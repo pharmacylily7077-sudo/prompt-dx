@@ -61,8 +61,8 @@
 <body>
 
   <div class="test-card">
-    <h1>🧪 調剤薬局システム フェーズ1: 小口現金 自動検証テスト</h1>
-    <p>開発憲法ルール3準拠: 暗算できる数字（10,000円補充 → 1,000円出金 → 残高9,000円）のロジック・保存検証</p>
+    <h1>🧪 調剤薬局システム 自動検証テストスイート（フェーズ1＆2）</h1>
+    <p>開発憲法ルール3準拠: 暗算できるキリの良い数字によるロジック・保存検証（小口現金＆レジ現金・クレジット締め）</p>
     <div style="margin-top: 1rem;">
       <button id="run-tests" class="btn">テストを再実行する</button>
       <a href="../index.html" style="margin-left: 1rem; color: #059669;">本番画面を開く &rarr;</a>
@@ -76,6 +76,7 @@
   </div>
 
   <script src="../js/petty-cash.js"></script>
+  <script src="../js/cash-register.js"></script>
   <script>
     function runAllTests() {
       const resultsContainer = document.getElementById('test-results');
@@ -89,14 +90,16 @@
       }
 
       try {
-        // テスト用の隔離LocalStorageキーを使用
-        const originalKey = PettyCashManager.STORAGE_KEY;
+        // ==========================================
+        // 【フェーズ1: 小口現金管理テスト】
+        // ==========================================
+        const originalPettyKey = PettyCashManager.STORAGE_KEY;
         PettyCashManager.STORAGE_KEY = 'pharmacy_petty_cash_test_suite';
         localStorage.removeItem(PettyCashManager.STORAGE_KEY);
 
         // 1. 初期状態テスト
         const manager = new PettyCashManager();
-        assert('1. 初期残高が0円であること', manager.getCurrentBalance() === 0, `現在残高: ${manager.getCurrentBalance()}円`);
+        assert('P1-1. 初期残高が0円であること', manager.getCurrentBalance() === 0, `現在残高: ${manager.getCurrentBalance()}円`);
 
         // 2. 外部検証ステップ1: 10,000円補充
         const incomeTx = manager.addTransaction({
@@ -106,8 +109,8 @@
           amount: 10000,
           memo: '金庫より小口補充'
         });
-        assert('2-1. 補充データが10,000円で登録されること', incomeTx.amount === 10000);
-        assert('2-2. 補充後の現在残高が10,000円であること', manager.getCurrentBalance() === 10000, `現在残高: ${manager.getCurrentBalance()}円`);
+        assert('P1-2. 補充データが10,000円で登録されること', incomeTx.amount === 10000);
+        assert('P1-3. 補充後の現在残高が10,000円であること', manager.getCurrentBalance() === 10000, `現在残高: ${manager.getCurrentBalance()}円`);
 
         // 3. 外部検証ステップ2: 1,000円出金（消耗品費）
         const expenseTx = manager.addTransaction({
@@ -117,33 +120,113 @@
           amount: 1000,
           memo: '事務用ボールペン購入'
         });
-        assert('3-1. 出金データが1,000円で登録されること', expenseTx.amount === 1000);
-        assert('3-2. 【憲法検証】残高が暗算通りの9,000円（10,000 - 1,000）であること', manager.getCurrentBalance() === 9000, `現在残高: ${manager.getCurrentBalance()}円`);
+        assert('P1-4. 出金データが1,000円で登録されること', expenseTx.amount === 1000);
+        assert('P1-5. 【憲法検証】残高が暗算通りの9,000円（10,000 - 1,000）であること', manager.getCurrentBalance() === 9000, `現在残高: ${manager.getCurrentBalance()}円`);
 
         // 4. サマリー集計テスト
         const summary = manager.getSummary('2026-09');
-        assert('4-1. 当月補充合計が10,000円であること', summary.monthlyIncome === 10000);
-        assert('4-2. 当月出金合計が1,000円であること', summary.monthlyExpense === 1000);
-        assert('4-3. 当月取引件数が2件であること', summary.monthlyCount === 2);
+        assert('P1-6. 当月補充合計が10,000円であること', summary.monthlyIncome === 10000);
+        assert('P1-7. 当月出金合計が1,000円であること', summary.monthlyExpense === 1000);
+        assert('P1-8. 当月取引件数が2件であること', summary.monthlyCount === 2);
 
         // 5. 表示一覧・時系列累積残高テスト
         const displayList = manager.getDisplayList();
-        assert('5-1. 一覧が新しい順に2件並ぶこと', displayList.length === 2 && displayList[0].id === expenseTx.id);
-        assert('5-2. 出金行の差引残高が9,000円であること', displayList[0].balanceAfter === 9000);
-        assert('5-3. 補充行の差引残高が10,000円であること', displayList[1].balanceAfter === 10000);
+        assert('P1-9. 一覧が新しい順に2件並ぶこと', displayList.length === 2 && displayList[0].id === expenseTx.id);
+        assert('P1-10. 出金行の差引残高が9,000円であること', displayList[0].balanceAfter === 9000);
+        assert('P1-11. 補充行の差引残高が10,000円であること', displayList[1].balanceAfter === 10000);
 
         // 6. 永続化（LocalStorage読み込み）テスト
         const reloadedManager = new PettyCashManager();
-        assert('6-1. 別インスタンス再読み込み後も残高9,000円が維持されること', reloadedManager.getCurrentBalance() === 9000);
-        assert('6-2. 別インスタンス再読み込み後も2件の取引が保持されること', reloadedManager.transactions.length === 2);
+        assert('P1-12. 別インスタンス再読み込み後も残高9,000円が維持されること', reloadedManager.getCurrentBalance() === 9000);
+        assert('P1-13. 別インスタンス再読み込み後も2件の取引が保持されること', reloadedManager.transactions.length === 2);
 
         // 7. 取引削除と残高再計算テスト
         reloadedManager.deleteTransaction(expenseTx.id);
-        assert('7. 出金を削除すると現在残高が10,000円に即時再計算されること', reloadedManager.getCurrentBalance() === 10000);
+        assert('P1-14. 出金を削除すると現在残高が10,000円に即時再計算されること', reloadedManager.getCurrentBalance() === 10000);
 
-        // クリーンアップ
         localStorage.removeItem(PettyCashManager.STORAGE_KEY);
-        PettyCashManager.STORAGE_KEY = originalKey;
+        PettyCashManager.STORAGE_KEY = originalPettyKey;
+
+        // ==========================================
+        // 【フェーズ2: レジ現金照合＆クレジット決済テスト】
+        // ==========================================
+        const originalRegKey = CashRegisterManager.STORAGE_KEY;
+        CashRegisterManager.STORAGE_KEY = 'pharmacy_cash_register_test_suite';
+        localStorage.removeItem(CashRegisterManager.STORAGE_KEY);
+
+        const regManager = new CashRegisterManager();
+        assert('P2-1. 初期状態の締めレコードが0件であること', regManager.records.length === 0);
+
+        // レジ現金照合: 一致
+        const matchCalc = CashRegisterManager.calculateCashDiscrepancy(50000, 10000, 60000);
+        assert('P2-2. つり銭5万+売上1万であるべき現金が60,000円であること', matchCalc.expectedCash === 60000);
+        assert('P2-3. 実査6万で過不足額が0円（一致）であること', matchCalc.discrepancy === 0 && matchCalc.status === 'match');
+
+        // 【憲法検証】レジ現金照合: 実査現金200円不足
+        const shortageCalc = CashRegisterManager.calculateCashDiscrepancy(50000, 10000, 59800);
+        assert('P2-4. 【憲法検証】実査59,800円で過不足額が -200円（不足）であること', shortageCalc.discrepancy === -200 && shortageCalc.status === 'shortage');
+        assert('P2-5. 不足ラベルに「不足」と「-200」が含まれること', shortageCalc.statusLabel.includes('不足') && shortageCalc.statusLabel.includes('-200'));
+
+        // レジ現金照合: 過剰
+        const excessCalc = CashRegisterManager.calculateCashDiscrepancy(50000, 10000, 60100);
+        assert('P2-6. 実査60,100円で過不足額が +100円（過剰）であること', excessCalc.discrepancy === 100 && excessCalc.status === 'excess');
+
+        // 【憲法検証】クレジット手数料・純入金計算（売上10,000円、手数料率3.24%）
+        const creditCalc = CashRegisterManager.calculateCredit(10000, 3.24);
+        assert('P2-7. 【憲法検証】クレジット売上10,000円の手数料が324円であること', creditCalc.feeAmount === 324);
+        assert('P2-8. 【憲法検証】差引入金見込額が9,676円（10,000 - 324）であること', creditCalc.netCreditAmount === 9676);
+
+        // クレジット四捨五入計算
+        const roundDown = CashRegisterManager.calculateCredit(1000, 3.24);
+        assert('P2-9. 32.4円が四捨五入で32円（純入金968円）になること', roundDown.feeAmount === 32 && roundDown.netCreditAmount === 968);
+
+        const roundUp = CashRegisterManager.calculateCredit(1500, 3.24);
+        assert('P2-10. 48.6円が四捨五入で49円（純入金1,451円）になること', roundUp.feeAmount === 49 && roundUp.netCreditAmount === 1451);
+
+        // レコード保存・LocalStorage永続化
+        const savedReg = regManager.saveRecord({
+          date: '2026-09-17',
+          changeFund: 50000,
+          presaleAmount: 10000,
+          actualCash: 59800,
+          creditSales: 10000,
+          feeRate: 3.24,
+          memo: 'テスト保存'
+        });
+        assert('P2-11. 保存レコードの過不足が -200円 であること', savedReg.discrepancy === -200);
+        assert('P2-12. 保存レコードの手数料が324円であること', savedReg.feeAmount === 324);
+        assert('P2-13. 保存レコードの純入金見込が9,676円であること', savedReg.netCreditAmount === 9676);
+
+        // 再読み込み
+        const reloadedReg = new CashRegisterManager();
+        assert('P2-14. 別インスタンス再読み込み後も1件保持されていること', reloadedReg.records.length === 1);
+        const fetchedReg = reloadedReg.getRecordByDate('2026-09-17');
+        assert('P2-15. 再読み込み後も -200円 不足状態が完全保持されること', fetchedReg && fetchedReg.discrepancy === -200);
+
+        // 同一日付更新
+        reloadedReg.saveRecord({
+          date: '2026-09-17',
+          changeFund: 50000,
+          presaleAmount: 10000,
+          actualCash: 60000,
+          creditSales: 10000,
+          feeRate: 3.24,
+          memo: '更新後'
+        });
+        assert('P2-16. 同一日付更新で件数が1件のままであること', reloadedReg.records.length === 1);
+        assert('P2-17. 上書き更新後の過不足額が0円（一致）に更新されること', reloadedReg.getRecordByDate('2026-09-17').discrepancy === 0);
+
+        // 憲法テストデータ投入検証
+        reloadedReg.loadConstitutionalTestData();
+        const constData = reloadedReg.getRecordByDate('2026-09-17');
+        assert('P2-18. 憲法テストデータ投入で -200円 不足と手数料324円がセットされること', constData.discrepancy === -200 && constData.feeAmount === 324 && constData.netCreditAmount === 9676);
+
+        // 削除
+        reloadedReg.deleteRecord(constData.id);
+        assert('P2-19. レコード削除で0件に戻ること', reloadedReg.records.length === 0);
+
+        localStorage.removeItem(CashRegisterManager.STORAGE_KEY);
+        CashRegisterManager.STORAGE_KEY = originalRegKey;
 
       } catch (err) {
         assert('例外エラーが発生しないこと', false, err.message);
@@ -165,7 +248,7 @@
       if (allPassed) {
         summaryContainer.innerHTML = `
           <div class="summary-box">
-            🎉 全 ${testCases.length} 項目 すべて合格！ 開発憲法の外部検証基準を満たしています。
+            🎉 全 ${testCases.length} 項目 すべて合格！ 開発憲法の外部検証基準（フェーズ1＆フェーズ2）を満たしています。
           </div>
         `;
       } else {

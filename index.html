@@ -25,11 +25,11 @@
   <!-- タブナビゲーション -->
   <nav class="tab-navigation">
     <div class="tab-container">
-      <button class="tab-btn" data-tab="tab-daily">
+      <button class="tab-btn active" data-tab="tab-daily">
         <span>📊 ① 本日の日計締め</span>
-        <span class="badge-status">フェーズ2〜3</span>
+        <span class="badge-status">稼働中</span>
       </button>
-      <button class="tab-btn active" data-tab="tab-petty">
+      <button class="tab-btn" data-tab="tab-petty">
         <span>👛 ② 小口現金管理</span>
         <span class="badge-status">稼働中</span>
       </button>
@@ -44,23 +44,205 @@
   <main class="main-container">
 
     <!-- ====================================================
-         タブ①: 本日の日計締め (フェーズ2〜3で実装)
+         タブ①: 本日の日計締め (★フェーズ2 実装)
          ==================================================== -->
-    <section id="tab-daily" class="tab-content">
-      <div class="placeholder-box">
-        <div class="placeholder-icon">📊</div>
-        <h2 class="placeholder-title">① 本日の日計締め・レジ現金照合</h2>
-        <p class="placeholder-desc">
-          営業終了後に1画面で「レセコン売上」「実査現金（レジ金数え）」「クレジット端末売上」を手入力し、即時締める画面です。<br>
-          <strong>「過不足の赤字警告」</strong>と<strong>「クレジット手数料3.24%の自動引去」</strong>で、現金のズレをごまかせない抑止力を実現します。（フェーズ2にて実装予定）
-        </p>
+    <section id="tab-daily" class="tab-content active">
+
+      <!-- サマリーカード -->
+      <div class="summary-grid">
+        <div id="daily-card-discrepancy" class="summary-card primary">
+          <div>
+            <div class="summary-card-title">
+              <span>⚖️ 本日のレジ現金過不足</span>
+              <span id="daily-status-tag" class="badge badge-match">一致（正常）</span>
+            </div>
+            <div id="daily-summary-discrepancy" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div id="daily-summary-discrepancy-sub" class="summary-card-sub">実査現金と（準備金＋売上）の差額</div>
+        </div>
+
+        <div class="summary-card info">
+          <div>
+            <div class="summary-card-title">
+              <span>🧾 レセコン窓口売上（現金）</span>
+            </div>
+            <div id="daily-summary-presale" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div class="summary-card-sub">日報・日計表の現金売上計</div>
+        </div>
+
+        <div class="summary-card">
+          <div>
+            <div class="summary-card-title">
+              <span>💵 実査現金合計（手元現物）</span>
+            </div>
+            <div id="daily-summary-actual" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div class="summary-card-sub">レジ金実査カウントの合計額</div>
+        </div>
+
+        <div class="summary-card primary">
+          <div>
+            <div class="summary-card-title">
+              <span>💳 クレジット純入金見込</span>
+            </div>
+            <div id="daily-summary-credit-net" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div class="summary-card-sub">売上から手数料3.24%を自動引去</div>
+        </div>
+      </div>
+
+      <!-- 2カラムコンテンツレイアウト -->
+      <div class="content-layout-2col">
+        
+        <!-- 左: 締め登録フォーム -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <h2 class="panel-title">
+              <span>📊</span> 本日の締め入力（手入力照合）
+            </h2>
+          </div>
+          <div class="panel-body">
+            <form id="daily-closing-form">
+
+              <!-- 締め日 -->
+              <div class="form-group">
+                <label for="daily-date" class="form-label">締め日 <span class="required">*</span></label>
+                <input type="date" id="daily-date" class="form-input" required>
+              </div>
+
+              <!-- ① レジ現金照合セクション -->
+              <div class="section-divider">
+                <div class="section-subtitle">
+                  <span>💵</span> ① レジ現金照合（現金のズレを可視化）
+                </div>
+
+                <!-- つり銭準備金 -->
+                <div class="form-group">
+                  <label for="daily-change-fund" class="form-label">つり銭準備金（円） <span class="required">*</span></label>
+                  <input type="number" id="daily-change-fund" class="form-input numeric" placeholder="例: 50000" min="0" step="1" value="50000" required>
+                </div>
+
+                <!-- レセコン窓口売上 -->
+                <div class="form-group">
+                  <label for="daily-presale-amount" class="form-label">レセコン窓口売上額（円） <span class="required">*</span></label>
+                  <input type="number" id="daily-presale-amount" class="form-input numeric" placeholder="例: 10000" min="0" step="1" required>
+                </div>
+
+                <!-- 実査現金合計額 -->
+                <div class="form-group">
+                  <label for="daily-actual-cash" class="form-label">実査現金合計額（円） <span class="required">*</span></label>
+                  <input type="number" id="daily-actual-cash" class="form-input numeric" placeholder="例: 59800" min="0" step="1" required>
+                </div>
+
+                <!-- リアルタイム過不足プレビュー -->
+                <div id="daily-discrepancy-preview" class="discrepancy-box match">
+                  <div class="discrepancy-box-header">
+                    <span>照合判定結果（リアルタイム）</span>
+                    <span id="preview-expected-cash">あるべき現金: ¥50,000</span>
+                  </div>
+                  <div id="preview-discrepancy-amount" class="discrepancy-box-amount numeric">一致（±¥0）</div>
+                  <div id="preview-discrepancy-note" style="font-size: 0.75rem;">※ レジ内の実査現金と、あるべき現金が一致しています。</div>
+                </div>
+              </div>
+
+              <!-- ② クレジット決済セクション -->
+              <div class="section-divider">
+                <div class="section-subtitle">
+                  <span>💳</span> ② クレジット決済（手数料自動計算）
+                </div>
+
+                <!-- クレジット端末売上 -->
+                <div class="form-group">
+                  <label for="daily-credit-sales" class="form-label">クレジット日計売上額（円）</label>
+                  <input type="number" id="daily-credit-sales" class="form-input numeric" placeholder="例: 10000" min="0" step="1" value="0">
+                </div>
+
+                <!-- 手数料率 -->
+                <div class="form-group">
+                  <label for="daily-fee-rate" class="form-label">決済手数料率（%）</label>
+                  <input type="number" id="daily-fee-rate" class="form-input numeric" placeholder="3.24" min="0" max="100" step="0.01" value="3.24">
+                </div>
+
+                <!-- リアルタイムクレジット計算プレビュー -->
+                <div id="daily-credit-preview" class="credit-preview-box">
+                  <div class="credit-preview-item">
+                    <span class="credit-preview-label">決済手数料（3.24%）</span>
+                    <span id="preview-fee-amount" class="credit-preview-val numeric">¥0</span>
+                  </div>
+                  <div class="credit-preview-item" style="text-align: right;">
+                    <span class="credit-preview-label">純入金見込額</span>
+                    <span id="preview-net-credit" class="credit-preview-val numeric" style="color: var(--primary-dark);">¥0</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- メモ・引継ぎ -->
+              <div class="form-group">
+                <label for="daily-memo" class="form-label">過不足理由・引継ぎメモ</label>
+                <textarea id="daily-memo" class="form-textarea" placeholder="例: 10円つり銭渡し間違いの疑い、レシート保管済"></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary">
+                <span>✓</span> 本日の締めデータを確定・保存する
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- 右: レジ締め履歴テーブル -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <h2 class="panel-title">
+              <span>📋</span> 日計締め履歴（最新順）
+            </h2>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button id="btn-load-closing-test-data" class="btn-test" title="開発憲法の外部検証データをセット">
+                🧪 【憲法検証】実査200円不足＆クレジット1万円
+              </button>
+              <button id="btn-clear-closing-data" class="btn-test" style="color: var(--danger); border-color: #fecaca;" title="全データをリセット">
+                🗑️ 全消去
+              </button>
+            </div>
+          </div>
+
+          <div class="panel-body" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>締め日</th>
+                    <th style="text-align: right;">準備金</th>
+                    <th style="text-align: right;">レセコン売上</th>
+                    <th style="text-align: right;">実査現金</th>
+                    <th style="text-align: center;">過不足判定</th>
+                    <th style="text-align: right;">クレジット売上</th>
+                    <th style="text-align: right;">手数料</th>
+                    <th style="text-align: right;">純入金見込</th>
+                    <th>メモ</th>
+                    <th style="text-align: center;">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="daily-table-body">
+                  <!-- JSで動的描画 -->
+                </tbody>
+              </table>
+            </div>
+
+            <div id="daily-empty-state" class="empty-state">
+              <div class="empty-state-icon">📭</div>
+              <p>日計締めの履歴がまだありません。<br>左側のフォームから本日の売上・実査現金を登録してください。</p>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
     <!-- ====================================================
          タブ②: 小口現金管理 (★フェーズ1 実装)
          ==================================================== -->
-    <section id="tab-petty" class="tab-content active">
+    <section id="tab-petty" class="tab-content">
 
       <!-- サマリーカード -->
       <div class="summary-grid">
@@ -233,6 +415,7 @@
 
   <!-- スクリプト読み込み -->
   <script src="js/petty-cash.js"></script>
+  <script src="js/cash-register.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
