@@ -359,6 +359,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // 心理的安全性安心ガイドの開閉制御（過不足発生時に温かいメッセージを自動表示）
+    const kindnessBox = document.getElementById('kindness-guidance-box');
+    if (kindnessBox) {
+      if (cashCalc.status !== 'match' && actual > 0) {
+        kindnessBox.style.display = 'block';
+      } else {
+        kindnessBox.style.display = 'none';
+      }
+    }
+
     // ② クレジット計算
     const creditCalc = CashRegisterManager.calculateCredit(creditSales, feeRate);
     if (previewFeeAmountEl) {
@@ -756,6 +766,41 @@ document.addEventListener('DOMContentLoaded', () => {
           showToast(`${date} の日計締めを確定・保存しました。現金のズレ: 過剰 +¥${saved.discrepancy.toLocaleString('ja-JP')}`, 'error');
         } else {
           showToast(`${date} の日計締めを確定・保存しました（レジ現金一致✓）`, 'success');
+        }
+
+        // 温かい労いモーダルの表示（今日もお疲れ様でした）
+        const warmDialog = document.getElementById('warm-closing-dialog');
+        const warmSummaryCard = document.getElementById('warm-closing-summary-card');
+        if (warmDialog && warmSummaryCard) {
+          let statusText = '✅ レジ現金ピッタリ一致（過不足なし）';
+          if (saved.status === 'shortage') {
+            statusText = `⚠️ レジ現金不足: -¥${Math.abs(saved.discrepancy).toLocaleString('ja-JP')}（理由メモ記録済）`;
+          } else if (saved.status === 'excess') {
+            statusText = `⚠️ レジ現金過剰: +¥${saved.discrepancy.toLocaleString('ja-JP')}（理由メモ記録済）`;
+          }
+          warmSummaryCard.innerHTML = `
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem; font-size:0.88rem;">
+              <span style="color:var(--text-muted);">📅 締め日:</span>
+              <strong class="numeric">${date}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem; font-size:0.88rem;">
+              <span style="color:var(--text-muted);">⚖️ 照合結果:</span>
+              <strong>${statusText}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem; font-size:0.88rem;">
+              <span style="color:var(--text-muted);">🧾 本日総売上:</span>
+              <strong class="numeric">${formatYen(saved.totalSales)}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:0.88rem;">
+              <span style="color:var(--text-muted);">💳 純入金見込計:</span>
+              <strong class="numeric" style="color:var(--primary-dark);">${formatYen(saved.totalNetExpected)}</strong>
+            </div>
+          `;
+          if (typeof warmDialog.showModal === 'function') {
+            warmDialog.showModal();
+          } else {
+            warmDialog.style.display = 'block';
+          }
         }
       } catch (err) {
         showToast(err.message, 'error');
@@ -1928,6 +1973,243 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // ====================================================
+  // フェーズ8: 簡単・優しさの仕組み化 初期設定
+  // ====================================================
+  const setupPhase8KindnessAndSimplicity = () => {
+    // 1. ワンタップ日付切替（今日／昨日）
+    const btnDateToday = document.getElementById('btn-date-today');
+    const btnDateYesterday = document.getElementById('btn-date-yesterday');
+
+    if (btnDateToday && dailyDateInput) {
+      btnDateToday.addEventListener('click', () => {
+        const today = new Date().toISOString().substring(0, 10);
+        dailyDateInput.value = today;
+        loadDateData(today);
+        renderDailyClosing();
+        showToast(`締め日を本日に設定しました: ${today}`, 'info');
+      });
+    }
+
+    if (btnDateYesterday && dailyDateInput) {
+      btnDateYesterday.addEventListener('click', () => {
+        const yesterday = new Date(Date.now() - 86400000).toISOString().substring(0, 10);
+        dailyDateInput.value = yesterday;
+        loadDateData(yesterday);
+        renderDailyClosing();
+        showToast(`締め日を昨日に設定しました: ${yesterday}`, 'info');
+      });
+    }
+
+    // 2. つり銭準備金リセット（標準 ¥50,000）
+    const btnResetFund = document.getElementById('btn-reset-change-fund');
+    if (btnResetFund && dailyChangeFundInput) {
+      btnResetFund.addEventListener('click', () => {
+        dailyChangeFundInput.value = '50000';
+        updateDailyPreviews();
+        showToast('つり銭準備金を標準値（¥50,000）にリセットしました', 'info');
+      });
+    }
+
+    // 3. 差額ゼロ（あるべき現金をそのまま反映）
+    const btnMatchCash = document.getElementById('btn-match-expected-cash');
+    if (btnMatchCash && dailyActualCashInput) {
+      btnMatchCash.addEventListener('click', () => {
+        const fund = parseInt(dailyChangeFundInput?.value, 10) || 0;
+        const presale = parseInt(dailyPresaleInput?.value, 10) || 0;
+        const expected = fund + presale;
+        dailyActualCashInput.value = expected;
+        updateDailyPreviews();
+        showToast(`あるべき現金（¥${expected.toLocaleString('ja-JP')}）を実査現金にセットしました（過不足ゼロ✓）`, 'success');
+      });
+    }
+
+    // 4. 金種別かんたん計算アシスト（金種カウンター）
+    const denomPanel = document.getElementById('denomination-panel');
+    const btnToggleDenom = document.getElementById('btn-toggle-denomination');
+    const btnCloseDenom = document.getElementById('btn-close-denomination');
+    const btnClearDenom = document.getElementById('btn-clear-denomination');
+    const btnApplyDenom = document.getElementById('btn-apply-denomination');
+    const denomTotalDisplay = document.getElementById('denom-total-display');
+
+    const updateDenominationCalculations = () => {
+      if (!denomPanel) return 0;
+      const rows = denomPanel.querySelectorAll('.denom-row');
+      const counts = {};
+      rows.forEach(row => {
+        const val = parseInt(row.getAttribute('data-val'), 10) || 0;
+        const input = row.querySelector('.denom-count');
+        const count = parseInt(input?.value, 10) || 0;
+        counts[val] = count;
+      });
+
+      const calc = CashRegisterManager.calculateDenominations(counts);
+      calc.breakdown.forEach(item => {
+        const row = denomPanel.querySelector(`.denom-row[data-val="${item.value}"]`);
+        if (row) {
+          const subtotalEl = row.querySelector('.denom-subtotal');
+          if (subtotalEl) {
+            subtotalEl.textContent = formatYen(item.subtotal);
+          }
+        }
+      });
+
+      if (denomTotalDisplay) {
+        denomTotalDisplay.textContent = formatYen(calc.total);
+      }
+      return calc.total;
+    };
+
+    if (btnToggleDenom && denomPanel) {
+      btnToggleDenom.addEventListener('click', () => {
+        const isHidden = denomPanel.style.display === 'none' || !denomPanel.style.display;
+        denomPanel.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) {
+          updateDenominationCalculations();
+        }
+      });
+    }
+
+    if (btnCloseDenom && denomPanel) {
+      btnCloseDenom.addEventListener('click', () => {
+        denomPanel.style.display = 'none';
+      });
+    }
+
+    if (btnClearDenom && denomPanel) {
+      btnClearDenom.addEventListener('click', () => {
+        denomPanel.querySelectorAll('.denom-count').forEach(inp => inp.value = '');
+        updateDenominationCalculations();
+      });
+    }
+
+    if (denomPanel) {
+      denomPanel.querySelectorAll('.denom-count').forEach(input => {
+        input.addEventListener('input', updateDenominationCalculations);
+      });
+
+      denomPanel.querySelectorAll('.btn-minus').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const row = btn.closest('.denom-row');
+          const input = row?.querySelector('.denom-count');
+          if (input) {
+            const cur = parseInt(input.value, 10) || 0;
+            input.value = Math.max(0, cur - 1);
+            updateDenominationCalculations();
+          }
+        });
+      });
+
+      denomPanel.querySelectorAll('.btn-plus').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const row = btn.closest('.denom-row');
+          const input = row?.querySelector('.denom-count');
+          if (input) {
+            const cur = parseInt(input.value, 10) || 0;
+            input.value = cur + 1;
+            updateDenominationCalculations();
+          }
+        });
+      });
+    }
+
+    if (btnApplyDenom && dailyActualCashInput) {
+      btnApplyDenom.addEventListener('click', () => {
+        const total = updateDenominationCalculations();
+        dailyActualCashInput.value = total;
+        if (denomPanel) denomPanel.style.display = 'none';
+        updateDailyPreviews();
+        showToast(`金種計算合計（${formatYen(total)}）を実査現金に反映しました！`, 'success');
+      });
+    }
+
+    // 5. 定型理由メモのワンタップ入力
+    document.querySelectorAll('.btn-memo-tag').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const text = btn.getAttribute('data-text');
+        if (!text || !dailyMemoInput) return;
+        if (dailyMemoInput.value.trim().length === 0) {
+          dailyMemoInput.value = text;
+        } else {
+          dailyMemoInput.value += `、${text}`;
+        }
+        showToast(`メモに「${btn.textContent.trim()}」を追加しました`, 'info');
+      });
+    });
+
+    // 6. 小口現金のクイックプリセットチップ
+    document.querySelectorAll('.btn-petty-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const type = btn.getAttribute('data-type') || 'expense';
+        const category = btn.getAttribute('data-category') || '';
+        const memo = btn.getAttribute('data-memo') || '';
+        const amount = btn.getAttribute('data-amount') || '';
+
+        const typeRadio = document.querySelector(`input[name="petty-type"][value="${type}"]`);
+        if (typeRadio) {
+          typeRadio.checked = true;
+          updateCategoryOptions(type);
+        }
+        const categorySelect = document.getElementById('petty-category');
+        if (categorySelect && category) {
+          categorySelect.value = category;
+        }
+        const memoInput = document.getElementById('petty-memo');
+        if (memoInput && memo) {
+          memoInput.value = memo;
+        }
+        const amountInput = document.getElementById('petty-amount');
+        if (amountInput && amount) {
+          amountInput.value = amount;
+        }
+        const dateInput = document.getElementById('petty-date');
+        if (dateInput && !dateInput.value) {
+          dateInput.value = new Date().toISOString().substring(0, 10);
+        }
+        showToast(`プリセット「${btn.textContent.trim()}」をセットしました`, 'info');
+      });
+    });
+
+    // 7. 調剤報酬返戻のクイック事由チップ
+    document.querySelectorAll('.btn-remand-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const reason = btn.getAttribute('data-reason') || '';
+        const select = document.getElementById('remand-form-reason');
+        if (select && reason) {
+          let found = false;
+          for (let i = 0; i < select.options.length; i++) {
+            const optVal = select.options[i].value;
+            if (optVal === reason || optVal.includes(reason.substring(0, 4)) || reason.includes(optVal.substring(0, 4))) {
+              select.selectedIndex = i;
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            select.value = reason;
+          }
+          showToast(`事由に「${select.value || reason}」をセットしました`, 'info');
+        }
+      });
+    });
+
+    // 8. 温かい労いモーダルの閉じるボタン
+    const btnCloseWarm = document.getElementById('btn-close-warm-modal');
+    const warmDialog = document.getElementById('warm-closing-dialog');
+    if (btnCloseWarm && warmDialog) {
+      btnCloseWarm.addEventListener('click', () => {
+        if (typeof warmDialog.close === 'function') {
+          warmDialog.close();
+        } else {
+          warmDialog.style.display = 'none';
+        }
+      });
+    }
+  };
+
+  // フェーズ8 簡単・優しさの仕組み化の初期化
+  setupPhase8KindnessAndSimplicity();
 
   // 初回ロード
   renderMonthlyReport('2026-09');

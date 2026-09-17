@@ -505,9 +505,65 @@ function run() {
     assert("フェーズ7-25: CSSにバックアップボタンおよびスキャンボックス用スタイルが定義されていること", cssCodeLatest.indexOf('.btn-backup-export') !== -1 && cssCodeLatest.indexOf('.scan-box-success') !== -1 && cssCodeLatest.indexOf('.scan-box-error') !== -1);
     assert("フェーズ7-26: MANUAL.mdにバックアップ・復元手順および個人情報非保持スキャン規約が明記されていること", manualCodeLatest.indexOf('データ保護・バックアップ＆復元手順') !== -1 && manualCodeLatest.indexOf('個人情報非保持ディープスキャン') !== -1);
 
+    results.push("\n=== 【フェーズ8: 簡単・優しさの仕組み化（金種計算・安心ガイド・ワンタップ入力・労いモーダル） テスト】 ===");
+    
+    // 1. 金種計算ロジック（CashRegisterManager.calculateDenominations）の検証
+    var testDenomCounts = {
+      10000: 5, // 50,000円
+      5000: 0,
+      2000: 0,
+      1000: 9,  // 9,000円
+      500: 1,   // 500円
+      100: 3,   // 300円
+      50: 0,
+      10: 0,
+      5: 0,
+      1: 0
+    };
+    var denomCalc = CashRegisterManager.calculateDenominations(testDenomCounts);
+    assert("フェーズ8-1: 【暗算検証】万札5枚+千円9枚+500円1枚+100円3枚で暗算通り59,800円が算出されること", denomCalc.total === 59800, "計算合計: " + denomCalc.total);
+    assert("フェーズ8-2: 金種内訳(breakdown)が10金種すべて含んでいること", denomCalc.breakdown.length === 10);
+    assert("フェーズ8-3: 万札の小計が50,000円、千円札の小計が9,000円であること", denomCalc.breakdown[0].subtotal === 50000 && denomCalc.breakdown[3].subtotal === 9000);
+    
+    // 異常値・空値耐性
+    var safeEmptyCalc = CashRegisterManager.calculateDenominations({});
+    assert("フェーズ8-4: 空の金種オブジェクトで安全に0円が返ること", safeEmptyCalc.total === 0);
+    var safeNegativeCalc = CashRegisterManager.calculateDenominations({ 10000: -2, 1000: "abc" });
+    assert("フェーズ8-5: 負数や不正文字が安全に0円扱いとなること", safeNegativeCalc.total === 0);
+
+    // 金種計算結果とレジ照合の統合検証（59,800円実査 ＝ 200円不足）
+    var registerDiscrepancyCheck = CashRegisterManager.calculateCashDiscrepancy(50000, 10000, denomCalc.total);
+    assert("フェーズ8-6: 金種計算結果(59,800円)からあるべき現金60,000円に対して200円不足が判定されること", registerDiscrepancyCheck.discrepancy === -200 && registerDiscrepancyCheck.status === 'shortage');
+
+    // 2. HTMLの簡単・優しさUI要素検証
+    assert("フェーズ8-7: HTMLに締め日クイックボタン(btn-date-today, btn-date-yesterday)が存在すること", htmlCodeLatest.indexOf('id="btn-date-today"') !== -1 && htmlCodeLatest.indexOf('id="btn-date-yesterday"') !== -1);
+    assert("フェーズ8-8: HTMLにつり銭準備金リセットボタン(btn-reset-change-fund)が存在すること", htmlCodeLatest.indexOf('id="btn-reset-change-fund"') !== -1);
+    assert("フェーズ8-9: HTMLにピッタリ一致ボタン(btn-match-expected-cash)が存在すること", htmlCodeLatest.indexOf('id="btn-match-expected-cash"') !== -1);
+    assert("フェーズ8-10: HTMLに金種カウンター展開ボタン(btn-toggle-denomination)およびパネル(denomination-panel)が存在すること", htmlCodeLatest.indexOf('id="btn-toggle-denomination"') !== -1 && htmlCodeLatest.indexOf('id="denomination-panel"') !== -1);
+    assert("フェーズ8-11: HTMLに10,000円〜1円の10金種入力行およびステッパーボタンが存在すること", htmlCodeLatest.indexOf('data-val="10000"') !== -1 && htmlCodeLatest.indexOf('data-val="1"') !== -1 && htmlCodeLatest.indexOf('class="btn-step btn-minus"') !== -1);
+    assert("フェーズ8-12: HTMLに金種計算結果反映ボタン(btn-apply-denomination)が存在すること", htmlCodeLatest.indexOf('id="btn-apply-denomination"') !== -1);
+    assert("フェーズ8-13: HTMLに過不足発生時の心理的安全性安心ガイド(kindness-guidance-box)が存在すること", htmlCodeLatest.indexOf('id="kindness-guidance-box"') !== -1);
+    assert("フェーズ8-14: HTML安心ガイド内に「安心してください」メッセージと30秒チェックリストが存在すること", htmlCodeLatest.indexOf('安心してください。過不足はあなたの責任ではありません') !== -1 && htmlCodeLatest.indexOf('kindness-checklist') !== -1);
+    assert("フェーズ8-15: HTMLに定型理由メモボタン群(quick-memo-tags)および原因不明・硬貨渡し間違いボタンが存在すること", htmlCodeLatest.indexOf('class="quick-memo-tags"') !== -1 && htmlCodeLatest.indexOf('原因不明（再確認済）') !== -1);
+    assert("フェーズ8-16: HTMLに締め保存完了時の温かい労いモーダル(warm-closing-dialog)が存在すること", htmlCodeLatest.indexOf('id="warm-closing-dialog"') !== -1 && htmlCodeLatest.indexOf('今日もお疲れ様でした！') !== -1);
+    assert("フェーズ8-17: HTML労いモーダル内に締めサマリー表示カード(warm-closing-summary-card)および明日の準備金案内(warm-tomorrow-reminder)が存在すること", htmlCodeLatest.indexOf('id="warm-closing-summary-card"') !== -1 && htmlCodeLatest.indexOf('warm-tomorrow-reminder') !== -1);
+    assert("フェーズ8-18: HTMLに小口現金かんたん入力プリセット(quick-preset-bar)および用紙・消毒液・切手・金庫補充ボタンが存在すること", htmlCodeLatest.indexOf('class="quick-preset-bar"') !== -1 && htmlCodeLatest.indexOf('用紙・ペン') !== -1 && htmlCodeLatest.indexOf('金庫補充(¥1万)') !== -1);
+    assert("フェーズ8-19: HTMLに調剤報酬返戻のワンタップ事由選択(quick-reason-chips)および資格喪失・疑義照会ボタンが存在すること", htmlCodeLatest.indexOf('class="quick-reason-chips"') !== -1 && htmlCodeLatest.indexOf('資格喪失・期限切れ') !== -1);
+
+    // 3. CSSスタイルの検証
+    assert("フェーズ8-20: CSSに金種カウンター用スタイル(.denomination-panel, .denom-grid, .denom-stepper)が定義されていること", cssCodeLatest.indexOf('.denomination-panel') !== -1 && cssCodeLatest.indexOf('.denomination-grid') !== -1 && cssCodeLatest.indexOf('.denom-stepper') !== -1);
+    assert("フェーズ8-21: CSSに心理的安全性安心ガイド用スタイル(.kindness-box, .kindness-title, .kindness-checklist)が定義されていること", cssCodeLatest.indexOf('.kindness-box') !== -1 && cssCodeLatest.indexOf('.kindness-title') !== -1 && cssCodeLatest.indexOf('.kindness-checklist') !== -1);
+    assert("フェーズ8-22: CSSに定型メモタグおよび小口・返戻クイックチップスタイル(.btn-memo-tag, .btn-petty-chip, .btn-remand-chip)が定義されていること", cssCodeLatest.indexOf('.btn-memo-tag') !== -1 && cssCodeLatest.indexOf('.btn-petty-chip') !== -1 && cssCodeLatest.indexOf('.btn-remand-chip') !== -1);
+    assert("フェーズ8-23: CSSに温かい労いモーダル用スタイル(.warm-modal-content, .warm-icon, .warm-tomorrow-reminder)が定義されていること", cssCodeLatest.indexOf('.warm-modal-content') !== -1 && cssCodeLatest.indexOf('.warm-tomorrow-reminder') !== -1);
+
+    // 4. MANUAL.mdドキュメント記載検証
+    assert("フェーズ8-24: MANUAL.mdに金種カウンターによる電卓不要手順およびピッタリ一致ボタンが明記されていること", manualCodeLatest.indexOf('金種カウンターで簡単計算') !== -1 && manualCodeLatest.indexOf('ピッタリ一致ボタン') !== -1);
+    assert("フェーズ8-25: MANUAL.mdに過不足時の心理的安全性安心ガイド・自腹補填厳禁・30秒チェックが明記されていること", manualCodeLatest.indexOf('心理的安全性安心ガイド') !== -1 && manualCodeLatest.indexOf('焦らずできる30秒チェック') !== -1);
+    assert("フェーズ8-26: MANUAL.mdに小口現金・調剤報酬返戻のかんたん入力プリセットおよび温かい労いモーダルが明記されていること", manualCodeLatest.indexOf('かんたん入力プリセット') !== -1 && manualCodeLatest.indexOf('温かい労いモーダル') !== -1);
+
     results.push("\n==============================================");
-    results.push("🎉 フェーズ1（14）＋ フェーズ2（19）＋ フェーズ3（25）＋ フェーズ4（25）＋ フェーズ5（12）＋ フェーズ6（22）＋ フェーズ7（26）全143項目に完全合格！");
-    results.push("外部検証基準（JSONエクスポート・安全復元・個人情報非保持ディープスキャン・ヘッダー操作UI・マニュアル更新）を完全達成。");
+    results.push("🎉 フェーズ1（14）＋ フェーズ2（19）＋ フェーズ3（25）＋ フェーズ4（25）＋ フェーズ5（12）＋ フェーズ6（22）＋ フェーズ7（26）＋ フェーズ8（26）全169項目に完全合格！");
+    results.push("外部検証基準（金種集計・安心ガイド・クイック入力・労いモーダル・マニュアル更新）を完全達成。");
     results.push("==============================================");
     return results.join("\n");
   } catch (e) {

@@ -132,7 +132,13 @@
 
               <!-- 締め日 -->
               <div class="form-group">
-                <label for="daily-date" class="form-label">締め日 <span class="required">*</span></label>
+                <div class="label-with-actions">
+                  <label for="daily-date" class="form-label">締め日 <span class="required">*</span></label>
+                  <div class="quick-btn-group">
+                    <button type="button" id="btn-date-today" class="btn-chip" title="本日の日付をセット">📅 今日</button>
+                    <button type="button" id="btn-date-yesterday" class="btn-chip" title="昨日の日付をセット">昨日</button>
+                  </div>
+                </div>
                 <input type="date" id="daily-date" class="form-input" required>
               </div>
 
@@ -144,7 +150,10 @@
 
                 <!-- つり銭準備金 -->
                 <div class="form-group">
-                  <label for="daily-change-fund" class="form-label">つり銭準備金（円） <span class="required">*</span></label>
+                  <div class="label-with-actions">
+                    <label for="daily-change-fund" class="form-label">つり銭準備金（円） <span class="required">*</span></label>
+                    <button type="button" id="btn-reset-change-fund" class="btn-chip" title="店舗規定値 ¥50,000 にリセット">🔄 標準 ¥50,000</button>
+                  </div>
                   <input type="number" id="daily-change-fund" class="form-input numeric" placeholder="例: 50000" min="0" step="1" value="50000" required>
                 </div>
 
@@ -156,8 +165,128 @@
 
                 <!-- 実査現金合計額 -->
                 <div class="form-group">
-                  <label for="daily-actual-cash" class="form-label">実査現金合計額（円） <span class="required">*</span></label>
+                  <div class="label-with-actions">
+                    <label for="daily-actual-cash" class="form-label">実査現金合計額（円） <span class="required">*</span></label>
+                    <div class="quick-btn-group">
+                      <button type="button" id="btn-match-expected-cash" class="btn-chip btn-chip-highlight" title="あるべき現金をそのままセット（差額ゼロの日に1タップ）">⚡ ピッタリ一致（あるべき現金を反映）</button>
+                      <button type="button" id="btn-toggle-denomination" class="btn-chip btn-chip-primary" title="電卓不要！お札・硬貨の枚数を入力して自動計算">🧮 金種カウンターで計算</button>
+                    </div>
+                  </div>
                   <input type="number" id="daily-actual-cash" class="form-input numeric" placeholder="例: 59800" min="0" step="1" required>
+                </div>
+
+                <!-- 金種別かんたん計算アシストパネル（開閉可能） -->
+                <div id="denomination-panel" class="denomination-panel" style="display: none;">
+                  <div class="denomination-panel-header">
+                    <div class="denomination-panel-title">
+                      <span>🧮</span> 金種別かんたん計算アシスト（電卓不要）
+                    </div>
+                    <div class="denomination-panel-actions">
+                      <button type="button" id="btn-clear-denomination" class="btn-chip-sm">クリア</button>
+                      <button type="button" id="btn-close-denomination" class="btn-chip-sm">閉じる ✕</button>
+                    </div>
+                  </div>
+                  <div class="denomination-grid">
+                    <div class="denom-row" data-val="10000">
+                      <span class="denom-label">10,000円札</span>
+                      <div class="denom-stepper">
+                        <button type="button" class="btn-step btn-minus" data-val="10000">-</button>
+                        <input type="number" class="denom-count form-input-sm numeric" min="0" step="1" placeholder="0" data-val="10000">
+                        <button type="button" class="btn-step btn-plus" data-val="10000">+</button>
+                      </div>
+                      <span class="denom-subtotal numeric">¥0</span>
+                    </div>
+                    <div class="denom-row" data-val="5000">
+                      <span class="denom-label">5,000円札</span>
+                      <div class="denom-stepper">
+                        <button type="button" class="btn-step btn-minus" data-val="5000">-</button>
+                        <input type="number" class="denom-count form-input-sm numeric" min="0" step="1" placeholder="0" data-val="5000">
+                        <button type="button" class="btn-step btn-plus" data-val="5000">+</button>
+                      </div>
+                      <span class="denom-subtotal numeric">¥0</span>
+                    </div>
+                    <div class="denom-row" data-val="2000">
+                      <span class="denom-label">2,000円札</span>
+                      <div class="denom-stepper">
+                        <button type="button" class="btn-step btn-minus" data-val="2000">-</button>
+                        <input type="number" class="denom-count form-input-sm numeric" min="0" step="1" placeholder="0" data-val="2000">
+                        <button type="button" class="btn-step btn-plus" data-val="2000">+</button>
+                      </div>
+                      <span class="denom-subtotal numeric">¥0</span>
+                    </div>
+                    <div class="denom-row" data-val="1000">
+                      <span class="denom-label">1,000円札</span>
+                      <div class="denom-stepper">
+                        <button type="button" class="btn-step btn-minus" data-val="1000">-</button>
+                        <input type="number" class="denom-count form-input-sm numeric" min="0" step="1" placeholder="0" data-val="1000">
+                        <button type="button" class="btn-step btn-plus" data-val="1000">+</button>
+                      </div>
+                      <span class="denom-subtotal numeric">¥0</span>
+                    </div>
+                    <div class="denom-row" data-val="500">
+                      <span class="denom-label">500円玉</span>
+                      <div class="denom-stepper">
+                        <button type="button" class="btn-step btn-minus" data-val="500">-</button>
+                        <input type="number" class="denom-count form-input-sm numeric" min="0" step="1" placeholder="0" data-val="500">
+                        <button type="button" class="btn-step btn-plus" data-val="500">+</button>
+                      </div>
+                      <span class="denom-subtotal numeric">¥0</span>
+                    </div>
+                    <div class="denom-row" data-val="100">
+                      <span class="denom-label">100円玉</span>
+                      <div class="denom-stepper">
+                        <button type="button" class="btn-step btn-minus" data-val="100">-</button>
+                        <input type="number" class="denom-count form-input-sm numeric" min="0" step="1" placeholder="0" data-val="100">
+                        <button type="button" class="btn-step btn-plus" data-val="100">+</button>
+                      </div>
+                      <span class="denom-subtotal numeric">¥0</span>
+                    </div>
+                    <div class="denom-row" data-val="50">
+                      <span class="denom-label">50円玉</span>
+                      <div class="denom-stepper">
+                        <button type="button" class="btn-step btn-minus" data-val="50">-</button>
+                        <input type="number" class="denom-count form-input-sm numeric" min="0" step="1" placeholder="0" data-val="50">
+                        <button type="button" class="btn-step btn-plus" data-val="50">+</button>
+                      </div>
+                      <span class="denom-subtotal numeric">¥0</span>
+                    </div>
+                    <div class="denom-row" data-val="10">
+                      <span class="denom-label">10円玉</span>
+                      <div class="denom-stepper">
+                        <button type="button" class="btn-step btn-minus" data-val="10">-</button>
+                        <input type="number" class="denom-count form-input-sm numeric" min="0" step="1" placeholder="0" data-val="10">
+                        <button type="button" class="btn-step btn-plus" data-val="10">+</button>
+                      </div>
+                      <span class="denom-subtotal numeric">¥0</span>
+                    </div>
+                    <div class="denom-row" data-val="5">
+                      <span class="denom-label">5円玉</span>
+                      <div class="denom-stepper">
+                        <button type="button" class="btn-step btn-minus" data-val="5">-</button>
+                        <input type="number" class="denom-count form-input-sm numeric" min="0" step="1" placeholder="0" data-val="5">
+                        <button type="button" class="btn-step btn-plus" data-val="5">+</button>
+                      </div>
+                      <span class="denom-subtotal numeric">¥0</span>
+                    </div>
+                    <div class="denom-row" data-val="1">
+                      <span class="denom-label">1円玉</span>
+                      <div class="denom-stepper">
+                        <button type="button" class="btn-step btn-minus" data-val="1">-</button>
+                        <input type="number" class="denom-count form-input-sm numeric" min="0" step="1" placeholder="0" data-val="1">
+                        <button type="button" class="btn-step btn-plus" data-val="1">+</button>
+                      </div>
+                      <span class="denom-subtotal numeric">¥0</span>
+                    </div>
+                  </div>
+                  <div class="denomination-footer">
+                    <div class="denom-total-box">
+                      <span class="denom-total-label">計算合計額:</span>
+                      <strong id="denom-total-display" class="denom-total-val numeric">¥0</strong>
+                    </div>
+                    <button type="button" id="btn-apply-denomination" class="btn btn-primary btn-sm">
+                      <span>📥</span> この合計を実査現金に反映する
+                    </button>
+                  </div>
                 </div>
 
                 <!-- リアルタイム過不足プレビュー -->
@@ -168,6 +297,32 @@
                   </div>
                   <div id="preview-discrepancy-amount" class="discrepancy-box-amount numeric">一致（±¥0）</div>
                   <div id="preview-discrepancy-note" style="font-size: 0.75rem;">※ レジ内の実査現金と、あるべき現金が一致しています。</div>
+                </div>
+
+                <!-- 心理的安全性安心ガイド（過不足発生時に自動表示） -->
+                <div id="kindness-guidance-box" class="kindness-box" style="display: none;">
+                  <div class="kindness-header">
+                    <span class="kindness-icon">💚</span>
+                    <div class="kindness-title-wrap">
+                      <strong class="kindness-title">安心してください。過不足はあなたの責任ではありません。</strong>
+                      <div class="kindness-subtitle">事実をそのまま記録することが、薬局とスタッフを守る盾になります（自腹補填は厳禁です）。</div>
+                    </div>
+                  </div>
+                  <div class="kindness-checklist">
+                    <div class="kindness-check-header">🔍 焦らずできる30秒チェック:</div>
+                    <label class="kindness-check-item">
+                      <input type="checkbox" class="kindness-chk">
+                      <span>つり銭準備金（¥50,000）の数え間違いや除外忘れはありませんか？</span>
+                    </label>
+                    <label class="kindness-check-item">
+                      <input type="checkbox" class="kindness-chk">
+                      <span>クレジット決済や電子マネー売上が現金レセコンに混ざっていませんか？</span>
+                    </label>
+                    <label class="kindness-check-item">
+                      <input type="checkbox" class="kindness-chk">
+                      <span>処方変更・返金・返品レシートの計上漏れはありませんか？</span>
+                    </label>
+                  </div>
                 </div>
               </div>
 
@@ -249,7 +404,17 @@
 
               <!-- メモ・引継ぎ -->
               <div class="form-group">
-                <label for="daily-memo" class="form-label">過不足理由・引継ぎメモ</label>
+                <div class="label-with-actions">
+                  <label for="daily-memo" class="form-label">過不足理由・引継ぎメモ</label>
+                  <span class="text-hint">ワンタップで定型文入力 ✍️</span>
+                </div>
+                <div class="quick-memo-tags">
+                  <button type="button" class="btn-memo-tag" data-text="原因不明（再確認済・レシート保管済・店長報告）">❓ 原因不明（再確認済）</button>
+                  <button type="button" class="btn-memo-tag" data-text="100円硬貨の渡し間違い可能性あり">🪙 100円硬貨渡し間違いの疑い</button>
+                  <button type="button" class="btn-memo-tag" data-text="10円硬貨の渡し間違い可能性あり">🪙 10円硬貨渡し間違いの疑い</button>
+                  <button type="button" class="btn-memo-tag" data-text="レセコン打鍵ミス・キャンセル修正タイムラグ">💻 レセコン修正タイムラグ</button>
+                  <button type="button" class="btn-memo-tag" data-text="店長へ連絡済・翌朝精査予定">📞 店長連絡済</button>
+                </div>
                 <textarea id="daily-memo" class="form-textarea" placeholder="例: 10円つり銭渡し間違いの疑い、レシート保管済"></textarea>
               </div>
 
@@ -394,6 +559,18 @@
           <div class="panel-body">
             <form id="petty-cash-form">
               
+              <!-- かんたん入力プリセット（ワンタップで入力完了） -->
+              <div class="quick-preset-bar">
+                <span class="quick-preset-title">⚡ かんたん入力:</span>
+                <div class="quick-preset-tags">
+                  <button type="button" class="btn-petty-chip" data-type="expense" data-category="消耗品費" data-memo="コピー用紙・ボールペン購入">📄 用紙・ペン</button>
+                  <button type="button" class="btn-petty-chip" data-type="expense" data-category="清掃・衛生費" data-memo="患者様用消毒用エタノール・マスク">🧴 消毒液・マスク</button>
+                  <button type="button" class="btn-petty-chip" data-type="expense" data-category="通信運搬費" data-memo="郵便切手・レターパック代">✉️ 切手・郵送</button>
+                  <button type="button" class="btn-petty-chip" data-type="expense" data-category="雑費" data-memo="店舗清掃用ゴミ袋・洗剤">🧹 ゴミ袋・洗剤</button>
+                  <button type="button" class="btn-petty-chip btn-petty-chip-income" data-type="income" data-category="小口現金補充" data-amount="10000" data-memo="金庫より小口現金補充">📥 金庫補充(¥1万)</button>
+                </div>
+              </div>
+
               <!-- 区分（出金 / 入金） -->
               <div class="form-group">
                 <label class="form-label">出納区分 <span class="required">*</span></label>
@@ -679,7 +856,16 @@
 
                 <!-- 事由 -->
                 <div class="form-group">
-                  <label for="remand-form-reason" class="form-label">返戻・保留の事由 <span class="required">*</span></label>
+                  <div class="label-with-actions">
+                    <label for="remand-form-reason" class="form-label">返戻・保留の事由 <span class="required">*</span></label>
+                    <span class="text-hint">ワンタップ選択 ✍️</span>
+                  </div>
+                  <div class="quick-reason-chips">
+                    <button type="button" class="btn-remand-chip" data-reason="保険証資格喪失・有効期限切れ">📄 資格喪失・期限切れ</button>
+                    <button type="button" class="btn-remand-chip" data-reason="記号番号誤り・枝番不一致">🔢 記号番号誤り</button>
+                    <button type="button" class="btn-remand-chip" data-reason="疑義照会・処方内容確認保留">💊 疑義照会保留</button>
+                    <button type="button" class="btn-remand-chip" data-reason="公費受給者証未提示・期限切れ">🏥 公費証未提示</button>
+                  </div>
                   <select id="remand-form-reason" class="form-select" required>
                     <!-- JSで動的生成 -->
                   </select>
@@ -1195,6 +1381,33 @@
         <button type="button" id="btn-cancel-restore" class="btn btn-secondary">キャンセル</button>
         <button type="button" id="btn-execute-restore" class="btn btn-primary" disabled style="background-color: var(--primary);">
           <span>✅</span> データを上書き復元する
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 温かい労いモーダル（今日もお疲れ様でした） -->
+  <dialog id="warm-closing-dialog" class="modal-dialog">
+    <div class="modal-content warm-modal-content">
+      <div class="warm-modal-header">
+        <span class="warm-icon">☕</span>
+        <h3 class="warm-title">今日もお疲れ様でした！</h3>
+      </div>
+      <div class="warm-modal-body">
+        <p class="warm-message">
+          本日の締めデータは安全に記録されました。<br>
+          今日も一日、地域の患者さんの健康のためにご尽力いただき、本当にありがとうございました。
+        </p>
+        <div id="warm-closing-summary-card" class="warm-summary-card">
+          <!-- 締め結果サマリー -->
+        </div>
+        <div class="warm-tomorrow-reminder">
+          <span>🌅</span> 明日のつり銭準備金は <strong>¥50,000</strong> です。レジ内をご確認ください。
+        </div>
+      </div>
+      <div class="warm-modal-footer">
+        <button type="button" id="btn-close-warm-modal" class="btn btn-primary btn-block">
+          <span>🏠</span> 確認しました（気をつけてお帰りください）
         </button>
       </div>
     </div>

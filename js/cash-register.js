@@ -126,6 +126,23 @@ class CashRegisterManager {
   }
 
   /**
+   * 金種別かんたん計算アシスト（電卓不要・枚数から金額集計）
+   * @param {Object} counts - { 10000: 5, 5000: 1, 1000: 4, 500: 1, 100: 3, ... }
+   * @returns {Object} { total: number, breakdown: Array<{ value: number, count: number, subtotal: number }> }
+   */
+  static calculateDenominations(counts = {}) {
+    const DENOMINATIONS = [10000, 5000, 2000, 1000, 500, 100, 50, 10, 5, 1];
+    let total = 0;
+    const breakdown = DENOMINATIONS.map(val => {
+      const count = Math.max(0, parseInt(counts[val], 10) || 0);
+      const subtotal = val * count;
+      total += subtotal;
+      return { value: val, count, subtotal };
+    });
+    return { total, breakdown };
+  }
+
+  /**
    * 日計締めレコード追加または更新
    */
   saveRecord({ date, changeFund, presaleAmount, actualCash, creditSales = 0, feeRate = CashRegisterManager.DEFAULT_FEE_RATE, memo = '' }) {

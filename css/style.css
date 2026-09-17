@@ -1944,3 +1944,454 @@ body {
     border: 0.8pt solid #cbd5e1 !important;
   }
 }
+
+/* ====================================================
+   フェーズ8: 簡単・優しさの仕組み化 スタイル
+   ==================================================== */
+.label-with-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.label-with-actions .form-label {
+  margin-bottom: 0;
+}
+
+.quick-btn-group {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-main);
+  background-color: #f1f5f9;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 32px;
+}
+
+.btn-chip:hover {
+  background-color: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+.btn-chip-primary {
+  color: #046c4e;
+  background-color: #def7ec;
+  border-color: #84e1bc;
+}
+
+.btn-chip-primary:hover {
+  background-color: #bcf0da;
+  border-color: #31c48d;
+}
+
+.btn-chip-highlight {
+  color: #1e429f;
+  background-color: #ebf5ff;
+  border-color: #a4cafe;
+}
+
+.btn-chip-highlight:hover {
+  background-color: #e1effe;
+  border-color: #76a9fa;
+}
+
+.btn-chip-sm {
+  padding: 0.2rem 0.45rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.btn-chip-sm:hover {
+  background: #f8fafc;
+}
+
+/* 金種別かんたん計算アシストパネル */
+.denomination-panel {
+  margin-top: 0.75rem;
+  margin-bottom: 1rem;
+  background-color: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.denomination-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.denomination-panel-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--navy-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.denomination-panel-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.denomination-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .denomination-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.denom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.denom-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-main);
+  min-width: 75px;
+}
+
+.denom-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.btn-step {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-main);
+  transition: background 0.1s ease;
+}
+
+.btn-step:hover {
+  background: #e2e8f0;
+}
+
+.denom-count {
+  width: 50px;
+  text-align: center;
+  padding: 0.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+}
+
+.denom-subtotal {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--navy-dark);
+  min-width: 70px;
+  text-align: right;
+}
+
+.denomination-footer {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.denom-total-box {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.denom-total-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.denom-total-val {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--primary-dark);
+}
+
+/* 心理的安全性安心ガイドボックス */
+.kindness-box {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  background-color: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.1);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.kindness-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.kindness-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.kindness-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #166534;
+}
+
+.kindness-subtitle {
+  font-size: 0.8rem;
+  color: #15803d;
+  margin-top: 0.15rem;
+  line-height: 1.4;
+}
+
+.kindness-checklist {
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px dashed #bbf7d0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.kindness-check-header {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #166534;
+}
+
+.kindness-check-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  color: #14532d;
+  cursor: pointer;
+}
+
+.kindness-chk {
+  width: 15px;
+  height: 15px;
+  accent-color: #16a34a;
+}
+
+/* 定型理由メモのクイックチップ */
+.text-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.quick-memo-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.45rem;
+}
+
+.btn-memo-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: #334155;
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 30px;
+}
+
+.btn-memo-tag:hover {
+  background-color: #e2e8f0;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+/* 小口現金クイックプリセット */
+.quick-preset-bar {
+  background: #f1f5f9;
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
+  margin-bottom: 0.85rem;
+  border: 1px solid #e2e8f0;
+}
+
+.quick-preset-title {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--navy-dark);
+  margin-bottom: 0.35rem;
+}
+
+.quick-preset-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.btn-petty-chip {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #1e293b;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 30px;
+}
+
+.btn-petty-chip:hover {
+  background: #e2e8f0;
+}
+
+.btn-petty-chip-income {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1e40af;
+}
+
+.btn-petty-chip-income:hover {
+  background: #dbeafe;
+}
+
+/* 調剤報酬返戻クイックチップ */
+.quick-reason-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.45rem;
+}
+
+.btn-remand-chip {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #334155;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 30px;
+}
+
+.btn-remand-chip:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+/* 温かい労いモーダル */
+.warm-modal-content {
+  max-width: 480px;
+  text-align: center;
+  border-top: 5px solid var(--primary);
+  padding: 1.5rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+}
+
+.warm-modal-header {
+  margin-bottom: 1rem;
+}
+
+.warm-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.warm-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--navy-dark);
+}
+
+.warm-message {
+  font-size: 0.95rem;
+  color: #334155;
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
+}
+
+.warm-summary-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.85rem;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.warm-tomorrow-reminder {
+  font-size: 0.85rem;
+  color: #065f46;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
