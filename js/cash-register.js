@@ -157,10 +157,14 @@ class CashRegisterManager {
       netCreditAmount: creditResult.netCreditAmount,
       // メモ・更新日時
       memo: (memo || '').trim(),
+      isConfirmed: true,
+      totalSales: cashResult.presaleAmount + creditResult.creditSales,
+      totalNetExpected: cashResult.presaleAmount + creditResult.netCreditAmount,
       updatedAt: new Date().toISOString()
     };
 
     if (existingIndex >= 0) {
+      recordData.createdAt = this.records[existingIndex].createdAt || new Date().toISOString();
       this.records[existingIndex] = recordData;
     } else {
       recordData.createdAt = new Date().toISOString();
@@ -208,8 +212,85 @@ class CashRegisterManager {
   }
 
   /**
-   * 憲法検証用テストデータ投入
-   * （実査現金が200円不足「不足 -200円」、クレジット10,000円で手数料324円引き）
+   * 日付ごとの店舗総合サマリー取得（小口現金との統合）
+   * @param {string} date YYYY-MM-DD
+   * @param {Object} [pettyCashManager] 小口現金マネージャー
+   */
+  getComprehensiveSummary(date, pettyCashManager = null) {
+    const record = this.getRecordByDate(date);
+    
+    // 小口現金データの抽出
+    let pettyExpense = 0;
+    let pettyIncome = 0;
+    let pettyBalance = 0;
+    let pettyTransactions = [];
+
+    if (pettyCashManager && pettyCashManager.transactions) {
+      pettyBalance = pettyCashManager.getCurrentBalance();
+      pettyTransactions = pettyCashManager.transactions.filter(t => t.date === date);
+      for (const tx of pettyTransactions) {
+        if (tx.type === 'expense') {
+          pettyExpense += tx.amount;
+        } else if (tx.type === 'income') {
+          pettyIncome += tx.amount;
+        }
+      }
+    }
+
+    if (!record) {
+      return {
+        date,
+        hasRecord: false,
+        isConfirmed: false,
+        presaleAmount: 0,
+        actualCash: 0,
+        changeFund: 50000,
+        discrepancy: 0,
+        status: 'match',
+        creditSales: 0,
+        feeAmount: 0,
+        netCreditAmount: 0,
+        totalSales: 0,
+        totalNetExpected: 0,
+        pettyExpense,
+        pettyIncome,
+        pettyBalance,
+        totalPhysicalCash: pettyBalance,
+        pettyTransactions,
+        memo: ''
+      };
+    }
+
+    return {
+      date,
+      hasRecord: true,
+      id: record.id,
+      isConfirmed: Boolean(record.isConfirmed),
+      presaleAmount: record.presaleAmount,
+      actualCash: record.actualCash,
+      changeFund: record.changeFund,
+      expectedCash: record.expectedCash,
+      discrepancy: record.discrepancy,
+      status: record.status,
+      statusLabel: record.statusLabel,
+      creditSales: record.creditSales,
+      feeRate: record.feeRate,
+      feeAmount: record.feeAmount,
+      netCreditAmount: record.netCreditAmount,
+      totalSales: record.totalSales || (record.presaleAmount + record.creditSales),
+      totalNetExpected: record.totalNetExpected || (record.presaleAmount + record.netCreditAmount),
+      pettyExpense,
+      pettyIncome,
+      pettyBalance,
+      totalPhysicalCash: record.actualCash + pettyBalance,
+      pettyTransactions,
+      memo: record.memo || '',
+      updatedAt: record.updatedAt
+    };
+  }
+
+  /**
+   * 憲法検証用テストデータ投入（フェーズ2互換）
    */
   loadConstitutionalTestData() {
     const today = new Date().toISOString().substring(0, 10);
@@ -217,10 +298,60 @@ class CashRegisterManager {
       date: today,
       changeFund: 50000,
       presaleAmount: 10000,
-      actualCash: 59800, // あるべき金額 60,000円 に対し 59,800円 = 不足 -200円
+      actualCash: 59800, // 不足 -200円
       creditSales: 10000,
       feeRate: 3.24,     // 手数料 324円、純入金 9,676円
       memo: '【憲法検証】実査現金200円不足、クレジット10,000円（手数料324円）'
+    });
+  }
+
+  /**
+   * フェーズ3 外部検証用テストデータ投入（複数日：Day 1 & Day 2）
+   * @param {Object} [pettyCashManager]
+   */
+  loadPhase3ConstitutionalTestData(pettyCashManager = null) {
+    // 小口現金の検証データをセット
+    if (pettyCashManager) {
+      pettyCashManager.clearAll();
+      pettyCashManager.addTransaction({
+        date: '2026-09-17',
+        type: 'income',
+        category: '小口現金補充',
+        amount: 10000,
+        memo: '金庫より小口補充'
+      });
+      pettyCashManager.addTransaction({
+        date: '2026-09-17',
+        type: 'expense',
+        category: '消耗品費',
+        amount: 1000,
+        memo: '事務用品購入'
+      });
+    }
+
+    // レジ締めデータの投入
+    this.clearAll();
+
+    // Day 1: 2026-09-17
+    this.saveRecord({
+      date: '2026-09-17',
+      changeFund: 50000,
+      presaleAmount: 10000,
+      actualCash: 59800, // 不足 -200円
+      creditSales: 10000,
+      feeRate: 3.24,     // 手数料 324円、純入金 9,676円
+      memo: '【憲法検証 Day1】実査200円不足、消耗品費1,000円出金'
+    });
+
+    // Day 2: 2026-09-18
+    this.saveRecord({
+      date: '2026-09-18',
+      changeFund: 50000,
+      presaleAmount: 20000,
+      actualCash: 70000, // 一致 ±0円
+      creditSales: 5000,
+      feeRate: 3.24,     // 手数料 162円、純入金 4,838円
+      memo: '【憲法検証 Day2】レジ現金完全一致、クレジット5,000円'
     });
   }
 

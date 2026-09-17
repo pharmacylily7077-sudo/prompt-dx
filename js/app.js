@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderPettyCash();
 
   // ----------------------------------------------------
-  // レジ現金＆クレジット決済管理 (★フェーズ2 実装)
+  // レジ現金＆クレジット決済・日計締め統合管理 (★フェーズ3 実装)
   // ----------------------------------------------------
   const cashRegisterManager = new CashRegisterManager();
 
@@ -266,6 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const dailyCreditSalesInput = document.getElementById('daily-credit-sales');
   const dailyFeeRateInput = document.getElementById('daily-fee-rate');
   const dailyMemoInput = document.getElementById('daily-memo');
+  const dailyLockStatusEl = document.getElementById('daily-lock-status');
 
   // リアルタイムプレビュー要素
   const discrepancyPreviewBox = document.getElementById('daily-discrepancy-preview');
@@ -275,19 +276,37 @@ document.addEventListener('DOMContentLoaded', () => {
   const previewFeeAmountEl = document.getElementById('preview-fee-amount');
   const previewNetCreditEl = document.getElementById('preview-net-credit');
 
+  // 小口＆総合プレビュー要素
+  const previewDailyPettyExpEl = document.getElementById('preview-daily-petty-exp');
+  const previewDailyPettyIncEl = document.getElementById('preview-daily-petty-inc');
+  const previewDailyPettyBalEl = document.getElementById('preview-daily-petty-bal');
+  const previewCompSalesEl = document.getElementById('preview-comp-sales');
+  const previewCompNetEl = document.getElementById('preview-comp-net');
+  const previewCompCashEl = document.getElementById('preview-comp-cash');
+
   // サマリーカード要素
   const dailySummaryDiscrepancyEl = document.getElementById('daily-summary-discrepancy');
   const dailyStatusTagEl = document.getElementById('daily-status-tag');
-  const dailySummaryPresaleEl = document.getElementById('daily-summary-presale');
-  const dailySummaryActualEl = document.getElementById('daily-summary-actual');
-  const dailySummaryCreditNetEl = document.getElementById('daily-summary-credit-net');
+  const dailySummaryTotalSalesEl = document.getElementById('daily-summary-total-sales');
+  const dailySummaryTotalNetEl = document.getElementById('daily-summary-total-net');
+  const dailySummaryPettyExpenseEl = document.getElementById('daily-summary-petty-expense');
+  const dailySummaryPettyBalanceSubEl = document.getElementById('daily-summary-petty-balance-sub');
+  const dailySummaryTotalPhysicalEl = document.getElementById('daily-summary-total-physical');
   const dailyCardDiscrepancyEl = document.getElementById('daily-card-discrepancy');
 
   // テーブル要素
   const dailyTableBody = document.getElementById('daily-table-body');
   const dailyEmptyStateEl = document.getElementById('daily-empty-state');
   const closingTestBtn = document.getElementById('btn-load-closing-test-data');
+  const phase3TestBtn = document.getElementById('btn-load-phase3-test-data');
   const clearClosingDataBtn = document.getElementById('btn-clear-closing-data');
+
+  // モーダル要素
+  const detailDialog = document.getElementById('daily-detail-dialog');
+  const modalReportBody = document.getElementById('modal-report-body');
+  const btnCloseModal = document.getElementById('btn-close-modal');
+  const btnCloseReport = document.getElementById('btn-close-report');
+  const btnPrintReport = document.getElementById('btn-print-report');
 
   // 初期日付
   if (dailyDateInput) {
@@ -296,13 +315,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // リアルタイム計算プレビュー更新
   const updateDailyPreviews = () => {
+    const selectedDate = dailyDateInput?.value || new Date().toISOString().substring(0, 10);
     const fund = parseInt(dailyChangeFundInput?.value, 10) || 0;
     const presale = parseInt(dailyPresaleInput?.value, 10) || 0;
     const actual = parseInt(dailyActualCashInput?.value, 10) || 0;
     const creditSales = parseInt(dailyCreditSalesInput?.value, 10) || 0;
     const feeRate = parseFloat(dailyFeeRateInput?.value) || 3.24;
 
-    // 現金照合計算
+    // ① レジ現金照合計算
     const cashCalc = CashRegisterManager.calculateCashDiscrepancy(fund, presale, actual);
     if (previewExpectedCashEl) {
       previewExpectedCashEl.textContent = `あるべき現金: ${formatYen(cashCalc.expectedCash)}`;
@@ -324,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // クレジット計算
+    // ② クレジット計算
     const creditCalc = CashRegisterManager.calculateCredit(creditSales, feeRate);
     if (previewFeeAmountEl) {
       previewFeeAmountEl.textContent = formatYen(creditCalc.feeAmount);
@@ -332,7 +352,70 @@ document.addEventListener('DOMContentLoaded', () => {
     if (previewNetCreditEl) {
       previewNetCreditEl.textContent = formatYen(creditCalc.netCreditAmount);
     }
+
+    // ③ 小口現金出納状況（選択日の動き）
+    const dayTxs = pettyCashManager.transactions.filter(t => t.date === selectedDate);
+    let dayExpense = 0;
+    let dayIncome = 0;
+    for (const tx of dayTxs) {
+      if (tx.type === 'expense') dayExpense += tx.amount;
+      else if (tx.type === 'income') dayIncome += tx.amount;
+    }
+    const currentPettyBalance = pettyCashManager.getCurrentBalance();
+
+    if (previewDailyPettyExpEl) previewDailyPettyExpEl.textContent = formatYen(dayExpense);
+    if (previewDailyPettyIncEl) previewDailyPettyIncEl.textContent = formatYen(dayIncome);
+    if (previewDailyPettyBalEl) previewDailyPettyBalEl.textContent = formatYen(currentPettyBalance);
+
+    // ④ 店舗総合サマリー
+    const totalSales = presale + creditSales;
+    const totalNet = presale + creditCalc.netCreditAmount;
+    const totalPhysicalCash = actual + currentPettyBalance;
+
+    if (previewCompSalesEl) previewCompSalesEl.textContent = formatYen(totalSales);
+    if (previewCompNetEl) previewCompNetEl.textContent = formatYen(totalNet);
+    if (previewCompCashEl) previewCompCashEl.textContent = formatYen(totalPhysicalCash);
   };
+
+  // 特定日付のデータをフォームにロードする
+  const loadDateData = (date) => {
+    const existing = cashRegisterManager.getRecordByDate(date);
+
+    if (existing) {
+      if (dailyChangeFundInput) dailyChangeFundInput.value = existing.changeFund;
+      if (dailyPresaleInput) dailyPresaleInput.value = existing.presaleAmount;
+      if (dailyActualCashInput) dailyActualCashInput.value = existing.actualCash;
+      if (dailyCreditSalesInput) dailyCreditSalesInput.value = existing.creditSales;
+      if (dailyFeeRateInput) dailyFeeRateInput.value = existing.feeRate;
+      if (dailyMemoInput) dailyMemoInput.value = existing.memo || '';
+
+      if (dailyLockStatusEl) {
+        dailyLockStatusEl.className = 'badge badge-confirmed';
+        dailyLockStatusEl.textContent = '確定済 ✓';
+      }
+    } else {
+      if (dailyChangeFundInput) dailyChangeFundInput.value = '50000';
+      if (dailyPresaleInput) dailyPresaleInput.value = '';
+      if (dailyActualCashInput) dailyActualCashInput.value = '';
+      if (dailyCreditSalesInput) dailyCreditSalesInput.value = '0';
+      if (dailyFeeRateInput) dailyFeeRateInput.value = '3.24';
+      if (dailyMemoInput) dailyMemoInput.value = '';
+
+      if (dailyLockStatusEl) {
+        dailyLockStatusEl.className = 'badge badge-unconfirmed';
+        dailyLockStatusEl.textContent = '未確定';
+      }
+    }
+    updateDailyPreviews();
+  };
+
+  // 日付変更イベント
+  if (dailyDateInput) {
+    dailyDateInput.addEventListener('change', () => {
+      loadDateData(dailyDateInput.value);
+      renderDailyClosing();
+    });
+  }
 
   // 入力イベントリスナー登録（リアルタイム計算）
   [dailyChangeFundInput, dailyPresaleInput, dailyActualCashInput, dailyCreditSalesInput, dailyFeeRateInput].forEach(input => {
@@ -341,64 +424,58 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // レジ締め画面レンダリング
+  // 日計締め画面レンダリング
   const renderDailyClosing = () => {
     const records = cashRegisterManager.getDisplayRecords();
 
-    // 最新レコードまたは本日レコードをサマリーに反映
-    const today = dailyDateInput?.value || new Date().toISOString().substring(0, 10);
-    const targetRecord = cashRegisterManager.getRecordByDate(today) || (records.length > 0 ? records[0] : null);
+    // 選択日付または最新レコードの総合サマリーを取得
+    const selectedDate = dailyDateInput?.value || new Date().toISOString().substring(0, 10);
+    const summary = cashRegisterManager.getComprehensiveSummary(selectedDate, pettyCashManager);
 
-    if (targetRecord) {
-      if (dailySummaryDiscrepancyEl) {
-        if (targetRecord.status === 'match') {
-          dailySummaryDiscrepancyEl.textContent = '±¥0';
-        } else if (targetRecord.status === 'shortage') {
-          dailySummaryDiscrepancyEl.textContent = `-¥${Math.abs(targetRecord.discrepancy).toLocaleString('ja-JP')}`;
-        } else {
-          dailySummaryDiscrepancyEl.textContent = `+¥${targetRecord.discrepancy.toLocaleString('ja-JP')}`;
-        }
+    // サマリーカードの更新
+    if (dailySummaryDiscrepancyEl) {
+      if (summary.status === 'match') {
+        dailySummaryDiscrepancyEl.textContent = '±¥0';
+      } else if (summary.status === 'shortage') {
+        dailySummaryDiscrepancyEl.textContent = `-¥${Math.abs(summary.discrepancy).toLocaleString('ja-JP')}`;
+      } else {
+        dailySummaryDiscrepancyEl.textContent = `+¥${summary.discrepancy.toLocaleString('ja-JP')}`;
       }
+    }
 
-      if (dailyCardDiscrepancyEl) {
-        dailyCardDiscrepancyEl.classList.remove('primary', 'danger', 'info');
-        if (targetRecord.status === 'shortage') {
-          dailyCardDiscrepancyEl.classList.add('danger');
-        } else {
-          dailyCardDiscrepancyEl.classList.add('primary');
-        }
+    if (dailyCardDiscrepancyEl) {
+      dailyCardDiscrepancyEl.classList.remove('primary', 'danger', 'info');
+      if (summary.status === 'shortage') {
+        dailyCardDiscrepancyEl.classList.add('danger');
+      } else {
+        dailyCardDiscrepancyEl.classList.add('primary');
       }
+    }
 
-      if (dailyStatusTagEl) {
-        dailyStatusTagEl.className = 'badge';
-        if (targetRecord.status === 'match') {
+    if (dailyStatusTagEl) {
+      dailyStatusTagEl.className = 'badge';
+      if (summary.hasRecord) {
+        if (summary.status === 'match') {
           dailyStatusTagEl.classList.add('badge-match');
           dailyStatusTagEl.textContent = '一致（正常）';
-        } else if (targetRecord.status === 'shortage') {
+        } else if (summary.status === 'shortage') {
           dailyStatusTagEl.classList.add('badge-shortage');
-          dailyStatusTagEl.textContent = `不足（-${Math.abs(targetRecord.discrepancy).toLocaleString('ja-JP')}円）⚠️`;
+          dailyStatusTagEl.textContent = `不足（-${Math.abs(summary.discrepancy).toLocaleString('ja-JP')}円）⚠️`;
         } else {
           dailyStatusTagEl.classList.add('badge-excess');
-          dailyStatusTagEl.textContent = `過剰（+${targetRecord.discrepancy.toLocaleString('ja-JP')}円）⚠️`;
+          dailyStatusTagEl.textContent = `過剰（+${summary.discrepancy.toLocaleString('ja-JP')}円）⚠️`;
         }
+      } else {
+        dailyStatusTagEl.classList.add('badge-unconfirmed');
+        dailyStatusTagEl.textContent = '未確定';
       }
-
-      if (dailySummaryPresaleEl) dailySummaryPresaleEl.textContent = formatYen(targetRecord.presaleAmount);
-      if (dailySummaryActualEl) dailySummaryActualEl.textContent = formatYen(targetRecord.actualCash);
-      if (dailySummaryCreditNetEl) dailySummaryCreditNetEl.textContent = formatYen(targetRecord.netCreditAmount);
-    } else {
-      if (dailySummaryDiscrepancyEl) dailySummaryDiscrepancyEl.textContent = '¥0';
-      if (dailyCardDiscrepancyEl) {
-        dailyCardDiscrepancyEl.className = 'summary-card primary';
-      }
-      if (dailyStatusTagEl) {
-        dailyStatusTagEl.className = 'badge badge-match';
-        dailyStatusTagEl.textContent = '未締め / 正常';
-      }
-      if (dailySummaryPresaleEl) dailySummaryPresaleEl.textContent = '¥0';
-      if (dailySummaryActualEl) dailySummaryActualEl.textContent = '¥0';
-      if (dailySummaryCreditNetEl) dailySummaryCreditNetEl.textContent = '¥0';
     }
+
+    if (dailySummaryTotalSalesEl) dailySummaryTotalSalesEl.textContent = formatYen(summary.totalSales);
+    if (dailySummaryTotalNetEl) dailySummaryTotalNetEl.textContent = formatYen(summary.totalNetExpected);
+    if (dailySummaryPettyExpenseEl) dailySummaryPettyExpenseEl.textContent = formatYen(summary.pettyExpense);
+    if (dailySummaryPettyBalanceSubEl) dailySummaryPettyBalanceSubEl.textContent = `小口現金残高: ${formatYen(summary.pettyBalance)}`;
+    if (dailySummaryTotalPhysicalEl) dailySummaryTotalPhysicalEl.textContent = formatYen(summary.totalPhysicalCash);
 
     // テーブル描画
     if (dailyTableBody) {
@@ -423,26 +500,38 @@ document.addEventListener('DOMContentLoaded', () => {
           statusBadge = `<span class="badge badge-excess">過剰 +¥${r.discrepancy.toLocaleString('ja-JP')}</span>`;
         }
 
+        const totalSales = r.totalSales || (r.presaleAmount + r.creditSales);
+        const totalNet = r.totalNetExpected || (r.presaleAmount + r.netCreditAmount);
+
         row.innerHTML = `
           <td class="numeric"><strong>${r.date}</strong></td>
-          <td class="numeric" style="text-align: right;">${formatYen(r.changeFund)}</td>
-          <td class="numeric" style="text-align: right; color: var(--info); font-weight: 600;">${formatYen(r.presaleAmount)}</td>
+          <td class="numeric" style="text-align: right; color: var(--info);">${formatYen(r.presaleAmount)}</td>
           <td class="numeric" style="text-align: right; font-weight: 700;">${formatYen(r.actualCash)}</td>
           <td style="text-align: center;">${statusBadge}</td>
           <td class="numeric" style="text-align: right;">${formatYen(r.creditSales)}</td>
-          <td class="numeric" style="text-align: right; color: #64748b;">${formatYen(r.feeAmount)}</td>
-          <td class="numeric" style="text-align: right; font-weight: 700; color: var(--primary-dark);">${formatYen(r.netCreditAmount)}</td>
+          <td class="numeric" style="text-align: right; font-weight: 700;">${formatYen(totalSales)}</td>
+          <td class="numeric" style="text-align: right; font-weight: 700; color: var(--primary-dark);">${formatYen(totalNet)}</td>
           <td>${r.memo || '<span style="color:#94a3b8;">-</span>'}</td>
-          <td style="text-align: center;">
-            <button class="btn btn-danger-outline btn-delete-daily" data-id="${r.id}" title="削除">削除</button>
+          <td style="text-align: center; white-space: nowrap;">
+            <button class="btn btn-secondary btn-view-detail" data-date="${r.date}" style="padding: 0.25rem 0.55rem; font-size: 0.8rem; margin-right: 0.25rem;" title="詳細日報閲覧">詳細</button>
+            <button class="btn btn-danger-outline btn-delete-daily" data-id="${r.id}" style="padding: 0.25rem 0.55rem; font-size: 0.8rem;" title="削除">削除</button>
           </td>
         `;
 
-        // 削除ボタンイベント
+        // 詳細ボタン
+        const viewBtn = row.querySelector('.btn-view-detail');
+        viewBtn.addEventListener('click', () => {
+          openDetailModal(r.date);
+        });
+
+        // 削除ボタン
         const deleteBtn = row.querySelector('.btn-delete-daily');
         deleteBtn.addEventListener('click', () => {
-          if (confirm(`【確認】\n締め日: ${r.date} の締めデータを削除しますか？\n（レセコン売上: ${formatYen(r.presaleAmount)}、実査現金: ${formatYen(r.actualCash)}）`)) {
+          if (confirm(`【確認】\n締め日: ${r.date} の締めデータを削除しますか？`)) {
             cashRegisterManager.deleteRecord(r.id);
+            if (dailyDateInput?.value === r.date) {
+              loadDateData(r.date);
+            }
             showToast('締めデータを削除しました');
           }
         });
@@ -452,7 +541,172 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // フォーム送信
+  // 詳細閲覧モーダルを開く
+  const openDetailModal = (date) => {
+    if (!detailDialog || !modalReportBody) return;
+
+    const summary = cashRegisterManager.getComprehensiveSummary(date, pettyCashManager);
+    if (!summary.hasRecord) {
+      showToast('対象日の締めデータが見つかりません', 'error');
+      return;
+    }
+
+    // 小口現金明細行の生成
+    let pettyRows = '';
+    if (summary.pettyTransactions.length === 0) {
+      pettyRows = '<tr><td colspan="4" style="text-align:center; color:#94a3b8; padding: 0.5rem;">この日の小口取引はありません</td></tr>';
+    } else {
+      summary.pettyTransactions.forEach(t => {
+        const isExp = t.type === 'expense';
+        pettyRows += `
+          <tr>
+            <td><span class="badge ${isExp ? 'badge-expense' : 'badge-income'}">${isExp ? '出金' : '補充'}</span></td>
+            <td><strong>${t.category}</strong></td>
+            <td>${t.memo || '-'}</td>
+            <td class="numeric" style="text-align: right; font-weight: bold; color: ${isExp ? 'var(--danger)' : 'var(--info)'};">
+              ${isExp ? '-' : '+'}${formatYen(t.amount)}
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    modalReportBody.innerHTML = `
+      <!-- ヘッダー情報 -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--navy);">
+        <div>
+          <span style="font-size: 1.25rem; font-weight: 800;">締め日: ${summary.date}</span>
+          <span class="badge badge-confirmed" style="margin-left: 0.5rem;">確定済</span>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">
+          最終更新: ${summary.updatedAt ? new Date(summary.updatedAt).toLocaleString('ja-JP') : '-'}
+        </div>
+      </div>
+
+      <!-- 店舗総合サマリー -->
+      <div class="report-section">
+        <div class="report-section-title">🏛️ 店舗総合サマリー（本日の総合計）</div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.5rem;">
+          <div class="report-item">
+            <div class="report-item-label">本日総売上（窓口現金＋クレジット）</div>
+            <div class="report-item-val numeric" style="color: var(--navy);">${formatYen(summary.totalSales)}</div>
+          </div>
+          <div class="report-item">
+            <div class="report-item-label">純入金見込計（現金＋クレジット手取り）</div>
+            <div class="report-item-val numeric" style="color: var(--primary-dark);">${formatYen(summary.totalNetExpected)}</div>
+          </div>
+          <div class="report-item">
+            <div class="report-item-label">手元実査現金計（レジ現物＋小口金庫）</div>
+            <div class="report-item-val numeric" style="color: #0284c7;">${formatYen(summary.totalPhysicalCash)}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ① レジ現金照合 -->
+      <div class="report-section">
+        <div class="report-section-title">💵 ① レジ現金照合</div>
+        <div class="report-grid-2">
+          <div class="report-item">
+            <div class="report-item-label">つり銭準備金</div>
+            <div class="report-item-val numeric">${formatYen(summary.changeFund)}</div>
+          </div>
+          <div class="report-item">
+            <div class="report-item-label">レセコン窓口現金売上</div>
+            <div class="report-item-val numeric">${formatYen(summary.presaleAmount)}</div>
+          </div>
+          <div class="report-item">
+            <div class="report-item-label">本来あるべき現金合計</div>
+            <div class="report-item-val numeric">${formatYen(summary.expectedCash)}</div>
+          </div>
+          <div class="report-item">
+            <div class="report-item-label">実査現金合計（レジ内実数）</div>
+            <div class="report-item-val numeric" style="font-weight: 800;">${formatYen(summary.actualCash)}</div>
+          </div>
+        </div>
+        <div style="margin-top: 0.5rem; padding: 0.6rem; border-radius: 6px; background: ${summary.status === 'shortage' ? 'var(--danger-light)' : (summary.status === 'match' ? 'var(--primary-light)' : '#fffbeb')};">
+          <strong style="color: ${summary.status === 'shortage' ? 'var(--danger)' : (summary.status === 'match' ? 'var(--primary)' : 'var(--warning)')};">
+            過不足判定: ${summary.statusLabel}
+          </strong>
+        </div>
+      </div>
+
+      <!-- ② クレジット決済 -->
+      <div class="report-section">
+        <div class="report-section-title">💳 ② クレジット決済</div>
+        <div class="report-grid-2">
+          <div class="report-item">
+            <div class="report-item-label">クレジット日計売上額</div>
+            <div class="report-item-val numeric">${formatYen(summary.creditSales)}</div>
+          </div>
+          <div class="report-item">
+            <div class="report-item-label">決済手数料（${summary.feeRate}%・四捨五入）</div>
+            <div class="report-item-val numeric" style="color: #64748b;">${formatYen(summary.feeAmount)}</div>
+          </div>
+        </div>
+        <div style="margin-top: 0.5rem; padding: 0.5rem 0.8rem; background: #eff6ff; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.85rem; color: #1e40af; font-weight: 600;">差引入金見込額:</span>
+          <strong class="numeric" style="font-size: 1.15rem; color: var(--primary-dark);">${formatYen(summary.netCreditAmount)}</strong>
+        </div>
+      </div>
+
+      <!-- ③ 当日の小口出納明細 -->
+      <div class="report-section">
+        <div class="report-section-title">👛 ③ 本日の小口現金出納明細（領収書等）</div>
+        <table class="data-table" style="font-size: 0.8rem;">
+          <thead>
+            <tr>
+              <th>区分</th>
+              <th>科目</th>
+              <th>摘要</th>
+              <th style="text-align: right;">金額</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pettyRows}
+          </tbody>
+        </table>
+        <div style="margin-top: 0.5rem; display: flex; justify-content: space-between; font-size: 0.85rem;">
+          <span>本日小口出金計: <strong class="numeric" style="color: var(--danger);">${formatYen(summary.pettyExpense)}</strong></span>
+          <span>小口現金残高: <strong class="numeric">${formatYen(summary.pettyBalance)}</strong></span>
+        </div>
+      </div>
+
+      <!-- 引継ぎメモ -->
+      <div class="report-section">
+        <div class="report-section-title">📝 理由・引継ぎメモ</div>
+        <div style="background: #f8fafc; padding: 0.75rem; border-radius: 6px; border: 1px solid #e2e8f0; min-height: 40px; white-space: pre-wrap;">
+          ${summary.memo || '（記載なし）'}
+        </div>
+      </div>
+    `;
+
+    if (typeof detailDialog.showModal === 'function') {
+      detailDialog.showModal();
+    } else {
+      detailDialog.setAttribute('open', '');
+    }
+  };
+
+  // モーダル閉じる
+  if (btnCloseModal) {
+    btnCloseModal.addEventListener('click', () => {
+      if (typeof detailDialog.close === 'function') detailDialog.close();
+      else detailDialog.removeAttribute('open');
+    });
+  }
+  if (btnCloseReport) {
+    btnCloseReport.addEventListener('click', () => {
+      if (typeof detailDialog.close === 'function') detailDialog.close();
+      else detailDialog.removeAttribute('open');
+    });
+  }
+  if (btnPrintReport) {
+    btnPrintReport.addEventListener('click', () => {
+      window.print();
+    });
+  }
+
+  // フォーム送信（確定・保存）
   if (dailyForm) {
     dailyForm.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -476,12 +730,17 @@ document.addEventListener('DOMContentLoaded', () => {
           memo
         });
 
+        if (dailyLockStatusEl) {
+          dailyLockStatusEl.className = 'badge badge-confirmed';
+          dailyLockStatusEl.textContent = '確定済 ✓';
+        }
+
         if (saved.status === 'shortage') {
-          showToast(`【注意】${date} の締めを保存しました。現金のズレ: 不足 -¥${Math.abs(saved.discrepancy).toLocaleString('ja-JP')}`, 'error');
+          showToast(`【注意】${date} の日計締めを確定・保存しました。現金のズレ: 不足 -¥${Math.abs(saved.discrepancy).toLocaleString('ja-JP')}`, 'error');
         } else if (saved.status === 'excess') {
-          showToast(`${date} の締めを保存しました。現金のズレ: 過剰 +¥${saved.discrepancy.toLocaleString('ja-JP')}`, 'error');
+          showToast(`${date} の日計締めを確定・保存しました。現金のズレ: 過剰 +¥${saved.discrepancy.toLocaleString('ja-JP')}`, 'error');
         } else {
-          showToast(`${date} の締めデータを保存しました（レジ現金一致✓）`, 'success');
+          showToast(`${date} の日計締めを確定・保存しました（レジ現金一致✓）`, 'success');
         }
       } catch (err) {
         showToast(err.message, 'error');
@@ -489,24 +748,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 開発憲法検証ボタン（実査現金200円不足、クレジット10,000円・手数料324円）
+  // フェーズ2 外部検証ボタン
   if (closingTestBtn) {
     closingTestBtn.addEventListener('click', () => {
       if (confirm('【開発憲法 外部検証】\n「つり銭準備金 50,000円」「レセコン売上 10,000円」「実査現金 59,800円（200円不足）」「クレジット 10,000円（手数料324円）」の検証データをセットしますか？')) {
         cashRegisterManager.loadConstitutionalTestData();
 
-        // フォームにも検証数値を反映
         const today = new Date().toISOString().substring(0, 10);
         if (dailyDateInput) dailyDateInput.value = today;
-        if (dailyChangeFundInput) dailyChangeFundInput.value = '50000';
-        if (dailyPresaleInput) dailyPresaleInput.value = '10000';
-        if (dailyActualCashInput) dailyActualCashInput.value = '59800';
-        if (dailyCreditSalesInput) dailyCreditSalesInput.value = '10000';
-        if (dailyFeeRateInput) dailyFeeRateInput.value = '3.24';
-        if (dailyMemoInput) dailyMemoInput.value = '【憲法検証】実査現金200円不足、クレジット10,000円（手数料324円）';
-
-        updateDailyPreviews();
+        loadDateData(today);
         showToast('外部検証データをセットしました（実査200円不足⚠️、クレジット手数料324円）', 'error');
+      }
+    });
+  }
+
+  // フェーズ3 外部検証ボタン（複数日：Day 1 & Day 2）
+  if (phase3TestBtn) {
+    phase3TestBtn.addEventListener('click', () => {
+      if (confirm('【開発憲法 フェーズ3外部検証】\n「Day1（2026-09-17: 200円不足・小口1千円出金）」および「Day2（2026-09-18: 一致・クレジット5千円）」の複数日日計締めデータをセットしますか？')) {
+        cashRegisterManager.loadPhase3ConstitutionalTestData(pettyCashManager);
+
+        // まずDay 1を表示
+        if (dailyDateInput) dailyDateInput.value = '2026-09-17';
+        loadDateData('2026-09-17');
+        showToast('フェーズ3検証データ（Day 1 & Day 2）をセットしました。日付を切り替えて履歴の完全性を確認してください。', 'success');
       }
     });
   }
@@ -516,16 +781,26 @@ document.addEventListener('DOMContentLoaded', () => {
     clearClosingDataBtn.addEventListener('click', () => {
       if (confirm('【注意】日計締めの全データをリセットしますか？\nこの操作は取り消せません。')) {
         cashRegisterManager.clearAll();
+        loadDateData(dailyDateInput?.value || new Date().toISOString().substring(0, 10));
         showToast('日計締めのデータをリセットしました');
       }
     });
   }
 
+  // 小口現金マネージャーが変更された時も締め画面のプレビューとサマリーを即時再計算
+  pettyCashManager.subscribe(() => {
+    updateDailyPreviews();
+    renderDailyClosing();
+  });
+
   // データ購読登録＆初回描画
   cashRegisterManager.subscribe(() => {
     renderDailyClosing();
   });
-  updateDailyPreviews();
+
+  // 初回ロード
+  loadDateData(dailyDateInput?.value || new Date().toISOString().substring(0, 10));
   renderDailyClosing();
 });
+
 

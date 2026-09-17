@@ -61,8 +61,8 @@
 <body>
 
   <div class="test-card">
-    <h1>🧪 調剤薬局システム 自動検証テストスイート（フェーズ1＆2）</h1>
-    <p>開発憲法ルール3準拠: 暗算できるキリの良い数字によるロジック・保存検証（小口現金＆レジ現金・クレジット締め）</p>
+    <h1>🧪 調剤薬局システム 自動検証テストスイート（フェーズ1〜3）</h1>
+    <p>開発憲法ルール3準拠: 暗算できるキリの良い数字によるロジック・保存検証（小口現金＆レジ締め・クレジット＆1画面日計確定・履歴分離）</p>
     <div style="margin-top: 1rem;">
       <button id="run-tests" class="btn">テストを再実行する</button>
       <a href="../index.html" style="margin-left: 1rem; color: #059669;">本番画面を開く &rarr;</a>
@@ -225,6 +225,52 @@
         reloadedReg.deleteRecord(constData.id);
         assert('P2-19. レコード削除で0件に戻ること', reloadedReg.records.length === 0);
 
+        // ==========================================
+        // 【フェーズ3: 1画面日計締めサマリー＆複数日履歴管理テスト】
+        // ==========================================
+        // 1. フェーズ3検証データ投入（Day 1: 2026-09-17, Day 2: 2026-09-18）
+        reloadedReg.loadPhase3ConstitutionalTestData(reloadedManager);
+        assert('P3-1. 複数日締めデータ投入で締めレコードが2件保持されること', reloadedReg.records.length === 2);
+
+        // 2. Day 1 のデータ独立性
+        const day1 = reloadedReg.getRecordByDate('2026-09-17');
+        assert('P3-2. Day 1（2026-09-17）の締めデータが存在すること', Boolean(day1));
+        assert('P3-3. Day 1 のレセコン売上が10,000円であること', day1.presaleAmount === 10000);
+        assert('P3-4. Day 1 の実査現金が59,800円（過不足 -200円）であること', day1.actualCash === 59800 && day1.discrepancy === -200);
+        assert('P3-5. Day 1 のクレジット売上が10,000円（手数料324円、純入金9,676円）であること', day1.creditSales === 10000 && day1.feeAmount === 324 && day1.netCreditAmount === 9676);
+        assert('P3-6. Day 1 が確定状態（isConfirmed: true）であること', day1.isConfirmed === true);
+
+        // 3. Day 2 のデータ独立性
+        const day2 = reloadedReg.getRecordByDate('2026-09-18');
+        assert('P3-7. Day 2（2026-09-18）の締めデータが存在すること', Boolean(day2));
+        assert('P3-8. Day 2 のレセコン売上が20,000円であること', day2.presaleAmount === 20000);
+        assert('P3-9. Day 2 の実査現金が70,000円（過不足 0円 一致）であること', day2.actualCash === 70000 && day2.discrepancy === 0 && day2.status === 'match');
+        assert('P3-10. Day 2 のクレジット売上が5,000円（手数料162円、純入金4,838円）であること', day2.creditSales === 5000 && day2.feeAmount === 162 && day2.netCreditAmount === 4838);
+        assert('P3-11. Day 2 が確定状態（isConfirmed: true）であること', day2.isConfirmed === true);
+
+        // 4. 小口現金との1画面総合サマリー（Day 1）
+        const day1Summary = reloadedReg.getComprehensiveSummary('2026-09-17', reloadedManager);
+        assert('P3-12. Day 1 本日総売上が20,000円（現金1万＋クレジット1万）であること', day1Summary.totalSales === 20000);
+        assert('P3-13. Day 1 純入金見込計が19,676円（現金1万＋クレジット純入金9,676円）であること', day1Summary.totalNetExpected === 19676);
+        assert('P3-14. Day 1 の小口経費出金が1,000円であること', day1Summary.pettyExpense === 1000);
+        assert('P3-15. Day 1 の小口現金残高が9,000円であること', day1Summary.pettyBalance === 9000);
+        assert('P3-16. Day 1 の店舗手元実査現金計が68,800円（実査59,800＋小口残高9,000）であること', day1Summary.totalPhysicalCash === 68800);
+        assert('P3-17. Day 1 の小口明細が2件（補充1万＋出金1千）取得できること', day1Summary.pettyTransactions.length === 2 && day1Summary.pettyTransactions.some(t => t.category === '消耗品費'));
+
+        // 5. 小口現金との1画面総合サマリー（Day 2）
+        const day2Summary = reloadedReg.getComprehensiveSummary('2026-09-18', reloadedManager);
+        assert('P3-18. Day 2 本日総売上が25,000円（現金2万＋クレジット5千）であること', day2Summary.totalSales === 25000);
+        assert('P3-19. Day 2 純入金見込計が24,838円（現金2万＋クレジット純入金4,838円）であること', day2Summary.totalNetExpected === 24838);
+        assert('P3-20. Day 2 の小口経費出金が0円（当日の小口取引なし）であること', day2Summary.pettyExpense === 0);
+        assert('P3-21. Day 2 の店舗手元実査現金計が79,000円（実査70,000＋小口残高9,000）であること', day2Summary.totalPhysicalCash === 79000);
+        assert('P3-22. Day 2 の小口明細が0件であること', day2Summary.pettyTransactions.length === 0);
+
+        // 6. 永続化（LocalStorageから再インスタンス化後も複数日が独立保持されること）
+        const p3Reloaded = new CashRegisterManager();
+        assert('P3-23. 別インスタンス再読み込み後も2件の締め履歴が完全保持されること', p3Reloaded.records.length === 2);
+        assert('P3-24. 再読み込み後も Day 1 の過不足 -200円 が保持されていること', p3Reloaded.getRecordByDate('2026-09-17').discrepancy === -200);
+        assert('P3-25. 再読み込み後も Day 2 の過不足 0円 が保持されていること', p3Reloaded.getRecordByDate('2026-09-18').discrepancy === 0);
+
         localStorage.removeItem(CashRegisterManager.STORAGE_KEY);
         CashRegisterManager.STORAGE_KEY = originalRegKey;
 
@@ -248,7 +294,7 @@
       if (allPassed) {
         summaryContainer.innerHTML = `
           <div class="summary-box">
-            🎉 全 ${testCases.length} 項目 すべて合格！ 開発憲法の外部検証基準（フェーズ1＆フェーズ2）を満たしています。
+            🎉 全 ${testCases.length} 項目 すべて合格！ 開発憲法の外部検証基準（フェーズ1〜3）を満たしています。
           </div>
         `;
       } else {

@@ -48,47 +48,57 @@
          ==================================================== -->
     <section id="tab-daily" class="tab-content active">
 
-      <!-- サマリーカード -->
-      <div class="summary-grid">
+      <!-- サマリーカード（店舗総合サマリー） -->
+      <div class="summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
         <div id="daily-card-discrepancy" class="summary-card primary">
           <div>
             <div class="summary-card-title">
-              <span>⚖️ 本日のレジ現金過不足</span>
+              <span>⚖️ レジ現金過不足</span>
               <span id="daily-status-tag" class="badge badge-match">一致（正常）</span>
             </div>
             <div id="daily-summary-discrepancy" class="summary-card-value numeric">¥0</div>
           </div>
-          <div id="daily-summary-discrepancy-sub" class="summary-card-sub">実査現金と（準備金＋売上）の差額</div>
+          <div id="daily-summary-discrepancy-sub" class="summary-card-sub">実査現金とあるべき現金の差額</div>
         </div>
 
         <div class="summary-card info">
           <div>
             <div class="summary-card-title">
-              <span>🧾 レセコン窓口売上（現金）</span>
+              <span>🧾 本日総売上（計）</span>
             </div>
-            <div id="daily-summary-presale" class="summary-card-value numeric">¥0</div>
+            <div id="daily-summary-total-sales" class="summary-card-value numeric">¥0</div>
           </div>
-          <div class="summary-card-sub">日報・日計表の現金売上計</div>
-        </div>
-
-        <div class="summary-card">
-          <div>
-            <div class="summary-card-title">
-              <span>💵 実査現金合計（手元現物）</span>
-            </div>
-            <div id="daily-summary-actual" class="summary-card-value numeric">¥0</div>
-          </div>
-          <div class="summary-card-sub">レジ金実査カウントの合計額</div>
+          <div class="summary-card-sub">現金売上 ＋ クレジット売上</div>
         </div>
 
         <div class="summary-card primary">
           <div>
             <div class="summary-card-title">
-              <span>💳 クレジット純入金見込</span>
+              <span>💳 純入金見込計</span>
             </div>
-            <div id="daily-summary-credit-net" class="summary-card-value numeric">¥0</div>
+            <div id="daily-summary-total-net" class="summary-card-value numeric">¥0</div>
           </div>
-          <div class="summary-card-sub">売上から手数料3.24%を自動引去</div>
+          <div class="summary-card-sub">現金売上 ＋ 手数料差引後クレジット</div>
+        </div>
+
+        <div class="summary-card danger">
+          <div>
+            <div class="summary-card-title">
+              <span>👛 本日小口経費出金</span>
+            </div>
+            <div id="daily-summary-petty-expense" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div id="daily-summary-petty-balance-sub" class="summary-card-sub">小口現金残高: ¥0</div>
+        </div>
+
+        <div class="summary-card">
+          <div>
+            <div class="summary-card-title">
+              <span>💵 手元実査現金（総額）</span>
+            </div>
+            <div id="daily-summary-total-physical" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div class="summary-card-sub">レジ実査現金 ＋ 小口金庫残高</div>
         </div>
       </div>
 
@@ -99,8 +109,9 @@
         <div class="panel-card">
           <div class="panel-header">
             <h2 class="panel-title">
-              <span>📊</span> 本日の締め入力（手入力照合）
+              <span>📊</span> 本日の日計締め（1画面統合）
             </h2>
+            <span id="daily-lock-status" class="badge badge-unconfirmed">未確定</span>
           </div>
           <div class="panel-body">
             <form id="daily-closing-form">
@@ -177,6 +188,51 @@
                 </div>
               </div>
 
+              <!-- ③ 小口現金出納連携セクション -->
+              <div class="section-divider">
+                <div class="section-subtitle">
+                  <span>👛</span> ③ 小口現金出納（本日の出納状況）
+                </div>
+                <div class="petty-inline-box">
+                  <div class="petty-inline-grid">
+                    <div>
+                      <span class="report-item-label">本日出金（経費）:</span>
+                      <strong id="preview-daily-petty-exp" class="numeric" style="color: var(--danger); margin-left: 0.25rem;">¥0</strong>
+                    </div>
+                    <div>
+                      <span class="report-item-label">本日補充:</span>
+                      <strong id="preview-daily-petty-inc" class="numeric" style="color: var(--info); margin-left: 0.25rem;">¥0</strong>
+                    </div>
+                    <div>
+                      <span class="report-item-label">現在小口残高:</span>
+                      <strong id="preview-daily-petty-bal" class="numeric" style="margin-left: 0.25rem;">¥0</strong>
+                    </div>
+                  </div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">
+                    ※ 取引登録は「② 小口現金管理」タブで行えます。本日分の出納が自動連携されます。
+                  </div>
+                </div>
+              </div>
+
+              <!-- ④ 店舗日計総合サマリープレビュー -->
+              <div class="comprehensive-preview-box">
+                <div class="comprehensive-preview-header">🏛️ 本日の店舗日計 総合着地見込</div>
+                <div class="comprehensive-preview-grid">
+                  <div class="comprehensive-preview-item">
+                    <span class="comprehensive-preview-label">本日総売上</span>
+                    <span id="preview-comp-sales" class="comprehensive-preview-val numeric">¥0</span>
+                  </div>
+                  <div class="comprehensive-preview-item">
+                    <span class="comprehensive-preview-label">純入金見込計</span>
+                    <span id="preview-comp-net" class="comprehensive-preview-val numeric">¥0</span>
+                  </div>
+                  <div class="comprehensive-preview-item">
+                    <span class="comprehensive-preview-label">手元実査現金計</span>
+                    <span id="preview-comp-cash" class="comprehensive-preview-val numeric" style="color: #4ade80;">¥0</span>
+                  </div>
+                </div>
+              </div>
+
               <!-- メモ・引継ぎ -->
               <div class="form-group">
                 <label for="daily-memo" class="form-label">過不足理由・引継ぎメモ</label>
@@ -184,7 +240,7 @@
               </div>
 
               <button type="submit" class="btn btn-primary">
-                <span>✓</span> 本日の締めデータを確定・保存する
+                <span>🔒</span> 本日の締めデータを確定・保存する
               </button>
             </form>
           </div>
@@ -196,9 +252,12 @@
             <h2 class="panel-title">
               <span>📋</span> 日計締め履歴（最新順）
             </h2>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
               <button id="btn-load-closing-test-data" class="btn-test" title="開発憲法の外部検証データをセット">
                 🧪 【憲法検証】実査200円不足＆クレジット1万円
+              </button>
+              <button id="btn-load-phase3-test-data" class="btn-test" style="color: var(--primary-dark); border-color: #a7f3d0;" title="Day1とDay2の複数日締めデータをセット">
+                🧪 【憲法検証】複数日締め（Day1＆Day2）
               </button>
               <button id="btn-clear-closing-data" class="btn-test" style="color: var(--danger); border-color: #fecaca;" title="全データをリセット">
                 🗑️ 全消去
@@ -212,12 +271,11 @@
                 <thead>
                   <tr>
                     <th>締め日</th>
-                    <th style="text-align: right;">準備金</th>
                     <th style="text-align: right;">レセコン売上</th>
                     <th style="text-align: right;">実査現金</th>
                     <th style="text-align: center;">過不足判定</th>
                     <th style="text-align: right;">クレジット売上</th>
-                    <th style="text-align: right;">手数料</th>
+                    <th style="text-align: right;">総売上</th>
                     <th style="text-align: right;">純入金見込</th>
                     <th>メモ</th>
                     <th style="text-align: center;">操作</th>
@@ -238,6 +296,27 @@
 
       </div>
     </section>
+
+    <!-- ====================================================
+         日計締め詳細閲覧モーダル (フェーズ3 実装)
+         ==================================================== -->
+    <dialog id="daily-detail-dialog" class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <span>📑</span> 日計締め確定レポート（詳細）
+          </h3>
+          <button id="btn-close-modal" class="modal-close-btn" title="閉じる">&times;</button>
+        </div>
+        <div class="modal-body" id="modal-report-body">
+          <!-- JSで動的レンダリング -->
+        </div>
+        <div class="modal-footer">
+          <button id="btn-print-report" class="btn btn-secondary">🖨️ 印刷</button>
+          <button id="btn-close-report" class="btn btn-secondary">閉じる</button>
+        </div>
+      </div>
+    </dialog>
 
     <!-- ====================================================
          タブ②: 小口現金管理 (★フェーズ1 実装)

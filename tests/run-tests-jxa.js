@@ -157,9 +157,53 @@ function run() {
     rReloaded.deleteRecord(constData.id);
     assert("フェーズ2-19: レコード削除で0件に戻ること", rReloaded.records.length === 0);
 
+    results.push("\n=== 【フェーズ3: 1画面日計締めサマリー＆複数日履歴管理 テスト】 ===");
+    // 1. フェーズ3検証データ投入（Day 1: 2026-09-17, Day 2: 2026-09-18）
+    rReloaded.loadPhase3ConstitutionalTestData(pReloaded);
+    assert("フェーズ3-1: 複数日締めデータ投入で締めレコードが2件保持されること", rReloaded.records.length === 2);
+
+    // 2. Day 1 のデータ独立性
+    var day1 = rReloaded.getRecordByDate("2026-09-17");
+    assert("フェーズ3-2: Day 1（2026-09-17）の締めデータが存在すること", Boolean(day1));
+    assert("フェーズ3-3: Day 1 のレセコン売上が10,000円であること", day1.presaleAmount === 10000);
+    assert("フェーズ3-4: Day 1 の実査現金が59,800円（過不足 -200円）であること", day1.actualCash === 59800 && day1.discrepancy === -200);
+    assert("フェーズ3-5: Day 1 のクレジット売上が10,000円（手数料324円、純入金9,676円）であること", day1.creditSales === 10000 && day1.feeAmount === 324 && day1.netCreditAmount === 9676);
+    assert("フェーズ3-6: Day 1 が確定状態（isConfirmed: true）であること", day1.isConfirmed === true);
+
+    // 3. Day 2 のデータ独立性
+    var day2 = rReloaded.getRecordByDate("2026-09-18");
+    assert("フェーズ3-7: Day 2（2026-09-18）の締めデータが存在すること", Boolean(day2));
+    assert("フェーズ3-8: Day 2 のレセコン売上が20,000円であること", day2.presaleAmount === 20000);
+    assert("フェーズ3-9: Day 2 の実査現金が70,000円（過不足 0円 一致）であること", day2.actualCash === 70000 && day2.discrepancy === 0 && day2.status === "match");
+    assert("フェーズ3-10: Day 2 のクレジット売上が5,000円（手数料162円、純入金4,838円）であること", day2.creditSales === 5000 && day2.feeAmount === 162 && day2.netCreditAmount === 4838);
+    assert("フェーズ3-11: Day 2 が確定状態（isConfirmed: true）であること", day2.isConfirmed === true);
+
+    // 4. 小口現金との1画面総合サマリー（Day 1）
+    var day1Summary = rReloaded.getComprehensiveSummary("2026-09-17", pReloaded);
+    assert("フェーズ3-12: Day 1 本日総売上が20,000円（現金1万＋クレジット1万）であること", day1Summary.totalSales === 20000);
+    assert("フェーズ3-13: Day 1 純入金見込計が19,676円（現金1万＋クレジット純入金9,676円）であること", day1Summary.totalNetExpected === 19676);
+    assert("フェーズ3-14: Day 1 の小口経費出金が1,000円であること", day1Summary.pettyExpense === 1000);
+    assert("フェーズ3-15: Day 1 の小口現金残高が9,000円であること", day1Summary.pettyBalance === 9000);
+    assert("フェーズ3-16: Day 1 の店舗手元実査現金計が68,800円（実査59,800＋小口残高9,000）であること", day1Summary.totalPhysicalCash === 68800);
+    assert("フェーズ3-17: Day 1 の小口明細が2件（補充1万＋出金1千）取得できること", day1Summary.pettyTransactions.length === 2 && day1Summary.pettyTransactions.some(t => t.category === "消耗品費"));
+
+    // 5. 小口現金との1画面総合サマリー（Day 2）
+    var day2Summary = rReloaded.getComprehensiveSummary("2026-09-18", pReloaded);
+    assert("フェーズ3-18: Day 2 本日総売上が25,000円（現金2万＋クレジット5千）であること", day2Summary.totalSales === 25000);
+    assert("フェーズ3-19: Day 2 純入金見込計が24,838円（現金2万＋クレジット純入金4,838円）であること", day2Summary.totalNetExpected === 24838);
+    assert("フェーズ3-20: Day 2 の小口経費出金が0円（当日の小口取引なし）であること", day2Summary.pettyExpense === 0);
+    assert("フェーズ3-21: Day 2 の店舗手元実査現金計が79,000円（実査70,000＋小口残高9,000）であること", day2Summary.totalPhysicalCash === 79000);
+    assert("フェーズ3-22: Day 2 の小口明細が0件であること", day2Summary.pettyTransactions.length === 0);
+
+    // 6. 永続化（LocalStorageから再インスタンス化後も複数日が独立保持されること）
+    var p3Reloaded = new CashRegisterManager(localStorage);
+    assert("フェーズ3-23: 別インスタンス再読み込み後も2件の締め履歴が完全保持されること", p3Reloaded.records.length === 2);
+    assert("フェーズ3-24: 再読み込み後も Day 1 の過不足 -200円 が保持されていること", p3Reloaded.getRecordByDate("2026-09-17").discrepancy === -200);
+    assert("フェーズ3-25: 再読み込み後も Day 2 の過不足 0円 が保持されていること", p3Reloaded.getRecordByDate("2026-09-18").discrepancy === 0);
+
     results.push("\n==============================================");
-    results.push("🎉 フェーズ1（14項目）＆ フェーズ2（19項目）全33項目に完全合格！");
-    results.push("外部検証基準（実査200円不足『不足 -200円』赤字判定、クレジット10,000円手数料324円引き）を完全達成。");
+    results.push("🎉 フェーズ1（14項目）＋ フェーズ2（19項目）＋ フェーズ3（25項目）全58項目に完全合格！");
+    results.push("外部検証基準（1画面日計確定、複数日履歴分離、小口現金総合サマリー連携）を完全達成。");
     results.push("==============================================");
     return results.join("\n");
   } catch (e) {
