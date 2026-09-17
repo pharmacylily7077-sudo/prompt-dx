@@ -1742,7 +1742,10 @@ body {
     page-break-inside: avoid !important;
   }
 
-  /* テーブルの行の泣き別れ防止 */
+  /* テーブルの行の泣き別れ防止およびヘッダー反復印字 */
+  thead {
+    display: table-header-group !important;
+  }
   .report-detail-table tr,
   .report-summary-table tr {
     break-inside: avoid !important;
