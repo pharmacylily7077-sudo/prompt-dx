@@ -35,7 +35,7 @@
       </button>
       <button class="tab-btn" data-tab="tab-reconcile">
         <span>📑 ③ 調剤報酬消込・返戻追跡</span>
-        <span class="badge-status">フェーズ4</span>
+        <span class="badge-status">稼働中</span>
       </button>
     </div>
   </nav>
@@ -474,17 +474,312 @@
     </section>
 
     <!-- ====================================================
-         タブ③: 調剤報酬消込・返戻追跡 (フェーズ4で実装)
+         タブ③: 調剤報酬消込・返戻追跡 (★フェーズ4 実装)
          ==================================================== -->
     <section id="tab-reconcile" class="tab-content">
-      <div class="placeholder-box">
-        <div class="placeholder-icon">📑</div>
-        <h2 class="placeholder-title">③ 調剤報酬消込・返戻追跡（2ヶ月サイクル）</h2>
-        <p class="placeholder-desc">
-          請求月（6月）の請求総額と、2ヶ月後（8月）の支払基金・国保連からの当座口振込通知書の支払確定額を突合し、差額を管理します。<br>
-          <strong>「カルテ番号ごとの返戻・保留ステータス管理（未対応 / 再請求中 / 解決）」</strong>により、前任者のような「請求放置による取りこぼし」を徹底防止します。（フェーズ4にて実装予定）
-        </p>
+
+      <!-- 操作・コントロールヘッダー -->
+      <div class="closing-action-bar" style="margin-bottom: 1.5rem;">
+        <div class="closing-action-inner">
+          <div class="closing-action-left">
+            <label for="reconcile-month-select" style="font-size: 0.9rem; font-weight: 700; color: var(--navy); display: flex; align-items: center; gap: 0.4rem;">
+              <span>📅</span> 請求対象月:
+            </label>
+            <input type="month" id="reconcile-month-select" class="form-input" style="width: auto; padding: 0.4rem 0.75rem; font-weight: 700;">
+            <span class="sub-text" style="font-size: 0.8rem; color: var(--text-muted);">※ 通常、調剤月の翌月10日請求、翌々月20日前後入金（2ヶ月サイクル）</span>
+          </div>
+
+          <div class="closing-action-right" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button id="btn-load-reconcile-test" class="btn-test" title="開発憲法の外部検証データをセット">
+              🧪 【憲法検証】請求100万/入金95万/返戻5万(A001)
+            </button>
+            <button id="btn-clear-reconcile-data" class="btn-test" style="color: var(--danger); border-color: #fecaca;" title="消込・返戻データを全消去">
+              🗑️ 全消去
+            </button>
+          </div>
+        </div>
       </div>
+
+      <!-- サマリーカード（請求月消込サマリー） -->
+      <div class="summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.5rem;">
+        <div class="summary-card info">
+          <div>
+            <div class="summary-card-title">
+              <span>📑 請求総額（レセプト）</span>
+            </div>
+            <div id="reconcile-sum-billed" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div id="reconcile-sum-billed-sub" class="summary-card-sub">請求対象月: --</div>
+        </div>
+
+        <div class="summary-card primary">
+          <div>
+            <div class="summary-card-title">
+              <span>🏦 入金総額（支払確定）</span>
+            </div>
+            <div id="reconcile-sum-paid" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div id="reconcile-sum-paid-sub" class="summary-card-sub">入金月: --</div>
+        </div>
+
+        <div id="reconcile-card-discrepancy" class="summary-card">
+          <div>
+            <div class="summary-card-title">
+              <span>⚖️ 入金差額（過不足）</span>
+              <span id="reconcile-status-tag" class="badge badge-match">一致（正常）</span>
+            </div>
+            <div id="reconcile-sum-discrepancy" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div id="reconcile-sum-discrepancy-sub" class="summary-card-sub">入金総額 - 請求総額</div>
+        </div>
+
+        <div class="summary-card danger">
+          <div>
+            <div class="summary-card-title">
+              <span>⚠️ 返戻・保留総額</span>
+            </div>
+            <div id="reconcile-sum-remand-total" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div id="reconcile-sum-remand-sub" class="summary-card-sub">未対応: 0件 (¥0)</div>
+        </div>
+
+        <div id="reconcile-card-unaccounted" class="summary-card">
+          <div>
+            <div class="summary-card-title">
+              <span>🔍 原因未特定差額</span>
+              <span id="reconcile-unaccounted-tag" class="badge badge-match">特定済</span>
+            </div>
+            <div id="reconcile-sum-unaccounted" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div id="reconcile-sum-unaccounted-sub" class="summary-card-sub">差額と返戻の乖離</div>
+        </div>
+      </div>
+
+      <!-- 差額突合アラートバナー -->
+      <div id="reconcile-alert-banner" class="alert-banner info" style="margin-bottom: 1.5rem; display: none;">
+        <span id="reconcile-alert-icon" class="alert-icon">ℹ️</span>
+        <div class="alert-content">
+          <div id="reconcile-alert-title" class="alert-title">差額突合ステータス</div>
+          <div id="reconcile-alert-desc" class="alert-desc">--</div>
+        </div>
+      </div>
+
+      <!-- 2カラムコンテンツレイアウト -->
+      <div class="content-layout-2col">
+
+        <!-- 左カラム: 請求・入金実績 ＆ 返戻・保留登録フォーム -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+          <!-- パネル1: 請求・入金サマリー登録 -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <h2 class="panel-title">
+                <span>🏦</span> 請求・入金実績の登録
+              </h2>
+              <span id="reconcile-record-status" class="badge badge-unconfirmed">未登録</span>
+            </div>
+            <div class="panel-body">
+              <form id="reconcile-billing-form">
+                <!-- 請求年月 -->
+                <div class="form-group">
+                  <label for="reconcile-form-billing-month" class="form-label">請求対象年月 <span class="required">*</span></label>
+                  <input type="month" id="reconcile-form-billing-month" class="form-input" required>
+                  <div class="form-hint">例: 2026年7月調剤分なら「2026-07」</div>
+                </div>
+
+                <!-- 請求総額 -->
+                <div class="form-group">
+                  <label for="reconcile-form-billed-amount" class="form-label">レセプト請求総額（円） <span class="required">*</span></label>
+                  <input type="number" id="reconcile-form-billed-amount" class="form-input numeric" placeholder="例: 1000000" min="0" step="1" required>
+                  <div class="form-hint">社保・国保・公費等の請求確定総額</div>
+                </div>
+
+                <!-- 入金年月（通常2ヶ月後） -->
+                <div class="form-group">
+                  <label for="reconcile-form-deposit-month" class="form-label">入金年月（通常請求月の2ヶ月後） <span class="required">*</span></label>
+                  <input type="month" id="reconcile-form-deposit-month" class="form-input" required>
+                  <div class="form-hint">支払基金・国保連からの入金通知月</div>
+                </div>
+
+                <!-- 入金総額 -->
+                <div class="form-group">
+                  <label for="reconcile-form-paid-amount" class="form-label">支払確定入金総額（円） <span class="required">*</span></label>
+                  <input type="number" id="reconcile-form-paid-amount" class="form-input numeric" placeholder="例: 950000" min="0" step="1" required>
+                  <div class="form-hint">当座預金等への実際の振込確定総額</div>
+                </div>
+
+                <!-- 差額プレビュー -->
+                <div class="calc-preview-box" style="margin-bottom: 1rem;">
+                  <div class="calc-row">
+                    <span class="calc-label">計算上の入金差額:</span>
+                    <span id="reconcile-form-discrepancy-preview" class="calc-val numeric">¥0</span>
+                  </div>
+                </div>
+
+                <!-- 備考メモ -->
+                <div class="form-group">
+                  <label for="reconcile-form-memo" class="form-label">備考・特記事項</label>
+                  <textarea id="reconcile-form-memo" class="form-textarea" placeholder="例: 7月調剤分。支払基金振込通知書確認済"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                  <span>💾</span> 請求・入金実績を保存する
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- パネル2: 返戻・保留案件の個別登録フォーム -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <h2 class="panel-title">
+                <span>➕</span> 返戻・保留案件の登録
+              </h2>
+            </div>
+            <div class="panel-body">
+              <!-- 開発憲法ガイド -->
+              <div class="compliance-note" style="margin-bottom: 1rem; padding: 0.6rem 0.75rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; font-size: 0.78rem; color: #991b1b; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🛡️</span>
+                <span><strong>【憲法規約】個人情報非保持:</strong> 患者氏名等は入力厳禁です。カルテ番号（例: A001）のみで管理してください。</span>
+              </div>
+
+              <form id="reconcile-remand-form">
+                <!-- 対象請求月（連動） -->
+                <div class="form-group">
+                  <label for="remand-form-billing-month" class="form-label">紐付く請求月 <span class="required">*</span></label>
+                  <input type="month" id="remand-form-billing-month" class="form-input" required readonly style="background: #f8fafc;">
+                </div>
+
+                <!-- カルテ番号 -->
+                <div class="form-group">
+                  <label for="remand-form-chart-id" class="form-label">カルテ番号（英数字・記号） <span class="required">*</span></label>
+                  <input type="text" id="remand-form-chart-id" class="form-input numeric" placeholder="例: A001 または 1024" required pattern="^[a-zA-Z0-9\-_]+$" title="半角英数字および記号のみ入力可能です（個人情報保護のため漢字・ひらがな等は禁止）">
+                  <div class="form-hint">※ 個人情報漏洩防止のため半角英数字記号のみ受付</div>
+                </div>
+
+                <!-- 金額 -->
+                <div class="form-group">
+                  <label for="remand-form-amount" class="form-label">保留・返戻金額（円） <span class="required">*</span></label>
+                  <input type="number" id="remand-form-amount" class="form-input numeric" placeholder="例: 50000" min="1" step="1" required>
+                </div>
+
+                <!-- 事由 -->
+                <div class="form-group">
+                  <label for="remand-form-reason" class="form-label">返戻・保留の事由 <span class="required">*</span></label>
+                  <select id="remand-form-reason" class="form-select" required>
+                    <!-- JSで動的生成 -->
+                  </select>
+                </div>
+
+                <!-- 初期ステータス -->
+                <div class="form-group">
+                  <label for="remand-form-status" class="form-label">初期ステータス <span class="required">*</span></label>
+                  <select id="remand-form-status" class="form-select" required>
+                    <option value="unhandled" selected>⚠️ 未対応（要調査）</option>
+                    <option value="rebilling">🔄 再請求中（レセプト再提出中）</option>
+                    <option value="resolved">✅ 入金済/解決</option>
+                  </select>
+                </div>
+
+                <!-- 対応メモ -->
+                <div class="form-group">
+                  <label for="remand-form-note" class="form-label">対応メモ・経過記録</label>
+                  <textarea id="remand-form-note" class="form-textarea" placeholder="例: 7/12受診時保険証失効のため返戻。患者へ新保険証の提出を依頼中"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                  <span>＋</span> 返戻・保留案件を追加する
+                </button>
+              </form>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 右カラム: 返戻・保留案件の追跡テーブル -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">
+                <span>📋</span> 返戻・保留案件 追跡一覧
+              </h2>
+              <span id="remand-count-badge" class="sub-text" style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">0 件の案件</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <label for="remand-filter-status" style="font-size: 0.8rem; color: var(--text-muted);">状態:</label>
+              <select id="remand-filter-status" class="form-select" style="width: auto; padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                <option value="all">すべて</option>
+                <option value="unhandled">未対応のみ</option>
+                <option value="rebilling">再請求中のみ</option>
+                <option value="resolved">解決済のみ</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="panel-body" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>カルテ番号</th>
+                    <th style="text-align: right;">金額</th>
+                    <th>事由</th>
+                    <th>ステータス</th>
+                    <th>対応メモ・経過</th>
+                    <th style="text-align: center;">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="remand-table-body">
+                  <!-- JSで動的レンダリング -->
+                </tbody>
+              </table>
+            </div>
+
+            <div id="remand-empty-state" class="empty-state">
+              <div class="empty-state-icon">📭</div>
+              <p>この請求月に登録された返戻・保留案件はありません。<br>左側のフォームからカルテ番号・金額・事由を登録してください。</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 請求月履歴サマリーテーブル（下部） -->
+      <div class="panel-card" style="margin-top: 1.5rem;">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <span>📚</span> 請求月別 消込履歴サマリー
+          </h2>
+          <span class="sub-text" style="font-size: 0.8rem; color: var(--text-muted);">過去の請求月と入金消込・未解決返戻の総括</span>
+        </div>
+        <div class="panel-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>請求月</th>
+                  <th>入金月</th>
+                  <th style="text-align: right;">請求総額</th>
+                  <th style="text-align: right;">入金総額</th>
+                  <th style="text-align: right;">入金差額</th>
+                  <th style="text-align: right;">返戻総額</th>
+                  <th style="text-align: center;">未対応/再請求残高</th>
+                  <th style="text-align: center;">差額突合状況</th>
+                  <th style="text-align: center;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="reconcile-history-table-body">
+                <!-- JSで動的レンダリング -->
+              </tbody>
+            </table>
+          </div>
+          <div id="reconcile-history-empty" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">📭</div>
+            <p>まだ登録された請求月データがありません。</p>
+          </div>
+        </div>
+      </div>
+
     </section>
 
   </main>
@@ -495,6 +790,7 @@
   <!-- スクリプト読み込み -->
   <script src="js/petty-cash.js"></script>
   <script src="js/cash-register.js"></script>
+  <script src="js/reconciliation.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

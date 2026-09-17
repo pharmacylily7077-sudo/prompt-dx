@@ -17,9 +17,11 @@ function run() {
   var currentDir = $.NSFileManager.defaultManager.currentDirectoryPath.js;
   var pettyCashCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/petty-cash.js', $.NSUTF8StringEncoding, null).js;
   var cashRegisterCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/cash-register.js', $.NSUTF8StringEncoding, null).js;
+  var reconciliationCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/reconciliation.js', $.NSUTF8StringEncoding, null).js;
 
   var PettyCashManager = eval(pettyCashCode + '; PettyCashManager;');
   var CashRegisterManager = eval(cashRegisterCode + '; CashRegisterManager;');
+  var ReconciliationManager = eval(reconciliationCode + '; ReconciliationManager;');
 
   var results = [];
   function assert(name, condition, detail) {
@@ -201,9 +203,125 @@ function run() {
     assert("フェーズ3-24: 再読み込み後も Day 1 の過不足 -200円 が保持されていること", p3Reloaded.getRecordByDate("2026-09-17").discrepancy === -200);
     assert("フェーズ3-25: 再読み込み後も Day 2 の過不足 0円 が保持されていること", p3Reloaded.getRecordByDate("2026-09-18").discrepancy === 0);
 
+    results.push("\n=== 【フェーズ4: 調剤報酬消込・返戻追跡（2ヶ月サイクル） テスト】 ===");
+    var recManager = new ReconciliationManager(localStorage);
+    recManager.clearAll();
+
+    // 1. 初期状態
+    assert("フェーズ4-1: 初期状態の請求月サマリーが0件であること", recManager.monthlyRecords.length === 0);
+    assert("フェーズ4-2: 初期状態の返戻・保留明細が0件であること", recManager.remandItems.length === 0);
+
+    // 2. 差額計算ロジック（静的メソッド）
+    var discShortage = ReconciliationManager.calculateDiscrepancy(1000000, 950000);
+    assert("フェーズ4-3: 【憲法検証】請求100万・入金95万で差額が -50,000円（不足）であること", discShortage.discrepancy === -50000 && discShortage.status === 'shortage' && discShortage.shortageAmount === 50000);
+
+    var discMatch = ReconciliationManager.calculateDiscrepancy(1000000, 1000000);
+    assert("フェーズ4-4: 請求100万・入金100万で差額0円（一致）であること", discMatch.discrepancy === 0 && discMatch.status === 'match' && discMatch.shortageAmount === 0);
+
+    var discExcess = ReconciliationManager.calculateDiscrepancy(1000000, 1050000);
+    assert("フェーズ4-5: 請求100万・入金105万で差額+50,000円（過剰）であること", discExcess.discrepancy === 50000 && discExcess.status === 'excess');
+
+    // 3. 2ヶ月サイクル入金予定月の自動計算
+    assert("フェーズ4-6: 2026-07請求の入金予定月が2026-09（2ヶ月後）であること", ReconciliationManager.calculateExpectedDepositMonth('2026-07') === '2026-09');
+    assert("フェーズ4-7: 2026-11請求の入金予定月が年をまたいで2027-01であること", ReconciliationManager.calculateExpectedDepositMonth('2026-11') === '2027-01');
+
+    // 4. 【憲法検証: 個人情報非保持規約】カルテ番号バリデーション
+    var chartIdValid = ReconciliationManager.validatePatientChartId('A001');
+    assert("フェーズ4-8: カルテ番号「A001」が正常にバリデーション通過すること", chartIdValid === 'A001');
+
+    var piiBlocked = false;
+    try {
+      ReconciliationManager.validatePatientChartId('山田太郎');
+    } catch (e) {
+      piiBlocked = true;
+    }
+    assert("フェーズ4-9: 【憲法規約】患者氏名（漢字）入力時に個人情報保護エラーがスローされること", piiBlocked);
+
+    var kanaBlocked = false;
+    try {
+      ReconciliationManager.validatePatientChartId('すずき');
+    } catch (e) {
+      kanaBlocked = true;
+    }
+    assert("フェーズ4-10: 【憲法規約】患者氏名（ひらがな）入力時に個人情報保護エラーがスローされること", kanaBlocked);
+
+    // 5. 請求月サマリーの保存・更新
+    var savedRec = recManager.saveMonthlyRecord({
+      billingMonth: '2026-07',
+      depositMonth: '2026-09',
+      billedAmount: 1000000,
+      paidAmount: 950000,
+      memo: '7月調剤分レセプト'
+    });
+    assert("フェーズ4-11: 請求月レコードが保存され、差額 -50,000円が算出されること", savedRec.billingMonth === '2026-07' && savedRec.discrepancy === -50000);
+
+    // 6. 返戻・保留明細の登録（カルテ番号A001, 50,000円）
+    var remand1 = recManager.addRemandItem({
+      billingMonth: '2026-07',
+      patientChartId: 'A001',
+      amount: 50000,
+      reason: '保険証資格喪失・無効（期限切れ・転職等）',
+      status: 'unhandled',
+      handlingNote: '7/12受診時保険証失効。患者へ新保険証提出を依頼中'
+    });
+    assert("フェーズ4-12: カルテ番号A001の返戻案件が50,000円・未対応で登録されること", remand1.patientChartId === 'A001' && remand1.amount === 50000 && remand1.status === 'unhandled');
+
+    // 7. 【憲法検証: 差額完全特定レポート】
+    var rep1 = recManager.getMonthlySummaryWithRemands('2026-07');
+    assert("フェーズ4-13: 【憲法検証】差額5万円に対し返戻5万円で原因未特定差額が0円（完全特定済）であること", rep1.shortageAmount === 50000 && rep1.totalRemandAmount === 50000 && rep1.unaccountedAmount === 0 && rep1.reconciliationStatus === 'fully_explained');
+    assert("フェーズ4-14: 未対応集計が1件（50,000円）であること", rep1.unhandledCount === 1 && rep1.unhandledAmount === 50000);
+
+    // 8. ステータス変更: 「未対応」→「再請求中」
+    recManager.updateRemandStatus(remand1.id, 'rebilling', '8/25 新保険証受理、再請求レセプト作成・提出済');
+    var rep2 = recManager.getMonthlySummaryWithRemands('2026-07');
+    assert("フェーズ4-15: ステータスが再請求中に更新され、未対応が0円、再請求中が50,000円になること", rep2.unhandledAmount === 0 && rep2.rebillingAmount === 50000 && rep2.rebillingCount === 1);
+
+    // 9. ステータス変更: 「再請求中」→「入金済/解決」
+    recManager.updateRemandStatus(remand1.id, 'resolved', '9/20 再請求分が入金完了・解決');
+    var updatedRemand = recManager.getRemandItem(remand1.id);
+    var rep3 = recManager.getMonthlySummaryWithRemands('2026-07');
+    assert("フェーズ4-16: ステータスが入金済/解決に更新され、解決日が自動記録されること", updatedRemand.status === 'resolved' && Boolean(updatedRemand.resolvedDate));
+    assert("フェーズ4-17: 解決済金額が50,000円、未対応/再請求残高が0円になること", rep3.resolvedAmount === 50000 && rep3.unhandledAmount === 0 && rep3.rebillingAmount === 0);
+
+    // 10. 複数案件の集計と削除
+    var remand2 = recManager.addRemandItem({
+      billingMonth: '2026-07',
+      patientChartId: 'B002',
+      amount: 10000,
+      reason: '疑義照会・処方内容確認保留',
+      status: 'unhandled'
+    });
+    var repMulti = recManager.getMonthlySummaryWithRemands('2026-07');
+    assert("フェーズ4-18: 2件目の返戻（10,000円）追加で返戻総額が60,000円になること", repMulti.totalRemandAmount === 60000);
+
+    recManager.deleteRemandItem(remand2.id);
+    var repDeleted = recManager.getMonthlySummaryWithRemands('2026-07');
+    assert("フェーズ4-19: 返戻案件削除で返戻総額が50,000円に戻ること", repDeleted.totalRemandAmount === 50000);
+
+    // 11. 永続化（LocalStorageから再インスタンス化後も完全保持）
+    var recReloaded = new ReconciliationManager(localStorage);
+    assert("フェーズ4-20: 再インスタンス化後も2026-07の請求レコード（請求100万、入金95万）が完全保持されること", recReloaded.getMonthlyRecord('2026-07').billedAmount === 1000000 && recReloaded.getMonthlyRecord('2026-07').paidAmount === 950000);
+    assert("フェーズ4-21: 再インスタンス化後もカルテ番号A001の返戻（解決済）が完全保持されること", recReloaded.remandItems.length === 1 && recReloaded.remandItems[0].patientChartId === 'A001' && recReloaded.remandItems[0].status === 'resolved');
+
+    // 12. 複数請求月の独立性
+    recReloaded.saveMonthlyRecord({
+      billingMonth: '2026-08',
+      depositMonth: '2026-10',
+      billedAmount: 2000000,
+      paidAmount: 2000000
+    });
+    assert("フェーズ4-22: 複数請求月（2026-07と2026-08）が独立して2件保持されること", recReloaded.monthlyRecords.length === 2);
+    assert("フェーズ4-23: 2026-08請求分は差額0円（一致）として独立保持されること", recReloaded.getMonthlyRecord('2026-08').discrepancy === 0);
+
+    // 13. 【憲法外部検証データ投入メソッド検証】
+    recReloaded.loadPhase4ConstitutionalTestData();
+    var constSummary = recReloaded.getMonthlySummaryWithRemands('2026-07');
+    assert("フェーズ4-24: 【憲法検証一括投入】請求100万、入金95万、差額-5万、返戻5万（A001・未対応）が完全復元されること", constSummary.billedAmount === 1000000 && constSummary.paidAmount === 950000 && constSummary.discrepancy === -50000 && constSummary.totalRemandAmount === 50000 && constSummary.items[0].patientChartId === 'A001' && constSummary.items[0].status === 'unhandled');
+    assert("フェーズ4-25: 【憲法検証一括投入】原因未特定差額が0円（完全特定済）であること", constSummary.unaccountedAmount === 0 && constSummary.reconciliationStatus === 'fully_explained');
+
     results.push("\n==============================================");
-    results.push("🎉 フェーズ1（14項目）＋ フェーズ2（19項目）＋ フェーズ3（25項目）全58項目に完全合格！");
-    results.push("外部検証基準（1画面日計確定、複数日履歴分離、小口現金総合サマリー連携）を完全達成。");
+    results.push("🎉 フェーズ1（14項目）＋ フェーズ2（19項目）＋ フェーズ3（25項目）＋ フェーズ4（25項目）全83項目に完全合格！");
+    results.push("外部検証基準（調剤報酬2ヶ月消込、差額-5万、返戻5万/A001追跡・解決、個人情報非保持ガード）を完全達成。");
     results.push("==============================================");
     return results.join("\n");
   } catch (e) {

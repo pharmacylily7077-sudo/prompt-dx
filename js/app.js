@@ -777,6 +777,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // レジ締め全データクリア
+  // レジ締め全データクリア
   if (clearClosingDataBtn) {
     clearClosingDataBtn.addEventListener('click', () => {
       if (confirm('【注意】日計締めの全データをリセットしますか？\nこの操作は取り消せません。')) {
@@ -801,6 +802,545 @@ document.addEventListener('DOMContentLoaded', () => {
   // 初回ロード
   loadDateData(dailyDateInput?.value || new Date().toISOString().substring(0, 10));
   renderDailyClosing();
+
+  // ====================================================
+  // 【フェーズ4: 調剤報酬消込・返戻追跡 管理】
+  // ====================================================
+  const reconciliationManager = new ReconciliationManager();
+
+  // DOM要素取得
+  const reconcileMonthSelect = document.getElementById('reconcile-month-select');
+  const btnLoadReconcileTest = document.getElementById('btn-load-reconcile-test');
+  const btnClearReconcileData = document.getElementById('btn-clear-reconcile-data');
+
+  // サマリーカード要素
+  const reconcileSumBilled = document.getElementById('reconcile-sum-billed');
+  const reconcileSumBilledSub = document.getElementById('reconcile-sum-billed-sub');
+  const reconcileSumPaid = document.getElementById('reconcile-sum-paid');
+  const reconcileSumPaidSub = document.getElementById('reconcile-sum-paid-sub');
+  const reconcileCardDiscrepancy = document.getElementById('reconcile-card-discrepancy');
+  const reconcileStatusTag = document.getElementById('reconcile-status-tag');
+  const reconcileSumDiscrepancy = document.getElementById('reconcile-sum-discrepancy');
+  const reconcileSumDiscrepancySub = document.getElementById('reconcile-sum-discrepancy-sub');
+  const reconcileSumRemandTotal = document.getElementById('reconcile-sum-remand-total');
+  const reconcileSumRemandSub = document.getElementById('reconcile-sum-remand-sub');
+  const reconcileCardUnaccounted = document.getElementById('reconcile-card-unaccounted');
+  const reconcileUnaccountedTag = document.getElementById('reconcile-unaccounted-tag');
+  const reconcileSumUnaccounted = document.getElementById('reconcile-sum-unaccounted');
+  const reconcileSumUnaccountedSub = document.getElementById('reconcile-sum-unaccounted-sub');
+
+  // アラートバナー
+  const reconcileAlertBanner = document.getElementById('reconcile-alert-banner');
+  const reconcileAlertIcon = document.getElementById('reconcile-alert-icon');
+  const reconcileAlertTitle = document.getElementById('reconcile-alert-title');
+  const reconcileAlertDesc = document.getElementById('reconcile-alert-desc');
+
+  // 請求・入金実績登録フォーム
+  const reconcileBillingForm = document.getElementById('reconcile-billing-form');
+  const reconcileRecordStatus = document.getElementById('reconcile-record-status');
+  const reconcileFormBillingMonth = document.getElementById('reconcile-form-billing-month');
+  const reconcileFormBilledAmount = document.getElementById('reconcile-form-billed-amount');
+  const reconcileFormDepositMonth = document.getElementById('reconcile-form-deposit-month');
+  const reconcileFormPaidAmount = document.getElementById('reconcile-form-paid-amount');
+  const reconcileFormDiscrepancyPreview = document.getElementById('reconcile-form-discrepancy-preview');
+  const reconcileFormMemo = document.getElementById('reconcile-form-memo');
+
+  // 返戻・保留登録フォーム
+  const reconcileRemandForm = document.getElementById('reconcile-remand-form');
+  const remandFormBillingMonth = document.getElementById('remand-form-billing-month');
+  const remandFormChartId = document.getElementById('remand-form-chart-id');
+  const remandFormAmount = document.getElementById('remand-form-amount');
+  const remandFormReason = document.getElementById('remand-form-reason');
+  const remandFormStatus = document.getElementById('remand-form-status');
+  const remandFormNote = document.getElementById('remand-form-note');
+
+  // 返戻追跡一覧
+  const remandTableBody = document.getElementById('remand-table-body');
+  const remandEmptyState = document.getElementById('remand-empty-state');
+  const remandCountBadge = document.getElementById('remand-count-badge');
+  const remandFilterStatus = document.getElementById('remand-filter-status');
+
+  // 請求月履歴サマリー一覧
+  const reconcileHistoryTableBody = document.getElementById('reconcile-history-table-body');
+  const reconcileHistoryEmpty = document.getElementById('reconcile-history-empty');
+
+  // 事由選択肢の初期化
+  if (remandFormReason) {
+    remandFormReason.innerHTML = '';
+    ReconciliationManager.REASON_CATEGORIES.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      remandFormReason.appendChild(opt);
+    });
+  }
+
+  // 請求・入金フォームの差額プレビュー計算
+  const updateBillingFormDiscrepancyPreview = () => {
+    if (!reconcileFormDiscrepancyPreview) return;
+    const billed = parseInt(reconcileFormBilledAmount?.value, 10) || 0;
+    const paid = parseInt(reconcileFormPaidAmount?.value, 10) || 0;
+    const diff = paid - billed;
+
+    if (diff === 0) {
+      reconcileFormDiscrepancyPreview.textContent = '¥0（一致）';
+      reconcileFormDiscrepancyPreview.style.color = 'var(--primary)';
+    } else if (diff < 0) {
+      reconcileFormDiscrepancyPreview.textContent = `-¥${Math.abs(diff).toLocaleString('ja-JP')}（入金不足）`;
+      reconcileFormDiscrepancyPreview.style.color = 'var(--danger)';
+    } else {
+      reconcileFormDiscrepancyPreview.textContent = `+¥${diff.toLocaleString('ja-JP')}（入金過剰）`;
+      reconcileFormDiscrepancyPreview.style.color = 'var(--info)';
+    }
+  };
+
+  if (reconcileFormBilledAmount) {
+    reconcileFormBilledAmount.addEventListener('input', updateBillingFormDiscrepancyPreview);
+  }
+  if (reconcileFormPaidAmount) {
+    reconcileFormPaidAmount.addEventListener('input', updateBillingFormDiscrepancyPreview);
+  }
+
+  // 請求年月変更時に入金年月（2ヶ月後）を自動設定
+  if (reconcileFormBillingMonth) {
+    reconcileFormBillingMonth.addEventListener('change', () => {
+      const m = reconcileFormBillingMonth.value;
+      if (m && reconcileFormDepositMonth && !reconcileFormDepositMonth.value) {
+        reconcileFormDepositMonth.value = ReconciliationManager.calculateExpectedDepositMonth(m);
+      }
+      if (remandFormBillingMonth) {
+        remandFormBillingMonth.value = m;
+      }
+    });
+  }
+
+  // 指定請求月の全データ読み込み＆画面描画
+  const loadReconcileMonth = (billingMonth) => {
+    if (!billingMonth) return;
+
+    // セレクターとフォームの月を同期
+    if (reconcileMonthSelect) reconcileMonthSelect.value = billingMonth;
+    if (reconcileFormBillingMonth) reconcileFormBillingMonth.value = billingMonth;
+    if (remandFormBillingMonth) remandFormBillingMonth.value = billingMonth;
+
+    const summary = reconciliationManager.getMonthlySummaryWithRemands(billingMonth);
+    const existing = reconciliationManager.getMonthlyRecord(billingMonth);
+
+    // フォームへの反映
+    if (existing) {
+      if (reconcileRecordStatus) {
+        reconcileRecordStatus.className = 'badge badge-confirmed';
+        reconcileRecordStatus.textContent = '登録済 ✓';
+      }
+      if (reconcileFormBilledAmount) reconcileFormBilledAmount.value = existing.billedAmount;
+      if (reconcileFormDepositMonth) reconcileFormDepositMonth.value = existing.depositMonth;
+      if (reconcileFormPaidAmount) reconcileFormPaidAmount.value = existing.paidAmount;
+      if (reconcileFormMemo) reconcileFormMemo.value = existing.memo || '';
+    } else {
+      if (reconcileRecordStatus) {
+        reconcileRecordStatus.className = 'badge badge-unconfirmed';
+        reconcileRecordStatus.textContent = '未登録';
+      }
+      if (reconcileFormBilledAmount) reconcileFormBilledAmount.value = '';
+      if (reconcileFormDepositMonth) {
+        reconcileFormDepositMonth.value = ReconciliationManager.calculateExpectedDepositMonth(billingMonth);
+      }
+      if (reconcileFormPaidAmount) reconcileFormPaidAmount.value = '';
+      if (reconcileFormMemo) reconcileFormMemo.value = '';
+    }
+    updateBillingFormDiscrepancyPreview();
+
+    // サマリーカード描画
+    if (reconcileSumBilled) reconcileSumBilled.textContent = formatYen(summary.billedAmount);
+    if (reconcileSumBilledSub) reconcileSumBilledSub.textContent = `請求対象: ${billingMonth}`;
+
+    if (reconcileSumPaid) reconcileSumPaid.textContent = formatYen(summary.paidAmount);
+    if (reconcileSumPaidSub) reconcileSumPaidSub.textContent = `入金月: ${summary.depositMonth || '--'}`;
+
+    // 入金差額カード
+    if (reconcileSumDiscrepancy) {
+      if (summary.discrepancy === 0) {
+        reconcileSumDiscrepancy.textContent = '¥0';
+      } else if (summary.discrepancy < 0) {
+        reconcileSumDiscrepancy.textContent = `-¥${Math.abs(summary.discrepancy).toLocaleString('ja-JP')}`;
+      } else {
+        reconcileSumDiscrepancy.textContent = `+¥${summary.discrepancy.toLocaleString('ja-JP')}`;
+      }
+    }
+
+    if (reconcileCardDiscrepancy && reconcileStatusTag) {
+      reconcileCardDiscrepancy.classList.remove('primary', 'danger', 'info');
+      reconcileStatusTag.className = 'badge';
+
+      if (summary.discrepancy === 0) {
+        reconcileCardDiscrepancy.classList.add('primary');
+        reconcileStatusTag.classList.add('badge-match');
+        reconcileStatusTag.textContent = '一致（正常）';
+      } else if (summary.discrepancy < 0) {
+        reconcileCardDiscrepancy.classList.add('danger');
+        reconcileStatusTag.classList.add('badge-shortage');
+        reconcileStatusTag.textContent = `不足 -¥${Math.abs(summary.discrepancy).toLocaleString('ja-JP')}`;
+      } else {
+        reconcileCardDiscrepancy.classList.add('info');
+        reconcileStatusTag.classList.add('badge-excess');
+        reconcileStatusTag.textContent = `過剰 +¥${summary.discrepancy.toLocaleString('ja-JP')}`;
+      }
+    }
+
+    // 返戻・保留総額カード
+    if (reconcileSumRemandTotal) {
+      reconcileSumRemandTotal.textContent = formatYen(summary.totalRemandAmount);
+    }
+    if (reconcileSumRemandSub) {
+      reconcileSumRemandSub.textContent = `未対応: ${summary.unhandledCount}件 (¥${summary.unhandledAmount.toLocaleString('ja-JP')}) / 再請求中: ${summary.rebillingCount}件`;
+    }
+
+    // 原因未特定差額カード
+    if (reconcileSumUnaccounted && reconcileCardUnaccounted && reconcileUnaccountedTag && reconcileSumUnaccountedSub) {
+      reconcileCardUnaccounted.classList.remove('primary', 'danger', 'warning');
+      reconcileUnaccountedTag.className = 'badge';
+
+      if (summary.shortageAmount === 0) {
+        reconcileSumUnaccounted.textContent = '¥0';
+        reconcileCardUnaccounted.classList.add('primary');
+        reconcileUnaccountedTag.classList.add('badge-match');
+        reconcileUnaccountedTag.textContent = '差額なし';
+        reconcileSumUnaccountedSub.textContent = '請求と入金が一致しています';
+      } else if (summary.unaccountedAmount === 0) {
+        reconcileSumUnaccounted.textContent = '¥0';
+        reconcileCardUnaccounted.classList.add('primary');
+        reconcileUnaccountedTag.classList.add('badge-match');
+        reconcileUnaccountedTag.textContent = '特定済（100%）';
+        reconcileSumUnaccountedSub.textContent = '差額の全額が返戻明細と合致';
+      } else if (summary.unaccountedAmount > 0) {
+        reconcileSumUnaccounted.textContent = `¥${summary.unaccountedAmount.toLocaleString('ja-JP')}`;
+        reconcileCardUnaccounted.classList.add('danger');
+        reconcileUnaccountedTag.classList.add('badge-shortage');
+        reconcileUnaccountedTag.textContent = '未特定 ⚠️';
+        reconcileSumUnaccountedSub.textContent = '差額の原因明細が未登録です';
+      } else {
+        reconcileSumUnaccounted.textContent = `¥${Math.abs(summary.unaccountedAmount).toLocaleString('ja-JP')}`;
+        reconcileCardUnaccounted.classList.add('warning');
+        reconcileUnaccountedTag.textContent = '返戻超過';
+        reconcileSumUnaccountedSub.textContent = '返戻額が差額を超過しています';
+      }
+    }
+
+    // 突合アラートバナー
+    if (reconcileAlertBanner && reconcileAlertIcon && reconcileAlertTitle && reconcileAlertDesc) {
+      reconcileAlertBanner.style.display = 'flex';
+      reconcileAlertBanner.className = 'alert-banner';
+
+      if (summary.shortageAmount === 0) {
+        reconcileAlertBanner.classList.add('success');
+        reconcileAlertIcon.textContent = '✅';
+        reconcileAlertTitle.textContent = `${billingMonth} 請求・入金消込完了`;
+        reconcileAlertDesc.textContent = `請求総額（¥${summary.billedAmount.toLocaleString('ja-JP')}）と入金総額（¥${summary.paidAmount.toLocaleString('ja-JP')}）が完全一致しています。`;
+      } else if (summary.reconciliationStatus === 'fully_explained') {
+        reconcileAlertBanner.classList.add('success');
+        reconcileAlertIcon.textContent = '🛡️';
+        reconcileAlertTitle.textContent = `差額原因の完全特定済（説明率 100%）`;
+        reconcileAlertDesc.textContent = `請求不足額 ¥${summary.shortageAmount.toLocaleString('ja-JP')} に対し、返戻・保留明細（${summary.totalRemandCount}件、計¥${summary.totalRemandAmount.toLocaleString('ja-JP')}）が完全に特定されています。放置せず再請求手続きを進めてください。`;
+      } else if (summary.reconciliationStatus === 'partially_explained') {
+        reconcileAlertBanner.classList.add('danger');
+        reconcileAlertIcon.textContent = '⚠️';
+        reconcileAlertTitle.textContent = `【警告】原因不明の未収差額が残存しています`;
+        reconcileAlertDesc.textContent = `入金不足 ¥${summary.shortageAmount.toLocaleString('ja-JP')} のうち、¥${summary.unaccountedAmount.toLocaleString('ja-JP')} が原因未特定です。支払基金・国保連の通知書を確認し、返戻案件の追加登録を行ってください。`;
+      } else {
+        reconcileAlertBanner.classList.add('warning');
+        reconcileAlertIcon.textContent = 'ℹ️';
+        reconcileAlertTitle.textContent = `返戻登録額の超過`;
+        reconcileAlertDesc.textContent = summary.reconciliationMessage;
+      }
+    }
+
+    // 返戻追跡テーブルの描画
+    renderRemandTable(summary.items);
+
+    // 請求月履歴サマリーテーブルの描画
+    renderReconcileHistory();
+  };
+
+  // 返戻テーブルのレンダリング
+  const renderRemandTable = (items) => {
+    if (!remandTableBody) return;
+    remandTableBody.innerHTML = '';
+
+    const filter = remandFilterStatus?.value || 'all';
+    const filtered = items.filter(item => {
+      if (filter === 'all') return true;
+      return item.status === filter;
+    });
+
+    if (remandCountBadge) {
+      remandCountBadge.textContent = `${items.length} 件の案件（表示: ${filtered.length}件）`;
+    }
+
+    if (filtered.length === 0) {
+      if (remandEmptyState) remandEmptyState.style.display = 'block';
+      return;
+    }
+
+    if (remandEmptyState) remandEmptyState.style.display = 'none';
+
+    filtered.forEach(item => {
+      const tr = document.createElement('tr');
+
+      const statusInfo = ReconciliationManager.STATUS_MAP[item.status] || {
+        label: item.status,
+        badgeClass: '',
+        icon: ''
+      };
+
+      tr.innerHTML = `
+        <td style="font-weight: 700;" class="numeric">
+          <span>🆔 ${item.patientChartId}</span>
+        </td>
+        <td style="text-align: right; font-weight: 700; color: var(--danger);" class="numeric">
+          ¥${item.amount.toLocaleString('ja-JP')}
+        </td>
+        <td style="font-size: 0.85rem;">
+          ${item.reason}
+        </td>
+        <td>
+          <select class="status-select-inline status-${item.status}" data-item-id="${item.id}">
+            <option value="unhandled" ${item.status === 'unhandled' ? 'selected' : ''}>⚠️ 未対応</option>
+            <option value="rebilling" ${item.status === 'rebilling' ? 'selected' : ''}>🔄 再請求中</option>
+            <option value="resolved" ${item.status === 'resolved' ? 'selected' : ''}>✅ 入金済/解決</option>
+          </select>
+          ${item.resolvedDate ? `<div style="font-size: 0.72rem; color: #059669; margin-top: 0.2rem;">解決日: ${item.resolvedDate}</div>` : ''}
+        </td>
+        <td style="font-size: 0.82rem; max-width: 200px;">
+          <span class="remand-note-text">${item.handlingNote || '<span style="color: var(--text-muted); font-style: italic;">なし</span>'}</span>
+        </td>
+        <td style="text-align: center;">
+          <button class="btn-action-delete btn-delete-remand" data-item-id="${item.id}" title="削除">
+            🗑️
+          </button>
+        </td>
+      `;
+
+      remandTableBody.appendChild(tr);
+    });
+  };
+
+  // 請求月履歴サマリーテーブルのレンダリング
+  const renderReconcileHistory = () => {
+    if (!reconcileHistoryTableBody) return;
+    reconcileHistoryTableBody.innerHTML = '';
+
+    const records = reconciliationManager.monthlyRecords;
+    if (records.length === 0) {
+      if (reconcileHistoryEmpty) reconcileHistoryEmpty.style.display = 'block';
+      return;
+    }
+
+    if (reconcileHistoryEmpty) reconcileHistoryEmpty.style.display = 'none';
+
+    records.forEach(rec => {
+      const summary = reconciliationManager.getMonthlySummaryWithRemands(rec.billingMonth);
+      const tr = document.createElement('tr');
+
+      const isCurrent = rec.billingMonth === reconcileMonthSelect?.value;
+      if (isCurrent) tr.style.backgroundColor = '#f0fdf4';
+
+      let statusBadge = '';
+      if (summary.shortageAmount === 0) {
+        statusBadge = '<span class="badge badge-match">一致</span>';
+      } else if (summary.reconciliationStatus === 'fully_explained') {
+        statusBadge = '<span class="badge badge-match">完全特定済</span>';
+      } else if (summary.reconciliationStatus === 'partially_explained') {
+        statusBadge = `<span class="badge badge-shortage">未特定 ¥${summary.unaccountedAmount.toLocaleString('ja-JP')}</span>`;
+      } else {
+        statusBadge = '<span class="badge badge-excess">超過</span>';
+      }
+
+      tr.innerHTML = `
+        <td style="font-weight: 700;">
+          ${rec.billingMonth} ${isCurrent ? '<span style="font-size: 0.72rem; color: var(--primary);">（選択中）</span>' : ''}
+        </td>
+        <td style="font-size: 0.85rem;">
+          ${rec.depositMonth || '--'}
+        </td>
+        <td style="text-align: right;" class="numeric">
+          ¥${rec.billedAmount.toLocaleString('ja-JP')}
+        </td>
+        <td style="text-align: right;" class="numeric">
+          ¥${rec.paidAmount.toLocaleString('ja-JP')}
+        </td>
+        <td style="text-align: right; font-weight: 700; color: ${rec.discrepancy < 0 ? 'var(--danger)' : (rec.discrepancy > 0 ? 'var(--info)' : 'var(--text-main)')};" class="numeric">
+          ${rec.discrepancy < 0 ? '-¥' + Math.abs(rec.discrepancy).toLocaleString('ja-JP') : '¥' + rec.discrepancy.toLocaleString('ja-JP')}
+        </td>
+        <td style="text-align: right; font-weight: 700;" class="numeric">
+          ¥${summary.totalRemandAmount.toLocaleString('ja-JP')}
+        </td>
+        <td style="text-align: center; font-size: 0.82rem;">
+          ${summary.unhandledCount + summary.rebillingCount > 0 ? `<span style="color: var(--danger); font-weight: 700;">${summary.unhandledCount + summary.rebillingCount}件 (¥${(summary.unhandledAmount + summary.rebillingAmount).toLocaleString('ja-JP')})</span>` : '<span style="color: var(--primary);">残高なし</span>'}
+        </td>
+        <td style="text-align: center;">
+          ${statusBadge}
+        </td>
+        <td style="text-align: center;">
+          <button class="btn btn-secondary btn-switch-month" data-month="${rec.billingMonth}" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">
+            表示
+          </button>
+        </td>
+      `;
+
+      reconcileHistoryTableBody.appendChild(tr);
+    });
+  };
+
+  // 請求月セレクター切り替え
+  if (reconcileMonthSelect) {
+    reconcileMonthSelect.addEventListener('change', () => {
+      loadReconcileMonth(reconcileMonthSelect.value);
+    });
+  }
+
+  // ステータスフィルター切り替え
+  if (remandFilterStatus) {
+    remandFilterStatus.addEventListener('change', () => {
+      const summary = reconciliationManager.getMonthlySummaryWithRemands(reconcileMonthSelect?.value || '2026-07');
+      renderRemandTable(summary.items);
+    });
+  }
+
+  // 請求・入金実績フォーム送信
+  if (reconcileBillingForm) {
+    reconcileBillingForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const billingMonth = reconcileFormBillingMonth.value;
+      const billedAmount = parseInt(reconcileFormBilledAmount.value, 10) || 0;
+      const depositMonth = reconcileFormDepositMonth.value;
+      const paidAmount = parseInt(reconcileFormPaidAmount.value, 10) || 0;
+      const memo = reconcileFormMemo.value;
+
+      try {
+        reconciliationManager.saveMonthlyRecord({
+          billingMonth,
+          billedAmount,
+          depositMonth,
+          paidAmount,
+          memo
+        });
+        showToast(`${billingMonth} の請求・入金実績を保存しました`);
+        loadReconcileMonth(billingMonth);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  }
+
+  // 返戻・保留案件登録フォーム送信
+  if (reconcileRemandForm) {
+    reconcileRemandForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const billingMonth = remandFormBillingMonth.value;
+      const patientChartId = remandFormChartId.value;
+      const amount = parseInt(remandFormAmount.value, 10) || 0;
+      const reason = remandFormReason.value;
+      const status = remandFormStatus.value;
+      const handlingNote = remandFormNote.value;
+
+      try {
+        reconciliationManager.addRemandItem({
+          billingMonth,
+          patientChartId,
+          amount,
+          reason,
+          status,
+          handlingNote
+        });
+
+        // 入力クリア
+        remandFormChartId.value = '';
+        remandFormAmount.value = '';
+        remandFormNote.value = '';
+
+        showToast(`カルテ番号 ${patientChartId} の返戻案件を登録しました`);
+        loadReconcileMonth(billingMonth);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  }
+
+  // 返戻テーブル内イベント委任（ステータス変更 & 削除）
+  if (remandTableBody) {
+    // ステータス変更
+    remandTableBody.addEventListener('change', (e) => {
+      const select = e.target.closest('.status-select-inline');
+      if (select) {
+        const itemId = select.getAttribute('data-item-id');
+        const newStatus = select.value;
+        try {
+          const updated = reconciliationManager.updateRemandStatus(itemId, newStatus);
+          const statusText = ReconciliationManager.STATUS_MAP[newStatus]?.label || newStatus;
+          showToast(`カルテ番号 ${updated.patientChartId} の状態を「${statusText}」に更新しました`);
+          loadReconcileMonth(reconcileMonthSelect.value);
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      }
+    });
+
+    // 削除
+    remandTableBody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-delete-remand');
+      if (btn) {
+        const itemId = btn.getAttribute('data-item-id');
+        const item = reconciliationManager.getRemandItem(itemId);
+        if (item && confirm(`カルテ番号「${item.patientChartId}」の返戻案件（¥${item.amount.toLocaleString('ja-JP')}）を削除しますか？`)) {
+          reconciliationManager.deleteRemandItem(itemId);
+          showToast(`カルテ番号 ${item.patientChartId} の返戻案件を削除しました`);
+          loadReconcileMonth(reconcileMonthSelect.value);
+        }
+      }
+    });
+  }
+
+  // 履歴テーブルの「表示」ボタンスイッチ
+  if (reconcileHistoryTableBody) {
+    reconcileHistoryTableBody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-switch-month');
+      if (btn) {
+        const month = btn.getAttribute('data-month');
+        if (month) {
+          loadReconcileMonth(month);
+          showToast(`請求月 ${month} の表示に切り替えました`);
+        }
+      }
+    });
+  }
+
+  // 憲法外部検証ボタン（フェーズ4）
+  if (btnLoadReconcileTest) {
+    btnLoadReconcileTest.addEventListener('click', () => {
+      if (confirm('【開発憲法 フェーズ4外部検証】\n「請求1,000,000円」「入金950,000円（差額 -50,000円）」「返戻50,000円（カルテ番号: A001, 未対応）」の検証データをセットしますか？')) {
+        reconciliationManager.loadPhase4ConstitutionalTestData();
+        loadReconcileMonth('2026-07');
+        showToast('フェーズ4外部検証データをセットしました（請求100万、入金95万、差額-5万、返戻5万/A001）', 'error');
+      }
+    });
+  }
+
+  // 全消去ボタン
+  if (btnClearReconcileData) {
+    btnClearReconcileData.addEventListener('click', () => {
+      if (confirm('【注意】調剤報酬消込・返戻追跡の全データを消去しますか？\nこの操作は取り消せません。')) {
+        reconciliationManager.clearAll();
+        loadReconcileMonth(reconcileMonthSelect?.value || '2026-07');
+        showToast('消込・返戻データをリセットしました');
+      }
+    });
+  }
+
+  // 初回ロード（デフォルト請求月: 2026-07 または当月）
+  const initialBillingMonth = '2026-07';
+  if (reconcileMonthSelect) reconcileMonthSelect.value = initialBillingMonth;
+  loadReconcileMonth(initialBillingMonth);
 });
+
 
 
