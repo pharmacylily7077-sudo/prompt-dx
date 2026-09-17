@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>フェーズ1 小口現金 自動検証テストスイート</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      background: #f8fafc;
+      color: #1e293b;
+    }
+    .test-card {
+      background: #ffffff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 1rem;
+    }
+    .pass {
+      color: #059669;
+      font-weight: bold;
+    }
+    .fail {
+      color: #dc2626;
+      font-weight: bold;
+    }
+    .test-item {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+    }
+    .summary-box {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      padding: 1rem;
+      border-radius: 6px;
+      margin-top: 1rem;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #065f46;
+    }
+    .btn {
+      background: #059669;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #047857;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="test-card">
+    <h1>🧪 調剤薬局システム フェーズ1: 小口現金 自動検証テスト</h1>
+    <p>開発憲法ルール3準拠: 暗算できる数字（10,000円補充 → 1,000円出金 → 残高9,000円）のロジック・保存検証</p>
+    <div style="margin-top: 1rem;">
+      <button id="run-tests" class="btn">テストを再実行する</button>
+      <a href="../index.html" style="margin-left: 1rem; color: #059669;">本番画面を開く &rarr;</a>
+    </div>
+  </div>
+
+  <div class="test-card">
+    <h2>テスト結果一覧</h2>
+    <div id="test-results">実行中...</div>
+    <div id="test-summary"></div>
+  </div>
+
+  <script src="../js/petty-cash.js"></script>
+  <script>
+    function runAllTests() {
+      const resultsContainer = document.getElementById('test-results');
+      const summaryContainer = document.getElementById('test-summary');
+      resultsContainer.innerHTML = '';
+      summaryContainer.innerHTML = '';
+
+      const testCases = [];
+      function assert(name, condition, detail) {
+        testCases.push({ name, passed: Boolean(condition), detail: detail || '' });
+      }
+
+      try {
+        // テスト用の隔離LocalStorageキーを使用
+        const originalKey = PettyCashManager.STORAGE_KEY;
+        PettyCashManager.STORAGE_KEY = 'pharmacy_petty_cash_test_suite';
+        localStorage.removeItem(PettyCashManager.STORAGE_KEY);
+
+        // 1. 初期状態テスト
+        const manager = new PettyCashManager();
+        assert('1. 初期残高が0円であること', manager.getCurrentBalance() === 0, `現在残高: ${manager.getCurrentBalance()}円`);
+
+        // 2. 外部検証ステップ1: 10,000円補充
+        const incomeTx = manager.addTransaction({
+          date: '2026-09-17',
+          type: 'income',
+          category: '小口現金補充',
+          amount: 10000,
+          memo: '金庫より小口補充'
+        });
+        assert('2-1. 補充データが10,000円で登録されること', incomeTx.amount === 10000);
+        assert('2-2. 補充後の現在残高が10,000円であること', manager.getCurrentBalance() === 10000, `現在残高: ${manager.getCurrentBalance()}円`);
+
+        // 3. 外部検証ステップ2: 1,000円出金（消耗品費）
+        const expenseTx = manager.addTransaction({
+          date: '2026-09-17',
+          type: 'expense',
+          category: '消耗品費',
+          amount: 1000,
+          memo: '事務用ボールペン購入'
+        });
+        assert('3-1. 出金データが1,000円で登録されること', expenseTx.amount === 1000);
+        assert('3-2. 【憲法検証】残高が暗算通りの9,000円（10,000 - 1,000）であること', manager.getCurrentBalance() === 9000, `現在残高: ${manager.getCurrentBalance()}円`);
+
+        // 4. サマリー集計テスト
+        const summary = manager.getSummary('2026-09');
+        assert('4-1. 当月補充合計が10,000円であること', summary.monthlyIncome === 10000);
+        assert('4-2. 当月出金合計が1,000円であること', summary.monthlyExpense === 1000);
+        assert('4-3. 当月取引件数が2件であること', summary.monthlyCount === 2);
+
+        // 5. 表示一覧・時系列累積残高テスト
+        const displayList = manager.getDisplayList();
+        assert('5-1. 一覧が新しい順に2件並ぶこと', displayList.length === 2 && displayList[0].id === expenseTx.id);
+        assert('5-2. 出金行の差引残高が9,000円であること', displayList[0].balanceAfter === 9000);
+        assert('5-3. 補充行の差引残高が10,000円であること', displayList[1].balanceAfter === 10000);
+
+        // 6. 永続化（LocalStorage読み込み）テスト
+        const reloadedManager = new PettyCashManager();
+        assert('6-1. 別インスタンス再読み込み後も残高9,000円が維持されること', reloadedManager.getCurrentBalance() === 9000);
+        assert('6-2. 別インスタンス再読み込み後も2件の取引が保持されること', reloadedManager.transactions.length === 2);
+
+        // 7. 取引削除と残高再計算テスト
+        reloadedManager.deleteTransaction(expenseTx.id);
+        assert('7. 出金を削除すると現在残高が10,000円に即時再計算されること', reloadedManager.getCurrentBalance() === 10000);
+
+        // クリーンアップ
+        localStorage.removeItem(PettyCashManager.STORAGE_KEY);
+        PettyCashManager.STORAGE_KEY = originalKey;
+
+      } catch (err) {
+        assert('例外エラーが発生しないこと', false, err.message);
+      }
+
+      // 結果レンダリング
+      let allPassed = true;
+      testCases.forEach(tc => {
+        if (!tc.passed) allPassed = false;
+        const div = document.createElement('div');
+        div.className = 'test-item';
+        div.innerHTML = `
+          <span>${tc.name} ${tc.detail ? `<small style="color:#64748b;">(${tc.detail})</small>` : ''}</span>
+          <span class="${tc.passed ? 'pass' : 'fail'}">${tc.passed ? '✓ 合格' : '✗ 失敗'}</span>
+        `;
+        resultsContainer.appendChild(div);
+      });
+
+      if (allPassed) {
+        summaryContainer.innerHTML = `
+          <div class="summary-box">
+            🎉 全 ${testCases.length} 項目 すべて合格！ 開発憲法の外部検証基準を満たしています。
+          </div>
+        `;
+      } else {
+        summaryContainer.innerHTML = `
+          <div class="summary-box" style="background:#fef2f2; border-color:#fecaca; color:#dc2626;">
+            ⚠️ 不合格のテストがあります。修正してください。
+          </div>
+        `;
+      }
+    }
+
+    document.getElementById('run-tests').addEventListener('click', runAllTests);
+    window.addEventListener('DOMContentLoaded', runAllTests);
+  </script>
+</body>
+</html>

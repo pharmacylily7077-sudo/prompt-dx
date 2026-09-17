@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>売上・入金・返戻管理システム | リリー薬局</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- アプリケーションヘッダー -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-area">
+        <span class="brand-badge">調剤薬局DX</span>
+        <h1 class="brand-title">売上・入金・返戻管理システム</h1>
+        <span class="pharmacy-badge">リリー薬局</span>
+      </div>
+      <div class="governance-note">
+        <span>🛡️ 薬局を守るための厳格管理（不正・ズレ・請求放置の撲滅）</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- タブナビゲーション -->
+  <nav class="tab-navigation">
+    <div class="tab-container">
+      <button class="tab-btn" data-tab="tab-daily">
+        <span>📊 ① 本日の日計締め</span>
+        <span class="badge-status">フェーズ2〜3</span>
+      </button>
+      <button class="tab-btn active" data-tab="tab-petty">
+        <span>👛 ② 小口現金管理</span>
+        <span class="badge-status">稼働中</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-reconcile">
+        <span>📑 ③ 調剤報酬消込・返戻追跡</span>
+        <span class="badge-status">フェーズ4</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- メインコンテンツ -->
+  <main class="main-container">
+
+    <!-- ====================================================
+         タブ①: 本日の日計締め (フェーズ2〜3で実装)
+         ==================================================== -->
+    <section id="tab-daily" class="tab-content">
+      <div class="placeholder-box">
+        <div class="placeholder-icon">📊</div>
+        <h2 class="placeholder-title">① 本日の日計締め・レジ現金照合</h2>
+        <p class="placeholder-desc">
+          営業終了後に1画面で「レセコン売上」「実査現金（レジ金数え）」「クレジット端末売上」を手入力し、即時締める画面です。<br>
+          <strong>「過不足の赤字警告」</strong>と<strong>「クレジット手数料3.24%の自動引去」</strong>で、現金のズレをごまかせない抑止力を実現します。（フェーズ2にて実装予定）
+        </p>
+      </div>
+    </section>
+
+    <!-- ====================================================
+         タブ②: 小口現金管理 (★フェーズ1 実装)
+         ==================================================== -->
+    <section id="tab-petty" class="tab-content active">
+
+      <!-- サマリーカード -->
+      <div class="summary-grid">
+        <div class="summary-card primary">
+          <div>
+            <div class="summary-card-title">
+              <span>💰 現在小口現金残高</span>
+              <span id="petty-balance-warning" style="display: none; color: var(--danger); font-size: 0.75rem; font-weight: bold;">⚠️ マイナス残高</span>
+            </div>
+            <div id="petty-summary-balance" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div class="summary-card-sub">※金庫内現金の実査カウントと一致しているか確認</div>
+        </div>
+
+        <div class="summary-card info">
+          <div>
+            <div class="summary-card-title">
+              <span>📥 今月補充合計</span>
+            </div>
+            <div id="petty-summary-income" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div class="summary-card-sub">銀行出金・金庫補充など</div>
+        </div>
+
+        <div class="summary-card danger">
+          <div>
+            <div class="summary-card-title">
+              <span>📤 今月出金合計</span>
+            </div>
+            <div id="petty-summary-expense" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div class="summary-card-sub">消耗品・切手・交通費等の実経費</div>
+        </div>
+
+        <div class="summary-card">
+          <div>
+            <div class="summary-card-title">
+              <span>📝 今月取引件数</span>
+            </div>
+            <div id="petty-summary-count" class="summary-card-value numeric">0 件</div>
+          </div>
+          <div class="summary-card-sub">登録された出納の総数</div>
+        </div>
+      </div>
+
+      <!-- 2カラムコンテンツレイアウト -->
+      <div class="content-layout-2col">
+        
+        <!-- 左: 出納登録フォーム -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <h2 class="panel-title">
+              <span>✍️</span> 出納の登録
+            </h2>
+          </div>
+          <div class="panel-body">
+            <form id="petty-cash-form">
+              
+              <!-- 区分（出金 / 入金） -->
+              <div class="form-group">
+                <label class="form-label">出納区分 <span class="required">*</span></label>
+                <div class="type-toggle-group">
+                  <div>
+                    <input type="radio" name="petty-type" id="type-expense" value="expense" checked>
+                    <label for="type-expense" class="type-toggle-btn btn-expense">📤 出金（経費）</label>
+                  </div>
+                  <div>
+                    <input type="radio" name="petty-type" id="type-income" value="income">
+                    <label for="type-income" class="type-toggle-btn btn-income">📥 入金（補充）</label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 取引日 -->
+              <div class="form-group">
+                <label for="petty-date" class="form-label">取引日 <span class="required">*</span></label>
+                <input type="date" id="petty-date" class="form-input" required>
+              </div>
+
+              <!-- 勘定科目 -->
+              <div class="form-group">
+                <label for="petty-category" class="form-label">科目 <span class="required">*</span></label>
+                <select id="petty-category" class="form-select" required></select>
+              </div>
+
+              <!-- 金額 -->
+              <div class="form-group">
+                <label for="petty-amount" class="form-label">金額（円） <span class="required">*</span></label>
+                <input type="number" id="petty-amount" class="form-input numeric" placeholder="例: 1000" min="1" step="1" required>
+              </div>
+
+              <!-- 摘要メモ -->
+              <div class="form-group">
+                <label for="petty-memo" class="form-label">摘要・用途（領収書等）</label>
+                <textarea id="petty-memo" class="form-textarea" placeholder="例: ボールペン・付箋購入（レシート保管済）"></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary">
+                <span>✓</span> 出納を登録する
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- 右: 出納履歴テーブル -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <h2 class="panel-title">
+              <span>📋</span> 小口出納履歴（最新順）
+            </h2>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button id="btn-load-test-data" class="btn-test" title="開発憲法の外部検証データをセット">
+                🧪 【憲法検証】1万円補充+千円出金
+              </button>
+              <button id="btn-clear-petty-data" class="btn-test" style="color: var(--danger); border-color: #fecaca;" title="全データをリセット">
+                🗑️ 全消去
+              </button>
+            </div>
+          </div>
+
+          <div class="panel-body" style="padding: 0;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>日付</th>
+                    <th>区分</th>
+                    <th>科目</th>
+                    <th>摘要・用途</th>
+                    <th style="text-align: right;">入金額</th>
+                    <th style="text-align: right;">出金額</th>
+                    <th style="text-align: right;">差引残高</th>
+                    <th style="text-align: center;">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="petty-table-body">
+                  <!-- JSで動的レンダリング -->
+                </tbody>
+              </table>
+            </div>
+
+            <div id="petty-empty-state" class="empty-state">
+              <div class="empty-state-icon">📭</div>
+              <p>小口現金の取引履歴がまだありません。<br>左側のフォームから出金または補充を登録してください。</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ====================================================
+         タブ③: 調剤報酬消込・返戻追跡 (フェーズ4で実装)
+         ==================================================== -->
+    <section id="tab-reconcile" class="tab-content">
+      <div class="placeholder-box">
+        <div class="placeholder-icon">📑</div>
+        <h2 class="placeholder-title">③ 調剤報酬消込・返戻追跡（2ヶ月サイクル）</h2>
+        <p class="placeholder-desc">
+          請求月（6月）の請求総額と、2ヶ月後（8月）の支払基金・国保連からの当座口振込通知書の支払確定額を突合し、差額を管理します。<br>
+          <strong>「カルテ番号ごとの返戻・保留ステータス管理（未対応 / 再請求中 / 解決）」</strong>により、前任者のような「請求放置による取りこぼし」を徹底防止します。（フェーズ4にて実装予定）
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- トースト通知コンテナ -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- スクリプト読み込み -->
+  <script src="js/petty-cash.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
