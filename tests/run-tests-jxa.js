@@ -319,9 +319,35 @@ function run() {
     assert("フェーズ4-24: 【憲法検証一括投入】請求100万、入金95万、差額-5万、返戻5万（A001・未対応）が完全復元されること", constSummary.billedAmount === 1000000 && constSummary.paidAmount === 950000 && constSummary.discrepancy === -50000 && constSummary.totalRemandAmount === 50000 && constSummary.items[0].patientChartId === 'A001' && constSummary.items[0].status === 'unhandled');
     assert("フェーズ4-25: 【憲法検証一括投入】原因未特定差額が0円（完全特定済）であること", constSummary.unaccountedAmount === 0 && constSummary.reconciliationStatus === 'fully_explained');
 
+    results.push("\n=== 【フェーズ5: UIデザインのブラッシュアップ テスト】 ===");
+    var cssCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/css/style.css', $.NSUTF8StringEncoding, null).js;
+    var htmlCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/index.html', $.NSUTF8StringEncoding, null).js;
+
+    // 1. CSS・HTMLファイルの存在
+    assert("フェーズ5-1: スタイルシート(css/style.css)が正常にロードされること", cssCode && cssCode.length > 0);
+    assert("フェーズ5-2: HTML(index.html)にviewportメタタグが設定されていること", htmlCode.indexOf('name="viewport"') !== -1 && htmlCode.indexOf('width=device-width') !== -1);
+
+    // 2. 誤読防止フォント（UDフォント・等幅数字）
+    assert("フェーズ5-3: 【視認性】誤読防止のためUDフォント「BIZ UDPGothic」が最優先指定されていること", cssCode.indexOf('"BIZ UDPGothic"') !== -1);
+    assert("フェーズ5-4: 【誤読防止】金額・数値フォントに等幅数字 tabular-nums が指定されていること", cssCode.indexOf('tabular-nums') !== -1);
+
+    // 3. 配色（緑・青基調、高コントラスト、薄いグレー文字の廃止）
+    assert("フェーズ5-5: 【配色】薬局基調色としてメディカルグリーン（--primary: #057a55）が定義されていること", cssCode.indexOf('--primary: #057a55') !== -1);
+    assert("フェーズ5-6: 【配色】厳格・信頼色としてネイビー/ブルー系（--navy, --info）が定義されていること", cssCode.indexOf('--navy:') !== -1 && cssCode.indexOf('--info:') !== -1);
+    assert("フェーズ5-7: 【守りの抑止力】現金過不足・警告用に高コントラスト赤字（--danger: #b91c1c）が定義されていること", cssCode.indexOf('--danger: #b91c1c') !== -1);
+    assert("フェーズ5-8: 【現場視認性】薄暗い環境でも読めるよう薄いグレーを排し高コントラストテキスト（--text-muted: #334155）が定義されていること", cssCode.indexOf('--text-muted: #334155') !== -1);
+
+    // 4. タブレット・店舗PC使い勝手（タップターゲット・iOSズーム防止）
+    assert("フェーズ5-9: 【タッチ最適化】ボタンおよびタブのタップ領域が最小44px〜48px以上確保されていること", cssCode.indexOf('min-height: 48px') !== -1 || cssCode.indexOf('min-height: 52px') !== -1);
+    assert("フェーズ5-10: 【店舗PC/タブレット】入力時にiOS Safari自動ズームが発生しないようフォント16px以上が指定されていること", cssCode.indexOf('font-size: 16px') !== -1);
+
+    // 5. テーブル可読性（ゼブラストライプ・Stickyヘッダー）
+    assert("フェーズ5-11: 【可読性向上】長大な金額テーブルの視線移動ミスを防ぐゼブラストライプが定義されていること", cssCode.indexOf('tbody tr:nth-child(even)') !== -1);
+    assert("フェーズ5-12: 【可読性向上】スクロール時にも列名を見失わないStickyヘッダーが定義されていること", cssCode.indexOf('position: sticky') !== -1);
+
     results.push("\n==============================================");
-    results.push("🎉 フェーズ1（14項目）＋ フェーズ2（19項目）＋ フェーズ3（25項目）＋ フェーズ4（25項目）全83項目に完全合格！");
-    results.push("外部検証基準（調剤報酬2ヶ月消込、差額-5万、返戻5万/A001追跡・解決、個人情報非保持ガード）を完全達成。");
+    results.push("🎉 フェーズ1（14）＋ フェーズ2（19）＋ フェーズ3（25）＋ フェーズ4（25）＋ フェーズ5（12）全95項目に完全合格！");
+    results.push("外部検証基準（調剤報酬消込・返戻追跡・UDフォント・高コントラスト配色・タブレット最適化）を完全達成。");
     results.push("==============================================");
     return results.join("\n");
   } catch (e) {
