@@ -356,6 +356,228 @@ class CashRegisterManager {
   }
 
   /**
+   * 月次横断集計レポートの生成
+   * @param {string} yearMonth "YYYY-MM"
+   * @param {Object} [pettyCashManager] 小口現金マネージャー
+   * @param {Object} [reconciliationManager] 調剤報酬消込マネージャー
+   * @returns {Object} 月次集計結果
+   */
+  getMonthlyReport(yearMonth, pettyCashManager = null, reconciliationManager = null) {
+    if (!yearMonth || !yearMonth.match(/^\d{4}-\d{2}$/)) {
+      const now = new Date();
+      yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    // 1. 対象月の日計締めレコード抽出（日付昇順）
+    this.sortRecords();
+    const daysInMonth = this.records.filter(r => r.date && r.date.startsWith(yearMonth + '-'));
+
+    let totalPresaleAmount = 0;
+    let totalActualCash = 0;
+    let totalExpectedCash = 0;
+    let totalDiscrepancy = 0;
+    let totalCreditSales = 0;
+    let totalFeeAmount = 0;
+    let totalNetCreditAmount = 0;
+    let matchDaysCount = 0;
+    let shortageDaysCount = 0;
+    let excessDaysCount = 0;
+    const discrepancyRecords = [];
+
+    daysInMonth.forEach(r => {
+      totalPresaleAmount += (r.presaleAmount || 0);
+      totalActualCash += (r.actualCash || 0);
+      totalExpectedCash += (r.expectedCash || 0);
+      totalDiscrepancy += (r.discrepancy || 0);
+      totalCreditSales += (r.creditSales || 0);
+      totalFeeAmount += (r.feeAmount || 0);
+      totalNetCreditAmount += (r.netCreditAmount || 0);
+
+      if (r.discrepancy === 0) {
+        matchDaysCount += 1;
+      } else if (r.discrepancy < 0) {
+        shortageDaysCount += 1;
+        discrepancyRecords.push({
+          date: r.date,
+          discrepancy: r.discrepancy,
+          status: 'shortage',
+          memo: r.memo || ''
+        });
+      } else {
+        excessDaysCount += 1;
+        discrepancyRecords.push({
+          date: r.date,
+          discrepancy: r.discrepancy,
+          status: 'excess',
+          memo: r.memo || ''
+        });
+      }
+    });
+
+    const grandTotalSales = totalPresaleAmount + totalCreditSales;
+    const grandTotalNetExpected = totalPresaleAmount + totalNetCreditAmount;
+
+    // 2. 小口現金の集計
+    let pettyCashData = {
+      startBalance: 0,
+      monthlyIncome: 0,
+      monthlyExpense: 0,
+      endBalance: 0,
+      transactions: [],
+      expenseByCategory: {},
+      count: 0
+    };
+
+    if (pettyCashManager && Array.isArray(pettyCashManager.transactions)) {
+      const allTx = pettyCashManager.transactions;
+      let startBalance = 0;
+      let monthlyIncome = 0;
+      let monthlyExpense = 0;
+      const monthlyTx = [];
+      const expenseByCategory = {};
+
+      allTx.forEach(tx => {
+        if (tx.date < yearMonth + '-01') {
+          // 月初前
+          if (tx.type === 'income') startBalance += tx.amount;
+          else if (tx.type === 'expense') startBalance -= tx.amount;
+        } else if (tx.date.startsWith(yearMonth + '-')) {
+          // 当月中
+          monthlyTx.push(tx);
+          if (tx.type === 'income') {
+            monthlyIncome += tx.amount;
+          } else if (tx.type === 'expense') {
+            monthlyExpense += tx.amount;
+            expenseByCategory[tx.category] = (expenseByCategory[tx.category] || 0) + tx.amount;
+          }
+        }
+      });
+
+      pettyCashData = {
+        startBalance,
+        monthlyIncome,
+        monthlyExpense,
+        endBalance: startBalance + monthlyIncome - monthlyExpense,
+        transactions: monthlyTx,
+        expenseByCategory,
+        count: monthlyTx.length
+      };
+    }
+
+    // 3. 調剤報酬消込の集計
+    let reconciliationData = {
+      depositMonthRecords: [],      // 当月入金対象（2ヶ月前請求分等）
+      billingMonthRecords: [],      // 当月請求分
+      totalBilledAmount: 0,
+      totalPaidAmount: 0,
+      totalDiscrepancy: 0,
+      unaccountedDiscrepancy: 0,
+      totalRemandAmount: 0,
+      unhandledRemandAmount: 0,
+      rebillingRemandAmount: 0,
+      resolvedRemandAmount: 0,
+      hasData: false
+    };
+
+    if (reconciliationManager) {
+      const records = reconciliationManager.monthlyRecords || [];
+      const remandItems = reconciliationManager.remandItems || [];
+
+      // 当月が入金月（depositMonth === yearMonth）のレコード
+      const depositRecords = records.filter(r => r.depositMonth === yearMonth);
+      // 当月が請求月（billingMonth === yearMonth）のレコード
+      const billingRecords = records.filter(r => r.billingMonth === yearMonth);
+
+      if (depositRecords.length > 0) {
+        reconciliationData.hasData = true;
+        reconciliationData.depositMonthRecords = depositRecords;
+        depositRecords.forEach(rec => {
+          reconciliationData.totalBilledAmount += (rec.billedAmount || 0);
+          reconciliationData.totalPaidAmount += (rec.paidAmount || 0);
+          reconciliationData.totalDiscrepancy += (rec.discrepancy || 0);
+
+          // 関連する返戻明細
+          const relItems = remandItems.filter(item => item.billingMonth === rec.billingMonth);
+          relItems.forEach(item => {
+            reconciliationData.totalRemandAmount += item.amount;
+            if (item.status === 'unhandled') {
+              reconciliationData.unhandledRemandAmount += item.amount;
+            } else if (item.status === 'rebilling') {
+              reconciliationData.rebillingRemandAmount += item.amount;
+            } else if (item.status === 'resolved') {
+              reconciliationData.resolvedRemandAmount += item.amount;
+            }
+          });
+        });
+
+        const shortage = Math.max(0, reconciliationData.totalBilledAmount - reconciliationData.totalPaidAmount);
+        reconciliationData.unaccountedDiscrepancy = Math.max(0, shortage - reconciliationData.totalRemandAmount);
+      } else if (billingRecords.length > 0) {
+        // 参考表示用
+        reconciliationData.hasData = true;
+      }
+      reconciliationData.billingMonthRecords = billingRecords;
+    }
+
+    return {
+      yearMonth,
+      closingDaysCount: daysInMonth.length,
+      daysInMonth,
+      // レジ現金
+      totalPresaleAmount,
+      totalActualCash,
+      totalExpectedCash,
+      totalDiscrepancy,
+      matchDaysCount,
+      shortageDaysCount,
+      excessDaysCount,
+      discrepancyRecords,
+      // クレジット
+      totalCreditSales,
+      totalFeeAmount,
+      totalNetCreditAmount,
+      // 総売上 & 純入金
+      grandTotalSales,
+      grandTotalNetExpected,
+      // 小口
+      pettyCash: pettyCashData,
+      // 調剤報酬
+      reconciliation: reconciliationData
+    };
+  }
+
+  /**
+   * フェーズ6 月次集計 憲法検証用テストデータ投入
+   * （暗算検証可能なデータ: 窓口3万+クレジット1.5万=総売上4.5万、過不足累計-200円、小口経費1,000円、調剤報酬差額-5万円）
+   * @param {Object} [pettyCashManager]
+   * @param {Object} [reconciliationManager]
+   */
+  loadMonthlyConstitutionalTestData(pettyCashManager = null, reconciliationManager = null) {
+    // 1. 日計締め（フェーズ3の複数日データと同一基準）
+    this.loadPhase3ConstitutionalTestData(pettyCashManager);
+
+    // 2. 調剤報酬消込（2026-07請求分、入金予定月: 2026-09）
+    if (reconciliationManager) {
+      reconciliationManager.clearAll();
+      reconciliationManager.saveMonthlyRecord({
+        billingMonth: '2026-07',
+        depositMonth: '2026-09',
+        billedAmount: 1000000,
+        paidAmount: 950000,
+        memo: '【憲法検証】7月調剤分レセプト請求（9月入金差額-5万円）'
+      });
+      reconciliationManager.addRemandItem({
+        billingMonth: '2026-07',
+        patientChartId: 'A001',
+        amount: 50000,
+        reason: '保険証資格喪失・無効（期限切れ・転職等）',
+        status: 'unhandled',
+        handlingNote: '【憲法検証】7/12受診時保険証失効。新保険証確認中'
+      });
+    }
+  }
+
+  /**
    * 全データ消去
    */
   clearAll() {

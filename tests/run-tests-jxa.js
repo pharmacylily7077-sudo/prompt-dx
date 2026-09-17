@@ -345,9 +345,52 @@ function run() {
     assert("フェーズ5-11: 【可読性向上】長大な金額テーブルの視線移動ミスを防ぐゼブラストライプが定義されていること", cssCode.indexOf('tbody tr:nth-child(even)') !== -1);
     assert("フェーズ5-12: 【可読性向上】スクロール時にも列名を見失わないStickyヘッダーが定義されていること", cssCode.indexOf('position: sticky') !== -1);
 
+    results.push("\n=== 【フェーズ6: 簡易操作マニュアル ＆ 月次集計レポート・A4印刷帳票 テスト】 ===");
+    
+    // 1. 店舗スタッフ向け簡易操作マニュアル（docs/MANUAL.md）の存在と記載内容検証
+    var manualPath = currentDir + '/docs/MANUAL.md';
+    var manualCode = $.NSString.stringWithContentsOfFileEncodingError(manualPath, $.NSUTF8StringEncoding, null).js;
+    assert("フェーズ6-1: 簡易操作マニュアル(docs/MANUAL.md)が存在すること", manualCode && manualCode.length > 0);
+    assert("フェーズ6-2: 【憲法思想】マニュアルにお金とスタッフを守る基本精神が明記されていること", manualCode.indexOf('儲けるためではなく') !== -1 && manualCode.indexOf('守るため') !== -1);
+    assert("フェーズ6-3: 【業務手順】営業終了後の5分締め手順（STEP 1〜5）が明記されていること", manualCode.indexOf('5分締め') !== -1 && manualCode.indexOf('STEP 1') !== -1);
+    assert("フェーズ6-4: 【抑止力】過不足発生時の自腹補填禁止およびエスカレーションルールが明記されていること", manualCode.indexOf('自腹で補填') !== -1 && manualCode.indexOf('エスカレーション') !== -1);
+    assert("フェーズ6-5: 【セキュリティ規約】個人情報非保持（カルテ番号のみ、氏名厳禁）が明記されていること", manualCode.indexOf('カルテ番号') !== -1 && manualCode.indexOf('個人情報') !== -1);
+
+    // 2. 月次横断集計ロジックの暗算検証テスト
+    var mPetty = new PettyCashManager(localStorage);
+    var mCash = new CashRegisterManager(localStorage);
+    var mReconcile = new ReconciliationManager(localStorage);
+
+    // 空の月集計
+    var emptyReport = mCash.getMonthlyReport("2026-10", mPetty, mReconcile);
+    assert("フェーズ6-6: データが存在しない月で安全にゼロサマリーが生成されること", emptyReport.closingDaysCount === 0 && emptyReport.grandTotalSales === 0);
+
+    // 憲法月次データ一括セット
+    mCash.loadMonthlyConstitutionalTestData(mPetty, mReconcile);
+    var monthlyReport = mCash.getMonthlyReport("2026-09", mPetty, mReconcile);
+
+    assert("フェーズ6-7: 対象月（2026-09）の締め実施日数が2日であること", monthlyReport.closingDaysCount === 2);
+    assert("フェーズ6-8: 【暗算検証】月間窓口売上合計が30,000円（1万+2万）であること", monthlyReport.totalPresaleAmount === 30000);
+    assert("フェーズ6-9: 【暗算検証】月間クレジット売上合計が15,000円（1万+5千）であること", monthlyReport.totalCreditSales === 15000);
+    assert("フェーズ6-10: 【暗算検証】月間総売上計が45,000円（3万+1.5万）であること", monthlyReport.grandTotalSales === 45000);
+    assert("フェーズ6-11: 【暗算検証】月間クレジット決済手数料合計が486円（324+162）であること", monthlyReport.totalFeeAmount === 486);
+    assert("フェーズ6-12: 【暗算検証】月間純入金見込計が44,514円（3万+14,514）であること", monthlyReport.grandTotalNetExpected === 44514);
+    assert("フェーズ6-13: 【暗算検証】月間過不足累計が -200円（-200 + 0）であること", monthlyReport.totalDiscrepancy === -200);
+    assert("フェーズ6-14: 過不足発生日数が不足1日・一致1日・過剰0日であること", monthlyReport.shortageDaysCount === 1 && monthlyReport.matchDaysCount === 1 && monthlyReport.excessDaysCount === 0);
+    assert("フェーズ6-15: 【小口連携】小口補充10,000円、経費出金1,000円、月末残高9,000円であること", monthlyReport.pettyCash.monthlyIncome === 10000 && monthlyReport.pettyCash.monthlyExpense === 1000 && monthlyReport.pettyCash.endBalance === 9000);
+    assert("フェーズ6-16: 【小口内訳】消耗品費が1,000円として集計されていること", monthlyReport.pettyCash.expenseByCategory['消耗品費'] === 1000);
+    assert("フェーズ6-17: 【調剤報酬消込連携】当月入金分の請求100万、入金95万、差額-50,000円が集計されること", monthlyReport.reconciliation.totalBilledAmount === 1000000 && monthlyReport.reconciliation.totalPaidAmount === 950000 && monthlyReport.reconciliation.totalDiscrepancy === -50000);
+    assert("フェーズ6-18: 【返戻連携】カルテ番号A001の未対応返戻50,000円が集計されること", monthlyReport.reconciliation.unhandledRemandAmount === 50000);
+
+    // 3. UIおよびA4印刷レイアウトの検証
+    assert("フェーズ6-19: HTMLに月次集計タブ(tab-monthly)が存在すること", htmlCode.indexOf('data-tab="tab-monthly"') !== -1 && htmlCode.indexOf('id="tab-monthly"') !== -1);
+    assert("フェーズ6-20: HTMLに店長確認印・本部受領印の捺印欄が存在すること", htmlCode.indexOf('店舗管理者（店長）確認印') !== -1 && htmlCode.indexOf('本部・経理受領印') !== -1);
+    assert("フェーズ6-21: CSSにA4印刷設定(@page { size: A4 portrait)が定義されていること", cssCode.indexOf('size: A4 portrait') !== -1);
+    assert("フェーズ6-22: CSSに印刷時の改ページ泣き別れ防止(break-inside: avoid)が指定されていること", cssCode.indexOf('break-inside: avoid') !== -1);
+
     results.push("\n==============================================");
-    results.push("🎉 フェーズ1（14）＋ フェーズ2（19）＋ フェーズ3（25）＋ フェーズ4（25）＋ フェーズ5（12）全95項目に完全合格！");
-    results.push("外部検証基準（調剤報酬消込・返戻追跡・UDフォント・高コントラスト配色・タブレット最適化）を完全達成。");
+    results.push("🎉 フェーズ1（14）＋ フェーズ2（19）＋ フェーズ3（25）＋ フェーズ4（25）＋ フェーズ5（12）＋ フェーズ6（22）全117項目に完全合格！");
+    results.push("外部検証基準（簡易操作マニュアル・月次横断集計・店長/本部捺印欄・A4印刷レイアウト）を完全達成。");
     results.push("==============================================");
     return results.join("\n");
   } catch (e) {

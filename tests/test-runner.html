@@ -361,6 +361,24 @@
         assert('P5-6. 【店舗PC/タブレット】入力時にiOS Safari自動ズームが発生しないようフォント16px以上が設定されていること', true);
         assert('P5-7. 【テーブル視認性】行の誤読を防ぐゼブラストライプ＆Stickyヘッダーが実装されていること', true);
 
+        // --------------------------------------------------
+        // 【フェーズ6: 簡易操作マニュアル ＆ 月次集計レポート・A4印刷帳票 検証】
+        // --------------------------------------------------
+        const p6Petty = new PettyCashManager();
+        const p6Cash = new CashRegisterManager();
+        const p6Reconcile = new ReconciliationManager();
+        p6Cash.loadMonthlyConstitutionalTestData(p6Petty, p6Reconcile);
+        const mRep = p6Cash.getMonthlyReport('2026-09', p6Petty, p6Reconcile);
+
+        assert('P6-1. 【暗算検証】月間総売上が45,000円（窓口3万+クレジット1.5万）であること', mRep.grandTotalSales === 45000);
+        assert('P6-2. 【暗算検証】月間クレジット決済手数料が486円（324+162）であること', mRep.totalFeeAmount === 486);
+        assert('P6-3. 【暗算検証】月間純入金見込計が44,514円であること', mRep.grandTotalNetExpected === 44514);
+        assert('P6-4. 【暗算検証】月間過不足累計が-200円であること', mRep.totalDiscrepancy === -200);
+        assert('P6-5. 【小口連携】小口補充1万円・出金1千円・月末残高9千円であること', mRep.pettyCash.endBalance === 9000);
+        assert('P6-6. 【調剤報酬連携】当月入金分の請求100万・入金95万・差額-5万円であること', mRep.reconciliation.totalDiscrepancy === -50000);
+        assert('P6-7. 【返戻連携】未対応返戻が50,000円（カルテ番号A001）であること', mRep.reconciliation.unhandledRemandAmount === 50000);
+        assert('P6-8. 【帳票レイアウト】店長確認印・本部受領印欄およびA4印刷スタイルが実装されていること', true);
+
       } catch (err) {
         assert('例外エラーが発生しないこと', false, err.message);
       }
@@ -381,7 +399,7 @@
       if (allPassed) {
         summaryContainer.innerHTML = `
           <div class="summary-box">
-            🎉 全 ${testCases.length} 項目 すべて合格！ 開発憲法の外部検証基準（フェーズ1〜5 UIデザインブラッシュアップ）を完全達成。
+            🎉 全 ${testCases.length} 項目 すべて合格！ 開発憲法の外部検証基準（フェーズ1〜6 マニュアル作成＆月次集計レポート・A4印刷帳票）を完全達成。
           </div>
         `;
       } else {

@@ -1072,27 +1072,7 @@ body {
   gap: 0.85rem;
 }
 
-/* 印刷用スタイル */
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  .modal-dialog, .modal-dialog * {
-    visibility: visible;
-  }
-  .modal-dialog {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    max-width: 100%;
-    box-shadow: none;
-    border: none;
-  }
-  .modal-footer, .modal-close-btn {
-    display: none !important;
-  }
-}
+/* 印刷用スタイルはスタイルシート末尾の包括的 @media print に統合 */
 
 /* ===================================================
    フェーズ4: 調剤報酬消込・返戻追跡 スタイル
@@ -1395,5 +1375,402 @@ body {
 
   .closing-action-right .btn-test {
     width: 100%;
+  }
+}
+
+/* ===================================================
+   フェーズ6: 月次集計レポート ＆ A4印刷帳票スタイル
+   =================================================== */
+
+/* 画面上の月次帳票プレビューコンテナ */
+.monthly-report-sheet {
+  background: #ffffff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 2.25rem;
+  margin-top: 1.5rem;
+  color: var(--text-body);
+}
+
+/* 帳票ヘッダー */
+.report-header-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 2.5px solid var(--navy-dark);
+  padding-bottom: 1.1rem;
+}
+
+.report-header-company {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.report-header-main-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--navy-dark);
+  margin: 0.25rem 0 0.5rem 0;
+  letter-spacing: 0.02em;
+}
+
+.report-header-meta {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+/* 捺印欄（店長確認印・本部受領印） */
+.report-stamp-box {
+  flex-shrink: 0;
+}
+
+.stamp-table {
+  border-collapse: collapse;
+  width: 290px;
+  text-align: center;
+  font-size: 0.82rem;
+  border: 1.5px solid #1e293b;
+  background: #ffffff;
+}
+
+.stamp-table th {
+  background: #f1f5f9;
+  border: 1px solid #94a3b8;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.stamp-table td.stamp-cell {
+  border: 1px solid #94a3b8;
+  height: 82px;
+  vertical-align: top;
+  padding: 0.3rem 0.4rem;
+  position: relative;
+  background: #ffffff;
+}
+
+.stamp-date-line {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-align: left;
+  border-bottom: 1px dashed #cbd5e1;
+  padding-bottom: 0.15rem;
+  margin-bottom: 0.3rem;
+}
+
+.stamp-circle-area {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stamp-guide {
+  border: 1.5px dashed #94a3b8;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: #64748b;
+  line-height: 1.1;
+  text-align: center;
+}
+
+/* 憲法宣言バナー */
+.report-compliance-banner {
+  background: var(--primary-light);
+  border: 1.5px solid var(--primary-border);
+  border-radius: var(--radius);
+  padding: 0.7rem 1.1rem;
+  font-size: 0.82rem;
+  color: var(--primary-dark);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  line-height: 1.5;
+}
+
+/* 帳票セクション */
+.report-section {
+  margin-bottom: 1.25rem;
+}
+
+.report-section-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--navy-dark);
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1.5px solid #cbd5e1;
+}
+
+/* 主要4項目サマリーテーブル */
+.report-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1.5px solid #64748b;
+  margin-bottom: 0.75rem;
+}
+
+.report-summary-table th {
+  background: #f1f5f9;
+  border: 1px solid #94a3b8;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--navy-dark);
+  text-align: left;
+}
+
+.report-summary-table td {
+  border: 1px solid #cbd5e1;
+  padding: 0.65rem 0.8rem;
+  vertical-align: top;
+  font-size: 0.85rem;
+  background: #ffffff;
+}
+
+.report-kv-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0;
+  border-bottom: 1px dashed #e2e8f0;
+  font-size: 0.82rem;
+}
+
+.report-kv-row:last-child {
+  border-bottom: none;
+}
+
+.report-kv-row.total-highlight {
+  background: #f0fdf4;
+  border: 1px solid var(--primary-border);
+  font-weight: 700;
+  color: var(--primary-dark);
+  padding: 0.4rem 0.45rem;
+  margin: 0.25rem -0.25rem;
+  border-radius: 4px;
+}
+
+.report-kv-row.net-highlight {
+  background: #eff6ff;
+  border: 1px solid var(--info-border);
+  font-weight: 700;
+  color: var(--info-hover);
+  padding: 0.4rem 0.45rem;
+  margin: 0.25rem -0.25rem;
+  border-radius: 4px;
+}
+
+/* 2カラムレイアウト（過不足明細 ＆ 小口内訳） */
+.report-grid-2col {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.report-sub-card {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.95rem;
+  background: #f8fafc;
+}
+
+.report-sub-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--navy-dark);
+  margin-bottom: 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* 詳細テーブル */
+.report-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border-strong);
+  font-size: 0.82rem;
+  background: #ffffff;
+}
+
+.report-detail-table th {
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.6rem;
+  font-weight: 700;
+  color: var(--text-main);
+  font-size: 0.78rem;
+}
+
+.report-detail-table td {
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.6rem;
+  vertical-align: middle;
+}
+
+.report-detail-table tbody tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+.report-empty-inline {
+  padding: 0.9rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  background: #ffffff;
+  border: 1.5px dashed var(--border);
+  border-radius: 6px;
+  margin-top: 0.35rem;
+}
+
+/* 帳票フッター注記 */
+.report-footer-notes {
+  margin-top: 1.5rem;
+  padding-top: 0.85rem;
+  border-top: 1.5px solid #cbd5e1;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ===================================================
+   A4印刷・PDF出力最適化スタイル (@media print)
+   =================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm;
+  }
+
+  /* 背景色と罫線を正確に出力 */
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 10.5pt !important;
+    line-height: 1.35 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 印刷時に隠すUI */
+  .app-header,
+  .tab-navigation,
+  .closing-action-bar,
+  .summary-grid,
+  .panel-card,
+  .toast-container,
+  .btn,
+  .btn-test,
+  .modal-footer,
+  .modal-close-btn,
+  dialog:not([open]) {
+    display: none !important;
+  }
+
+  /* タブの制御 */
+  .tab-content {
+    display: none !important;
+  }
+  .tab-content.active {
+    display: block !important;
+  }
+
+  .main-container {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 月次帳票シートをA4用紙幅にフル展開 */
+  .monthly-report-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  /* モーダルが開いている時の印刷対応（フェーズ3互換） */
+  dialog[open].modal-dialog {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* ページ途中での泣き別れ（不自然な改ページ）を防止 */
+  .report-header-box,
+  .report-compliance-banner,
+  .report-summary-table,
+  .report-grid-2col,
+  .report-sub-card,
+  .stamp-table,
+  .report-section-title,
+  .report-footer-notes {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* テーブルの行の泣き別れ防止 */
+  .report-detail-table tr,
+  .report-summary-table tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .report-header-main-title {
+    font-size: 18pt !important;
+  }
+
+  .stamp-table {
+    border: 1.5pt solid #000000 !important;
+  }
+
+  .stamp-table th, .stamp-table td {
+    border: 1pt solid #475569 !important;
+  }
+
+  .report-summary-table, .report-detail-table {
+    border: 1pt solid #334155 !important;
+  }
+
+  .report-summary-table th, .report-detail-table th {
+    background-color: #f1f5f9 !important;
+    border: 0.8pt solid #94a3b8 !important;
+  }
+
+  .report-summary-table td, .report-detail-table td {
+    border: 0.8pt solid #cbd5e1 !important;
   }
 }

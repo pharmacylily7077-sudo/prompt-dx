@@ -37,6 +37,10 @@
         <span>📑 ③ 調剤報酬消込・返戻追跡</span>
         <span class="badge-status">稼働中</span>
       </button>
+      <button class="tab-btn" data-tab="tab-monthly">
+        <span>📈 ④ 月次集計レポート</span>
+        <span class="badge-status">稼働中</span>
+      </button>
     </div>
   </nav>
 
@@ -778,6 +782,340 @@
             <p>まだ登録された請求月データがありません。</p>
           </div>
         </div>
+      </div>
+
+    </section>
+
+    <!-- ====================================================
+         タブ④: 月次集計レポート ＆ A4印刷帳票 (★フェーズ6 実装)
+         ==================================================== -->
+    <section id="tab-monthly" class="tab-content">
+
+      <!-- 操作・アクションバー -->
+      <div class="closing-action-bar" style="margin-bottom: 1.5rem;">
+        <div class="closing-action-inner">
+          <div class="closing-action-left">
+            <label for="monthly-select-month" style="font-weight: 700; color: var(--navy-dark); font-size: 0.95rem;">
+              📅 集計対象年月:
+            </label>
+            <input type="month" id="monthly-select-month" class="form-input" style="width: auto; font-size: 1rem; font-weight: 700; padding: 0.4rem 0.8rem;">
+            <span id="monthly-closing-count-badge" class="badge badge-match" style="font-size: 0.82rem;">0日分の締めデータ</span>
+          </div>
+          <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+            <button id="btn-print-monthly-report" class="btn btn-primary" title="店長確認印・本部受領印欄付きのA4帳票を印刷またはPDF出力">
+              🖨️ A4帳票を印刷 / PDF出力
+            </button>
+            <button id="btn-load-monthly-test-data" class="btn-test" title="暗算検算可能な憲法検証用月次データを一括投入">
+              🧪 【憲法検証】月次一括データセット
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 月次KPIサマリーカード -->
+      <div class="summary-grid">
+        <div id="monthly-card-discrepancy" class="summary-card primary">
+          <div>
+            <div class="summary-card-title">
+              <span>⚖️ 月間過不足累計</span>
+              <span id="monthly-discrepancy-status-tag" class="badge badge-match">一致（正常）</span>
+            </div>
+            <div id="monthly-summary-discrepancy" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div id="monthly-summary-discrepancy-sub" class="summary-card-sub">過不足発生: 0日 / 締め日数: 0日</div>
+        </div>
+
+        <div class="summary-card info">
+          <div>
+            <div class="summary-card-title">
+              <span>🧾 月間総売上（計）</span>
+            </div>
+            <div id="monthly-summary-total-sales" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div id="monthly-summary-sales-breakdown" class="summary-card-sub">窓口現金: ¥0 / クレジット: ¥0</div>
+        </div>
+
+        <div class="summary-card primary">
+          <div>
+            <div class="summary-card-title">
+              <span>💳 純入金見込計</span>
+            </div>
+            <div id="monthly-summary-total-net" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div id="monthly-summary-fee-sub" class="summary-card-sub">決済手数料控除後（手数料計: ¥0）</div>
+        </div>
+
+        <div class="summary-card danger">
+          <div>
+            <div class="summary-card-title">
+              <span>📤 小口経費出金計</span>
+            </div>
+            <div id="monthly-summary-petty-expense" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div id="monthly-summary-petty-balance-sub" class="summary-card-sub">小口月末残高: ¥0</div>
+        </div>
+
+        <div class="summary-card">
+          <div>
+            <div class="summary-card-title">
+              <span>🏦 調剤報酬入金差額</span>
+              <span id="monthly-reconcile-status-tag" class="badge badge-match">差額なし</span>
+            </div>
+            <div id="monthly-summary-reconcile-diff" class="summary-card-value numeric">¥0</div>
+          </div>
+          <div id="monthly-summary-reconcile-sub" class="summary-card-sub">未解決返戻: ¥0</div>
+        </div>
+      </div>
+
+      <!-- ====================================================
+           A4印刷・帳票プレビューコンテナ（画面表示兼A4印刷レイアウト）
+           ==================================================== -->
+      <div id="monthly-printable-report" class="monthly-report-sheet">
+
+        <!-- 帳票ヘッダー ＆ 捺印欄 -->
+        <div class="report-header-box">
+          <div class="report-header-titles">
+            <div class="report-header-company">リリー薬局 管理本部 提出用帳票</div>
+            <h2 class="report-header-main-title">月次売上・入金・過不足管理報告書</h2>
+            <div class="report-header-meta">
+              <span><strong>対象年月:</strong> <span id="print-meta-month" class="numeric">----年--月度</span></span>
+              <span><strong>店舗名:</strong> リリー薬局</span>
+              <span><strong>出力日時:</strong> <span id="print-meta-timestamp" class="numeric">----/--/-- --:--</span></span>
+            </div>
+          </div>
+
+          <!-- 店長確認印・本部受領印 捺印欄 -->
+          <div class="report-stamp-box">
+            <table class="stamp-table">
+              <thead>
+                <tr>
+                  <th>店舗管理者（店長）確認印</th>
+                  <th>本部・経理受領印</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="stamp-cell">
+                    <div class="stamp-date-line">確認日: &nbsp;&nbsp;&nbsp;&nbsp;年 &nbsp;&nbsp;月 &nbsp;&nbsp;日</div>
+                    <div class="stamp-circle-area">
+                      <span class="stamp-guide">印またはサイン</span>
+                    </div>
+                  </td>
+                  <td class="stamp-cell">
+                    <div class="stamp-date-line">受領日: &nbsp;&nbsp;&nbsp;&nbsp;年 &nbsp;&nbsp;月 &nbsp;&nbsp;日</div>
+                    <div class="stamp-circle-area">
+                      <span class="stamp-guide">印またはサイン</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 憲法宣言バナー（印刷時にも明記） -->
+        <div class="report-compliance-banner">
+          <span>🛡️ <strong>【薬局憲法】適正管理と抑止力:</strong> 現金のズレや請求保留をうやむやにせず1円単位で事実を記録し、スタッフのお金と尊厳を守るための公式月次報告書です。（患者個人情報非保持規約準拠）</span>
+        </div>
+
+        <!-- 月次主要4項目サマリーテーブル -->
+        <div class="report-section">
+          <div class="report-section-title">
+            <span>📊</span> 1. 月次主要収支・入金サマリー
+          </div>
+          <table class="report-summary-table">
+            <thead>
+              <tr>
+                <th style="width: 25%;">① 売上・入金実績</th>
+                <th style="width: 25%;">② レジ現金・過不足状況</th>
+                <th style="width: 25%;">③ 小口現金出納状況</th>
+                <th style="width: 25%;">④ 調剤報酬消込実績（入金月基準）</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="report-kv-row">
+                    <span>窓口現金売上:</span>
+                    <strong id="print-sum-presale" class="numeric">¥0</strong>
+                  </div>
+                  <div class="report-kv-row">
+                    <span>クレジット売上:</span>
+                    <strong id="print-sum-credit" class="numeric">¥0</strong>
+                  </div>
+                  <div class="report-kv-row total-highlight">
+                    <span>月間総売上:</span>
+                    <strong id="print-sum-total-sales" class="numeric">¥0</strong>
+                  </div>
+                  <div class="report-kv-row">
+                    <span>決済手数料:</span>
+                    <span id="print-sum-fee" class="numeric">¥0</span>
+                  </div>
+                  <div class="report-kv-row net-highlight">
+                    <span>純入金見込計:</span>
+                    <strong id="print-sum-net-expected" class="numeric">¥0</strong>
+                  </div>
+                </td>
+                <td>
+                  <div class="report-kv-row">
+                    <span>実査現金累計:</span>
+                    <span id="print-sum-actual-cash" class="numeric">¥0</span>
+                  </div>
+                  <div class="report-kv-row">
+                    <span>あるべき現金累計:</span>
+                    <span id="print-sum-expected-cash" class="numeric">¥0</span>
+                  </div>
+                  <div class="report-kv-row total-highlight">
+                    <span>過不足累計:</span>
+                    <strong id="print-sum-discrepancy" class="numeric">¥0</strong>
+                  </div>
+                  <div class="report-kv-row">
+                    <span>締め実施日数:</span>
+                    <span id="print-sum-closing-days" class="numeric">0 日</span>
+                  </div>
+                  <div class="report-kv-row">
+                    <span>内訳（不/過/一）:</span>
+                    <span id="print-sum-discrepancy-breakdown" class="numeric" style="font-size: 0.8rem;">0日/0日/0日</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="report-kv-row">
+                    <span>月初繰越残高:</span>
+                    <span id="print-sum-petty-start" class="numeric">¥0</span>
+                  </div>
+                  <div class="report-kv-row">
+                    <span>当月小口補充:</span>
+                    <span id="print-sum-petty-income" class="numeric">¥0</span>
+                  </div>
+                  <div class="report-kv-row total-highlight">
+                    <span>当月経費出金:</span>
+                    <strong id="print-sum-petty-expense" class="numeric">¥0</strong>
+                  </div>
+                  <div class="report-kv-row net-highlight">
+                    <span>月末現在残高:</span>
+                    <strong id="print-sum-petty-end" class="numeric">¥0</strong>
+                  </div>
+                  <div class="report-kv-row">
+                    <span>出納取引件数:</span>
+                    <span id="print-sum-petty-count" class="numeric">0 件</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="report-kv-row">
+                    <span>当月入金対象請求:</span>
+                    <span id="print-sum-rec-target-month" class="numeric">--</span>
+                  </div>
+                  <div class="report-kv-row">
+                    <span>レセプト請求総額:</span>
+                    <span id="print-sum-rec-billed" class="numeric">¥0</span>
+                  </div>
+                  <div class="report-kv-row">
+                    <span>振込確定入金額:</span>
+                    <strong id="print-sum-rec-paid" class="numeric">¥0</strong>
+                  </div>
+                  <div class="report-kv-row total-highlight">
+                    <span>調剤報酬入金差額:</span>
+                    <strong id="print-sum-rec-diff" class="numeric">¥0</strong>
+                  </div>
+                  <div class="report-kv-row">
+                    <span>未解決返戻残高:</span>
+                    <span id="print-sum-rec-remand" class="numeric">¥0</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 2カラム詳細: 過不足発生記録 ＆ 小口経費内訳 -->
+        <div class="report-grid-2col">
+          
+          <!-- 左: 過不足発生日および理由記録（エスカレーション・抑止力） -->
+          <div class="report-sub-card">
+            <div class="report-sub-title">
+              <span>⚖️</span> 2. 現金過不足 発生記録・エスカレーション明細
+            </div>
+            <div id="print-discrepancy-list-container">
+              <table class="report-detail-table">
+                <thead>
+                  <tr>
+                    <th>発生日</th>
+                    <th style="text-align: right;">過不足額</th>
+                    <th>判定</th>
+                    <th>スタッフ記録理由・引継ぎメモ</th>
+                  </tr>
+                </thead>
+                <tbody id="print-discrepancy-table-body">
+                  <!-- 動的挿入 -->
+                </tbody>
+              </table>
+              <div id="print-discrepancy-empty" class="report-empty-inline">
+                ✅ 当月の締めにおいて現金過不足は発生していません（全日完全一致）。
+              </div>
+            </div>
+          </div>
+
+          <!-- 右: 小口現金 科目別経費内訳 -->
+          <div class="report-sub-card">
+            <div class="report-sub-title">
+              <span>👛</span> 3. 小口現金 科目別経費内訳
+            </div>
+            <div id="print-petty-category-container">
+              <table class="report-detail-table">
+                <thead>
+                  <tr>
+                    <th>出納科目</th>
+                    <th style="text-align: right;">出金額</th>
+                    <th style="text-align: right;">構成比</th>
+                  </tr>
+                </thead>
+                <tbody id="print-petty-category-table-body">
+                  <!-- 動的挿入 -->
+                </tbody>
+              </table>
+              <div id="print-petty-empty" class="report-empty-inline">
+                当月の小口経費出金はありません。
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 日別締め実績推移一覧テーブル -->
+        <div class="report-section" style="margin-top: 1rem;">
+          <div class="report-section-title">
+            <span>📅</span> 4. 日別締め実績一覧（全営業日推移）
+          </div>
+          <div class="table-responsive">
+            <table class="report-detail-table" style="font-size: 0.82rem;">
+              <thead>
+                <tr>
+                  <th>締め日</th>
+                  <th style="text-align: right;">窓口売上</th>
+                  <th style="text-align: right;">実査現金</th>
+                  <th style="text-align: center;">過不足判定</th>
+                  <th style="text-align: right;">クレジット売上</th>
+                  <th style="text-align: right;">総売上</th>
+                  <th style="text-align: right;">純入金見込</th>
+                  <th>メモ</th>
+                </tr>
+              </thead>
+              <tbody id="print-daily-breakdown-table-body">
+                <!-- 動的挿入 -->
+              </tbody>
+            </table>
+          </div>
+          <div id="print-daily-empty" class="report-empty-inline" style="display: none;">
+            対象月の日計締めデータが登録されていません。
+          </div>
+        </div>
+
+        <!-- 帳票フッター注記 -->
+        <div class="report-footer-notes">
+          <div>※ <strong>個人情報非保持規約:</strong> 本帳票に患者氏名・生年月日・処方等の個人情報は一切含まれておりません。カルテ番号のみで管理しています。</div>
+          <div>※ <strong>厳格管理規約:</strong> 現金過不足の自腹補填・翌日繰越は厳禁です。事実をありのままに記録し、店長確認印および本部受領印をもって月次確定とします。</div>
+        </div>
+
       </div>
 
     </section>

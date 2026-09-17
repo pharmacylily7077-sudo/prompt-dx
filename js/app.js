@@ -9,6 +9,16 @@ document.addEventListener('DOMContentLoaded', () => {
     return '¥' + amount.toLocaleString('ja-JP');
   };
 
+  const escapeHtml = (str) => {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  };
+
   const showToast = (message, type = 'success') => {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -46,6 +56,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const targetContent = document.getElementById(targetId);
       if (targetContent) {
         targetContent.classList.add('active');
+      }
+
+      // 月次レポートタブを開いた際に最新データを集計再描画
+      if (targetId === 'tab-monthly' && typeof window.__renderMonthlyReport === 'function') {
+        window.__renderMonthlyReport();
       }
     });
   });
@@ -1340,6 +1355,345 @@ document.addEventListener('DOMContentLoaded', () => {
   const initialBillingMonth = '2026-07';
   if (reconcileMonthSelect) reconcileMonthSelect.value = initialBillingMonth;
   loadReconcileMonth(initialBillingMonth);
+
+  // ----------------------------------------------------
+  // フェーズ6: 月次集計レポート ＆ A4印刷帳票
+  // ----------------------------------------------------
+  const monthlySelectMonth = document.getElementById('monthly-select-month');
+  const monthlyClosingCountBadge = document.getElementById('monthly-closing-count-badge');
+  const btnPrintMonthlyReport = document.getElementById('btn-print-monthly-report');
+  const btnLoadMonthlyTestData = document.getElementById('btn-load-monthly-test-data');
+
+  // KPIカード
+  const monthlySummaryDiscrepancy = document.getElementById('monthly-summary-discrepancy');
+  const monthlyDiscrepancyStatusTag = document.getElementById('monthly-discrepancy-status-tag');
+  const monthlySummaryDiscrepancySub = document.getElementById('monthly-summary-discrepancy-sub');
+  const monthlySummaryTotalSales = document.getElementById('monthly-summary-total-sales');
+  const monthlySummarySalesBreakdown = document.getElementById('monthly-summary-sales-breakdown');
+  const monthlySummaryTotalNet = document.getElementById('monthly-summary-total-net');
+  const monthlySummaryFeeSub = document.getElementById('monthly-summary-fee-sub');
+  const monthlySummaryPettyExpense = document.getElementById('monthly-summary-petty-expense');
+  const monthlySummaryPettyBalanceSub = document.getElementById('monthly-summary-petty-balance-sub');
+  const monthlySummaryReconcileDiff = document.getElementById('monthly-summary-reconcile-diff');
+  const monthlyReconcileStatusTag = document.getElementById('monthly-reconcile-status-tag');
+  const monthlySummaryReconcileSub = document.getElementById('monthly-summary-reconcile-sub');
+
+  // A4帳票プレビュー要素
+  const printMetaMonth = document.getElementById('print-meta-month');
+  const printMetaTimestamp = document.getElementById('print-meta-timestamp');
+
+  // サマリー4列
+  const printSumPresale = document.getElementById('print-sum-presale');
+  const printSumCredit = document.getElementById('print-sum-credit');
+  const printSumTotalSales = document.getElementById('print-sum-total-sales');
+  const printSumFee = document.getElementById('print-sum-fee');
+  const printSumNetExpected = document.getElementById('print-sum-net-expected');
+
+  const printSumActualCash = document.getElementById('print-sum-actual-cash');
+  const printSumExpectedCash = document.getElementById('print-sum-expected-cash');
+  const printSumDiscrepancy = document.getElementById('print-sum-discrepancy');
+  const printSumClosingDays = document.getElementById('print-sum-closing-days');
+  const printSumDiscrepancyBreakdown = document.getElementById('print-sum-discrepancy-breakdown');
+
+  const printSumPettyStart = document.getElementById('print-sum-petty-start');
+  const printSumPettyIncome = document.getElementById('print-sum-petty-income');
+  const printSumPettyExpense = document.getElementById('print-sum-petty-expense');
+  const printSumPettyEnd = document.getElementById('print-sum-petty-end');
+  const printSumPettyCount = document.getElementById('print-sum-petty-count');
+
+  const printSumRecTargetMonth = document.getElementById('print-sum-rec-target-month');
+  const printSumRecBilled = document.getElementById('print-sum-rec-billed');
+  const printSumRecPaid = document.getElementById('print-sum-rec-paid');
+  const printSumRecDiff = document.getElementById('print-sum-rec-diff');
+  const printSumRecRemand = document.getElementById('print-sum-rec-remand');
+
+  // 明細テーブルボディ
+  const printDiscrepancyTableBody = document.getElementById('print-discrepancy-table-body');
+  const printDiscrepancyEmpty = document.getElementById('print-discrepancy-empty');
+  const printPettyCategoryTableBody = document.getElementById('print-petty-category-table-body');
+  const printPettyEmpty = document.getElementById('print-petty-empty');
+  const printDailyBreakdownTableBody = document.getElementById('print-daily-breakdown-table-body');
+  const printDailyEmpty = document.getElementById('print-daily-empty');
+
+  // 初期年月設定（デフォルト: "2026-09"）
+  if (monthlySelectMonth) {
+    monthlySelectMonth.value = '2026-09';
+  }
+
+  const renderMonthlyReport = (selectedMonth = null) => {
+    const month = selectedMonth || monthlySelectMonth?.value || '2026-09';
+    if (!month) return;
+
+    const report = cashRegisterManager.getMonthlyReport(month, pettyCashManager, reconciliationManager);
+
+    // ヘッダーメタ・件数バッジ
+    if (monthlyClosingCountBadge) {
+      monthlyClosingCountBadge.textContent = `${report.closingDaysCount}日分の締めデータ`;
+      if (report.closingDaysCount === 0) {
+        monthlyClosingCountBadge.className = 'badge badge-unconfirmed';
+      } else {
+        monthlyClosingCountBadge.className = 'badge badge-match';
+      }
+    }
+
+    const [y, m] = month.split('-');
+    const formattedMonth = `${y}年${m}月度`;
+    if (printMetaMonth) printMetaMonth.textContent = formattedMonth;
+    if (printMetaTimestamp) {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      printMetaTimestamp.textContent = `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    }
+
+    // 1. KPIカード描画
+    // 過不足累計
+    if (monthlySummaryDiscrepancy) {
+      monthlySummaryDiscrepancy.textContent = formatYen(report.totalDiscrepancy);
+      if (report.totalDiscrepancy < 0) {
+        monthlySummaryDiscrepancy.style.color = 'var(--danger)';
+        if (monthlyDiscrepancyStatusTag) {
+          monthlyDiscrepancyStatusTag.className = 'badge badge-shortage';
+          monthlyDiscrepancyStatusTag.textContent = `不足（${report.totalDiscrepancy.toLocaleString('ja-JP')}円）`;
+        }
+      } else if (report.totalDiscrepancy > 0) {
+        monthlySummaryDiscrepancy.style.color = 'var(--warning)';
+        if (monthlyDiscrepancyStatusTag) {
+          monthlyDiscrepancyStatusTag.className = 'badge badge-excess';
+          monthlyDiscrepancyStatusTag.textContent = `過剰（+${report.totalDiscrepancy.toLocaleString('ja-JP')}円）`;
+        }
+      } else {
+        monthlySummaryDiscrepancy.style.color = '';
+        if (monthlyDiscrepancyStatusTag) {
+          monthlyDiscrepancyStatusTag.className = 'badge badge-match';
+          monthlyDiscrepancyStatusTag.textContent = '一致（正常）';
+        }
+      }
+    }
+    if (monthlySummaryDiscrepancySub) {
+      monthlySummaryDiscrepancySub.textContent = `過不足発生: ${report.shortageDaysCount + report.excessDaysCount}日 / 締め日数: ${report.closingDaysCount}日`;
+    }
+
+    // 総売上
+    if (monthlySummaryTotalSales) monthlySummaryTotalSales.textContent = formatYen(report.grandTotalSales);
+    if (monthlySummarySalesBreakdown) {
+      monthlySummarySalesBreakdown.textContent = `窓口: ${formatYen(report.totalPresaleAmount)} / クレジット: ${formatYen(report.totalCreditSales)}`;
+    }
+
+    // 純入金見込
+    if (monthlySummaryTotalNet) monthlySummaryTotalNet.textContent = formatYen(report.grandTotalNetExpected);
+    if (monthlySummaryFeeSub) {
+      monthlySummaryFeeSub.textContent = `決済手数料控除後（手数料計: ${formatYen(report.totalFeeAmount)}）`;
+    }
+
+    // 小口経費
+    if (monthlySummaryPettyExpense) monthlySummaryPettyExpense.textContent = formatYen(report.pettyCash.monthlyExpense);
+    if (monthlySummaryPettyBalanceSub) {
+      monthlySummaryPettyBalanceSub.textContent = `小口月末残高: ${formatYen(report.pettyCash.endBalance)}`;
+    }
+
+    // 調剤報酬
+    if (monthlySummaryReconcileDiff) {
+      monthlySummaryReconcileDiff.textContent = formatYen(report.reconciliation.totalDiscrepancy);
+      if (report.reconciliation.totalDiscrepancy < 0) {
+        monthlySummaryReconcileDiff.style.color = 'var(--danger)';
+        if (monthlyReconcileStatusTag) {
+          monthlyReconcileStatusTag.className = 'badge badge-shortage';
+          monthlyReconcileStatusTag.textContent = '入金不足';
+        }
+      } else if (report.reconciliation.totalDiscrepancy > 0) {
+        monthlySummaryReconcileDiff.style.color = 'var(--warning)';
+        if (monthlyReconcileStatusTag) {
+          monthlyReconcileStatusTag.className = 'badge badge-excess';
+          monthlyReconcileStatusTag.textContent = '入金過剰';
+        }
+      } else {
+        monthlySummaryReconcileDiff.style.color = '';
+        if (monthlyReconcileStatusTag) {
+          monthlyReconcileStatusTag.className = 'badge badge-match';
+          monthlyReconcileStatusTag.textContent = '差額なし';
+        }
+      }
+    }
+    if (monthlySummaryReconcileSub) {
+      monthlySummaryReconcileSub.textContent = `未解決返戻: ${formatYen(report.reconciliation.unhandledRemandAmount + report.reconciliation.rebillingRemandAmount)}`;
+    }
+
+    // 2. A4帳票主要4項目サマリー表の更新
+    if (printSumPresale) printSumPresale.textContent = formatYen(report.totalPresaleAmount);
+    if (printSumCredit) printSumCredit.textContent = formatYen(report.totalCreditSales);
+    if (printSumTotalSales) printSumTotalSales.textContent = formatYen(report.grandTotalSales);
+    if (printSumFee) printSumFee.textContent = formatYen(report.totalFeeAmount);
+    if (printSumNetExpected) printSumNetExpected.textContent = formatYen(report.grandTotalNetExpected);
+
+    if (printSumActualCash) printSumActualCash.textContent = formatYen(report.totalActualCash);
+    if (printSumExpectedCash) printSumExpectedCash.textContent = formatYen(report.totalExpectedCash);
+    if (printSumDiscrepancy) {
+      printSumDiscrepancy.textContent = formatYen(report.totalDiscrepancy);
+      if (report.totalDiscrepancy < 0) printSumDiscrepancy.style.color = 'var(--danger)';
+      else if (report.totalDiscrepancy > 0) printSumDiscrepancy.style.color = 'var(--warning)';
+      else printSumDiscrepancy.style.color = '';
+    }
+    if (printSumClosingDays) printSumClosingDays.textContent = `${report.closingDaysCount} 日`;
+    if (printSumDiscrepancyBreakdown) {
+      printSumDiscrepancyBreakdown.textContent = `不足${report.shortageDaysCount}日 / 過剰${report.excessDaysCount}日 / 一致${report.matchDaysCount}日`;
+    }
+
+    if (printSumPettyStart) printSumPettyStart.textContent = formatYen(report.pettyCash.startBalance);
+    if (printSumPettyIncome) printSumPettyIncome.textContent = formatYen(report.pettyCash.monthlyIncome);
+    if (printSumPettyExpense) printSumPettyExpense.textContent = formatYen(report.pettyCash.monthlyExpense);
+    if (printSumPettyEnd) printSumPettyEnd.textContent = formatYen(report.pettyCash.endBalance);
+    if (printSumPettyCount) printSumPettyCount.textContent = `${report.pettyCash.count} 件`;
+
+    if (printSumRecTargetMonth) {
+      const depRecs = report.reconciliation.depositMonthRecords;
+      if (depRecs && depRecs.length > 0) {
+        printSumRecTargetMonth.textContent = depRecs.map(r => r.billingMonth).join(', ') + ' 請求分';
+      } else {
+        printSumRecTargetMonth.textContent = '当月入金データなし';
+      }
+    }
+    if (printSumRecBilled) printSumRecBilled.textContent = formatYen(report.reconciliation.totalBilledAmount);
+    if (printSumRecPaid) printSumRecPaid.textContent = formatYen(report.reconciliation.totalPaidAmount);
+    if (printSumRecDiff) {
+      printSumRecDiff.textContent = formatYen(report.reconciliation.totalDiscrepancy);
+      if (report.reconciliation.totalDiscrepancy < 0) printSumRecDiff.style.color = 'var(--danger)';
+      else if (report.reconciliation.totalDiscrepancy > 0) printSumRecDiff.style.color = 'var(--warning)';
+      else printSumRecDiff.style.color = '';
+    }
+    if (printSumRecRemand) {
+      const unresolvedRemand = report.reconciliation.unhandledRemandAmount + report.reconciliation.rebillingRemandAmount;
+      printSumRecRemand.textContent = formatYen(unresolvedRemand);
+      if (unresolvedRemand > 0) printSumRecRemand.style.color = 'var(--danger)';
+      else printSumRecRemand.style.color = '';
+    }
+
+    // 3. 過不足明細テーブル
+    if (printDiscrepancyTableBody) {
+      printDiscrepancyTableBody.innerHTML = '';
+      if (report.discrepancyRecords.length === 0) {
+        if (printDiscrepancyEmpty) printDiscrepancyEmpty.style.display = 'block';
+      } else {
+        if (printDiscrepancyEmpty) printDiscrepancyEmpty.style.display = 'none';
+        report.discrepancyRecords.forEach(item => {
+          const tr = document.createElement('tr');
+          const isShortage = item.discrepancy < 0;
+          tr.innerHTML = `
+            <td><span class="numeric" style="font-weight: 700;">${item.date}</span></td>
+            <td style="text-align: right;"><strong class="numeric" style="color: ${isShortage ? 'var(--danger)' : 'var(--warning)'};">${item.discrepancy > 0 ? '+' : ''}${item.discrepancy.toLocaleString('ja-JP')}円</strong></td>
+            <td><span class="badge ${isShortage ? 'badge-shortage' : 'badge-excess'}">${isShortage ? '不足' : '過剰'}</span></td>
+            <td>${item.memo ? escapeHtml(item.memo) : '<span style="color: var(--text-muted);">（メモなし）</span>'}</td>
+          `;
+          printDiscrepancyTableBody.appendChild(tr);
+        });
+      }
+    }
+
+    // 4. 小口科目別内訳テーブル
+    if (printPettyCategoryTableBody) {
+      printPettyCategoryTableBody.innerHTML = '';
+      const categories = Object.keys(report.pettyCash.expenseByCategory);
+      const totalExpense = report.pettyCash.monthlyExpense;
+
+      if (categories.length === 0 || totalExpense === 0) {
+        if (printPettyEmpty) printPettyEmpty.style.display = 'block';
+      } else {
+        if (printPettyEmpty) printPettyEmpty.style.display = 'none';
+        categories.sort((a, b) => report.pettyCash.expenseByCategory[b] - report.pettyCash.expenseByCategory[a]);
+        categories.forEach(cat => {
+          const amt = report.pettyCash.expenseByCategory[cat];
+          const pct = totalExpense > 0 ? ((amt / totalExpense) * 100).toFixed(1) : '0.0';
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><strong>${escapeHtml(cat)}</strong></td>
+            <td style="text-align: right;"><span class="numeric" style="font-weight: 700;">${formatYen(amt)}</span></td>
+            <td style="text-align: right;"><span class="numeric" style="color: var(--text-muted);">${pct}%</span></td>
+          `;
+          printPettyCategoryTableBody.appendChild(tr);
+        });
+      }
+    }
+
+    // 5. 日別締め実績推移一覧テーブル
+    if (printDailyBreakdownTableBody) {
+      printDailyBreakdownTableBody.innerHTML = '';
+      if (report.daysInMonth.length === 0) {
+        if (printDailyEmpty) printDailyEmpty.style.display = 'block';
+      } else {
+        if (printDailyEmpty) printDailyEmpty.style.display = 'none';
+        report.daysInMonth.forEach(day => {
+          const tr = document.createElement('tr');
+          let discClass = 'badge-match';
+          let discText = '一致 (±0)';
+          if (day.discrepancy < 0) {
+            discClass = 'badge-shortage';
+            discText = `不足 (${day.discrepancy.toLocaleString('ja-JP')}円)`;
+          } else if (day.discrepancy > 0) {
+            discClass = 'badge-excess';
+            discText = `過剰 (+${day.discrepancy.toLocaleString('ja-JP')}円)`;
+          }
+
+          tr.innerHTML = `
+            <td><strong class="numeric">${day.date}</strong></td>
+            <td style="text-align: right;"><span class="numeric">${formatYen(day.presaleAmount)}</span></td>
+            <td style="text-align: right;"><span class="numeric">${formatYen(day.actualCash)}</span></td>
+            <td style="text-align: center;"><span class="badge ${discClass}">${discText}</span></td>
+            <td style="text-align: right;"><span class="numeric">${formatYen(day.creditSales)}</span></td>
+            <td style="text-align: right;"><strong class="numeric">${formatYen(day.totalSales)}</strong></td>
+            <td style="text-align: right;"><span class="numeric" style="color: var(--primary-dark); font-weight: 700;">${formatYen(day.totalNetExpected)}</span></td>
+            <td><small style="color: var(--text-muted);">${escapeHtml(day.memo || '-')}</small></td>
+          `;
+          printDailyBreakdownTableBody.appendChild(tr);
+        });
+      }
+    }
+  };
+
+  // グローバル公開（タブ切り替え時等）
+  window.__renderMonthlyReport = () => renderMonthlyReport(monthlySelectMonth?.value);
+
+  // 対象月選択変更イベント
+  if (monthlySelectMonth) {
+    monthlySelectMonth.addEventListener('change', () => {
+      renderMonthlyReport(monthlySelectMonth.value);
+    });
+  }
+
+  // A4印刷ボタン
+  if (btnPrintMonthlyReport) {
+    btnPrintMonthlyReport.addEventListener('click', () => {
+      renderMonthlyReport(monthlySelectMonth?.value);
+      window.print();
+    });
+  }
+
+  // 憲法検証用月次テストデータ一括セット
+  if (btnLoadMonthlyTestData) {
+    btnLoadMonthlyTestData.addEventListener('click', () => {
+      if (confirm('【開発憲法 フェーズ6外部検証】\n「2026-09」の月次検証データを一括セットしますか？\n・日計締め: Day1(-200円不足) & Day2(完全一致) 計総売上4.5万円、過不足累計-200円\n・小口現金: 補充1万円、出金1千円、残高9千円\n・調剤報酬: 7月請求分(9月入金)、請求100万、入金95万、差額-5万、返戻5万(A001/未対応)')) {
+        cashRegisterManager.loadMonthlyConstitutionalTestData(pettyCashManager, reconciliationManager);
+        if (monthlySelectMonth) monthlySelectMonth.value = '2026-09';
+        renderPettyCash();
+        renderDailyClosing();
+        loadReconcileMonth('2026-07');
+        renderMonthlyReport('2026-09');
+        showToast('月次検証データを一括投入しました（総売上4.5万、過不足-200円、小口経費1千円、調剤報酬差額-5万円）');
+      }
+    });
+  }
+
+  // 各マネージャーのリスナー登録（データ変更時に月次レポートも自動更新）
+  cashRegisterManager.subscribe(() => {
+    renderMonthlyReport(monthlySelectMonth?.value);
+  });
+  pettyCashManager.subscribe(() => {
+    renderMonthlyReport(monthlySelectMonth?.value);
+  });
+  reconciliationManager.subscribe(() => {
+    renderMonthlyReport(monthlySelectMonth?.value);
+  });
+
+  // 初回ロード
+  renderMonthlyReport('2026-09');
 });
 
 
