@@ -16,8 +16,18 @@
         <h1 class="brand-title">売上・入金・返戻管理システム</h1>
         <span class="pharmacy-badge">リリー薬局</span>
       </div>
-      <div class="governance-note">
-        <span>🛡️ 薬局を守るための厳格管理（不正・ズレ・請求放置の撲滅）</span>
+      <div class="header-right-area">
+        <div class="governance-note">
+          <span>🛡️ 薬局を守るための厳格管理（不正・ズレ・請求放置の撲滅）</span>
+        </div>
+        <div class="header-actions">
+          <button id="btn-header-export" class="btn-header-action btn-backup-export" title="全データ（小口・レジ・消込）を1つのJSONファイルにバックアップ保存します">
+            <span>💾</span> バックアップ保存
+          </button>
+          <button id="btn-header-import" class="btn-header-action btn-backup-import" title="保存したJSONバックアップファイルからデータを安全に復元します">
+            <span>📥</span> データ復元
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -1122,6 +1132,74 @@
 
   </main>
 
+  <!-- データ復元＆バックアップ管理モーダル -->
+  <dialog id="backup-restore-dialog" class="modal-dialog">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <span>📥</span> データの復元（JSONインポート）
+        </h3>
+        <button id="btn-close-backup-modal" class="modal-close-btn" title="閉じる">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="backup-modal-intro">
+          <p>以前に保存したJSONバックアップファイルを選択して、システム全体のデータを安全に復元します。</p>
+          <div class="alert-box info-alert" style="margin-top: 0.5rem;">
+            <span>🛡️ <strong>個人情報非保持ディープスキャン:</strong> インポート時に全データ（カルテ番号・明細）をスキャンし、患者氏名等の混入がないかを厳格に検査します。</span>
+          </div>
+        </div>
+
+        <!-- ファイル選択エリア -->
+        <div class="backup-dropzone" id="backup-dropzone">
+          <input type="file" id="backup-file-input" accept=".json,application/json" style="display: none;">
+          <div class="dropzone-icon">📁</div>
+          <div class="dropzone-text"><strong>JSONファイルを選択</strong> または ここにドラッグ＆ドロップ</div>
+          <button type="button" class="btn btn-secondary" id="btn-browse-backup-file" style="margin-top: 0.75rem;">
+            ファイルを選択する
+          </button>
+          <div id="backup-file-name" class="backup-selected-file" style="display: none;"></div>
+        </div>
+
+        <!-- スキャン結果・プレビューエリア -->
+        <div id="backup-scan-result" class="backup-scan-container" style="display: none;">
+          <!-- 成功時 or 失敗時のバッジ・メッセージが動的に挿入される -->
+        </div>
+
+        <!-- 復元前データサマリープレビュー -->
+        <div id="backup-summary-preview" class="backup-summary-preview" style="display: none;">
+          <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: var(--navy-dark);">📊 復元対象データ一覧</h4>
+          <div class="backup-summary-grid">
+            <div class="backup-summary-item">
+              <span class="backup-item-label">👛 小口現金出納</span>
+              <span class="backup-item-val numeric" id="restore-count-petty">0 件</span>
+            </div>
+            <div class="backup-summary-item">
+              <span class="backup-item-label">📊 日計締め履歴</span>
+              <span class="backup-item-val numeric" id="restore-count-cash">0 件</span>
+            </div>
+            <div class="backup-summary-item">
+              <span class="backup-item-label">📑 調剤報酬月別</span>
+              <span class="backup-item-val numeric" id="restore-count-reconcile">0 ヶ月</span>
+            </div>
+            <div class="backup-summary-item">
+              <span class="backup-item-label">⚠️ 返戻・保留案件</span>
+              <span class="backup-item-val numeric" id="restore-count-remand">0 件</span>
+            </div>
+          </div>
+          <div class="alert-box danger-alert" style="margin-top: 1rem;">
+            <span>⚠️ <strong>ご注意:</strong> 復元を実行すると、現在のブラウザ上のデータはすべて上書きされます。必要に応じて事前に「バックアップ保存」を行ってください。</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-cancel-restore" class="btn btn-secondary">キャンセル</button>
+        <button type="button" id="btn-execute-restore" class="btn btn-primary" disabled style="background-color: var(--primary);">
+          <span>✅</span> データを上書き復元する
+        </button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- トースト通知コンテナ -->
   <div id="toast-container" class="toast-container"></div>
 
@@ -1129,6 +1207,7 @@
   <script src="js/petty-cash.js"></script>
   <script src="js/cash-register.js"></script>
   <script src="js/reconciliation.js"></script>
+  <script src="js/backup.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

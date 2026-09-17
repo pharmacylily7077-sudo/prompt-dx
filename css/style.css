@@ -144,6 +144,13 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.header-right-area {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
 .governance-note {
   font-size: 0.85rem;
   color: #cbd5e1;
@@ -154,6 +161,49 @@ body {
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-header-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px;
+}
+
+.btn-backup-export {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.btn-backup-export:hover {
+  background: rgba(255, 255, 255, 0.28);
+  border-color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.btn-backup-import {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary-light);
+}
+
+.btn-backup-import:hover {
+  background: var(--primary-dark);
+  border-color: #ffffff;
+  transform: translateY(-1px);
 }
 
 /* ===================================================
@@ -1073,6 +1123,123 @@ body {
 }
 
 /* 印刷用スタイルはスタイルシート末尾の包括的 @media print に統合 */
+
+/* バックアップ＆復元モーダル (フェーズ7) */
+.modal-lg {
+  max-width: 680px;
+}
+
+.backup-modal-intro p {
+  color: var(--text-main);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.backup-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: var(--radius-md);
+  padding: 1.75rem 1.25rem;
+  text-align: center;
+  background-color: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 1rem 0;
+}
+
+.backup-dropzone:hover,
+.backup-dropzone.dragover {
+  border-color: var(--primary);
+  background-color: var(--primary-lightest);
+}
+
+.dropzone-icon {
+  font-size: 2.2rem;
+  margin-bottom: 0.35rem;
+}
+
+.dropzone-text {
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+.backup-selected-file {
+  margin-top: 0.75rem;
+  font-weight: 700;
+  color: var(--navy-dark);
+  word-break: break-all;
+  background: #ffffff;
+  display: inline-block;
+  padding: 0.35rem 0.8rem;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.9rem;
+}
+
+.backup-scan-container {
+  margin-bottom: 1rem;
+}
+
+.scan-box-success {
+  background-color: #f0fdf4;
+  border: 1.5px solid #86efac;
+  color: #166534;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.scan-box-error {
+  background-color: #fef2f2;
+  border: 1.5px solid #fca5a5;
+  color: #991b1b;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.scan-box-error ul {
+  margin: 0.4rem 0 0 1.2rem;
+  padding: 0;
+  font-size: 0.85rem;
+}
+
+.backup-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.backup-summary-item {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.25rem;
+}
+
+.backup-item-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.backup-item-val {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--navy-dark);
+}
 
 /* ===================================================
    フェーズ4: 調剤報酬消込・返戻追跡 スタイル

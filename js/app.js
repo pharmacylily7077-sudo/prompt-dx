@@ -1692,6 +1692,243 @@ document.addEventListener('DOMContentLoaded', () => {
     renderMonthlyReport(monthlySelectMonth?.value);
   });
 
+  // ----------------------------------------------------
+  // フェーズ7: データ保護・バックアップ＆復元 (BackupManager)
+  // ----------------------------------------------------
+  const backupManager = new BackupManager({
+    pettyCashManager,
+    cashRegisterManager,
+    reconciliationManager
+  });
+
+  const btnHeaderExport = document.getElementById('btn-header-export');
+  const btnHeaderImport = document.getElementById('btn-header-import');
+  const backupRestoreDialog = document.getElementById('backup-restore-dialog');
+  const btnCloseBackupModal = document.getElementById('btn-close-backup-modal');
+  const btnCancelRestore = document.getElementById('btn-cancel-restore');
+  const btnExecuteRestore = document.getElementById('btn-execute-restore');
+  const btnBrowseBackupFile = document.getElementById('btn-browse-backup-file');
+  const backupFileInput = document.getElementById('backup-file-input');
+  const backupDropzone = document.getElementById('backup-dropzone');
+  const backupFileNameEl = document.getElementById('backup-file-name');
+  const backupScanResultEl = document.getElementById('backup-scan-result');
+  const backupSummaryPreviewEl = document.getElementById('backup-summary-preview');
+  const restoreCountPettyEl = document.getElementById('restore-count-petty');
+  const restoreCountCashEl = document.getElementById('restore-count-cash');
+  const restoreCountReconcileEl = document.getElementById('restore-count-reconcile');
+  const restoreCountRemandEl = document.getElementById('restore-count-remand');
+
+  let stagedBackupData = null;
+
+  // バックアップ保存（エクスポート）
+  if (btnHeaderExport) {
+    btnHeaderExport.addEventListener('click', () => {
+      try {
+        const savedFilename = backupManager.downloadBackupFile();
+        showToast(`全データバックアップを保存しました（${savedFilename}）`);
+      } catch (err) {
+        showToast(`バックアップ保存に失敗しました: ${err.message}`, 'error');
+      }
+    });
+  }
+
+  // データ復元モーダル初期化
+  const resetRestoreModal = () => {
+    stagedBackupData = null;
+    if (backupFileInput) backupFileInput.value = '';
+    if (backupFileNameEl) {
+      backupFileNameEl.textContent = '';
+      backupFileNameEl.style.display = 'none';
+    }
+    if (backupScanResultEl) {
+      backupScanResultEl.innerHTML = '';
+      backupScanResultEl.style.display = 'none';
+    }
+    if (backupSummaryPreviewEl) backupSummaryPreviewEl.style.display = 'none';
+    if (btnExecuteRestore) btnExecuteRestore.disabled = true;
+  };
+
+  if (btnHeaderImport) {
+    btnHeaderImport.addEventListener('click', () => {
+      resetRestoreModal();
+      if (backupRestoreDialog) backupRestoreDialog.showModal();
+    });
+  }
+
+  if (btnCloseBackupModal) {
+    btnCloseBackupModal.addEventListener('click', () => {
+      if (backupRestoreDialog) backupRestoreDialog.close();
+    });
+  }
+
+  if (btnCancelRestore) {
+    btnCancelRestore.addEventListener('click', () => {
+      if (backupRestoreDialog) backupRestoreDialog.close();
+    });
+  }
+
+  if (btnBrowseBackupFile && backupFileInput) {
+    btnBrowseBackupFile.addEventListener('click', () => {
+      backupFileInput.click();
+    });
+  }
+
+  // ファイル解析＆個人情報非保持スキャン処理
+  const handleBackupFile = (file) => {
+    if (!file) return;
+    if (!file.name.endsWith('.json') && file.type !== 'application/json') {
+      if (backupScanResultEl) {
+        backupScanResultEl.style.display = 'block';
+        backupScanResultEl.innerHTML = `
+          <div class="scan-box-error">
+            <span>❌</span>
+            <div>
+              <strong>ファイル形式エラー</strong>
+              <div>JSON形式（.json）のファイルを選択してください。</div>
+            </div>
+          </div>
+        `;
+      }
+      if (btnExecuteRestore) btnExecuteRestore.disabled = true;
+      if (backupSummaryPreviewEl) backupSummaryPreviewEl.style.display = 'none';
+      return;
+    }
+
+    if (backupFileNameEl) {
+      backupFileNameEl.textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      backupFileNameEl.style.display = 'inline-block';
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target.result;
+      const validation = BackupManager.validateBackupData(content);
+
+      if (backupScanResultEl) backupScanResultEl.style.display = 'block';
+
+      if (!validation.valid || !validation.scanResult.safe) {
+        stagedBackupData = null;
+        if (btnExecuteRestore) btnExecuteRestore.disabled = true;
+        if (backupSummaryPreviewEl) backupSummaryPreviewEl.style.display = 'none';
+
+        let violationsHtml = '';
+        if (validation.scanResult && validation.scanResult.violations && validation.scanResult.violations.length > 0) {
+          violationsHtml = `
+            <ul>
+              ${validation.scanResult.violations.map(v => `<li>${escapeHtml(v)}</li>`).join('')}
+            </ul>
+          `;
+        }
+
+        if (backupScanResultEl) {
+          backupScanResultEl.innerHTML = `
+            <div class="scan-box-error">
+              <span>⚠️</span>
+              <div>
+                <strong>復元を拒否しました: セキュリティ憲法違反または無効なデータ</strong>
+                <div>${escapeHtml(validation.error)}</div>
+                ${violationsHtml}
+              </div>
+            </div>
+          `;
+        }
+      } else {
+        stagedBackupData = content;
+        if (btnExecuteRestore) btnExecuteRestore.disabled = false;
+
+        if (backupScanResultEl) {
+          backupScanResultEl.innerHTML = `
+            <div class="scan-box-success">
+              <span>🛡️</span>
+              <div>
+                <strong>個人情報非保持ディープスキャン 合格</strong>
+                <div>患者氏名・個人情報は一切含まれていません。安全に復元可能です。</div>
+              </div>
+            </div>
+          `;
+        }
+
+        if (backupSummaryPreviewEl) {
+          backupSummaryPreviewEl.style.display = 'block';
+          if (restoreCountPettyEl) restoreCountPettyEl.textContent = `${validation.summary.pettyCashCount} 件`;
+          if (restoreCountCashEl) restoreCountCashEl.textContent = `${validation.summary.cashRegisterCount} 件`;
+          if (restoreCountReconcileEl) restoreCountReconcileEl.textContent = `${validation.summary.reconciliationMonthCount} ヶ月`;
+          if (restoreCountRemandEl) restoreCountRemandEl.textContent = `${validation.summary.remandItemCount} 件`;
+        }
+      }
+    };
+
+    reader.onerror = () => {
+      showToast('ファイルの読み込みに失敗しました', 'error');
+    };
+
+    reader.readAsText(file);
+  };
+
+  if (backupFileInput) {
+    backupFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      handleBackupFile(file);
+    });
+  }
+
+  // ドラッグ＆ドロップ対応
+  if (backupDropzone) {
+    backupDropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      backupDropzone.classList.add('dragover');
+    });
+
+    backupDropzone.addEventListener('dragleave', () => {
+      backupDropzone.classList.remove('dragover');
+    });
+
+    backupDropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      backupDropzone.classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        handleBackupFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    backupDropzone.addEventListener('click', (e) => {
+      if (e.target !== btnBrowseBackupFile && backupFileInput) {
+        backupFileInput.click();
+      }
+    });
+  }
+
+  // 復元実行
+  if (btnExecuteRestore) {
+    btnExecuteRestore.addEventListener('click', () => {
+      if (!stagedBackupData) return;
+
+      if (confirm('【最終確認】\nバックアップデータから全データを復元しますか？\n\n※現在のブラウザ上の登録データはすべて上書きされます。')) {
+        try {
+          const summary = backupManager.importData(stagedBackupData, {
+            pettyCashManager,
+            cashRegisterManager,
+            reconciliationManager
+          });
+
+          if (backupRestoreDialog) backupRestoreDialog.close();
+
+          // 全画面再描画
+          renderPettyCash();
+          const currentDate = dailyDateInput?.value || new Date().toISOString().substring(0, 10);
+          loadDateData(currentDate);
+          renderDailyClosing();
+          loadReconcileMonth(reconcileMonthSelect?.value || '2026-07');
+          renderMonthlyReport(monthlySelectMonth?.value || '2026-09');
+
+          showToast(`全データを正常に復元しました（小口${summary.pettyCashCount}件、レジ締め${summary.cashRegisterCount}件、調剤報酬${summary.reconciliationMonthCount}ヶ月、返戻${summary.remandItemCount}件）`);
+        } catch (err) {
+          showToast(`復元に失敗しました: ${err.message}`, 'error');
+        }
+      }
+    });
+  }
+
   // 初回ロード
   renderMonthlyReport('2026-09');
 });

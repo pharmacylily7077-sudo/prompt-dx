@@ -18,10 +18,12 @@ function run() {
   var pettyCashCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/petty-cash.js', $.NSUTF8StringEncoding, null).js;
   var cashRegisterCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/cash-register.js', $.NSUTF8StringEncoding, null).js;
   var reconciliationCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/reconciliation.js', $.NSUTF8StringEncoding, null).js;
+  var backupCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/backup.js', $.NSUTF8StringEncoding, null).js;
 
   var PettyCashManager = eval(pettyCashCode + '; PettyCashManager;');
   var CashRegisterManager = eval(cashRegisterCode + '; CashRegisterManager;');
   var ReconciliationManager = eval(reconciliationCode + '; ReconciliationManager;');
+  var BackupManager = eval(backupCode + '; BackupManager;');
 
   var results = [];
   function assert(name, condition, detail) {
@@ -388,9 +390,124 @@ function run() {
     assert("フェーズ6-21: CSSにA4印刷設定(@page { size: A4 portrait)が定義されていること", cssCode.indexOf('size: A4 portrait') !== -1);
     assert("フェーズ6-22: CSSに印刷時の改ページ泣き別れ防止(break-inside: avoid)が指定されていること", cssCode.indexOf('break-inside: avoid') !== -1);
 
+    results.push("\n=== 【フェーズ7: データ保護・バックアップ＆復元（JSONエクスポート／インポート） テスト】 ===");
+
+    // 1. BackupManagerのインスタンス生成と初期状態エクスポート
+    var bkPetty = new PettyCashManager(localStorage);
+    var bkCash = new CashRegisterManager(localStorage);
+    var bkReconcile = new ReconciliationManager(localStorage);
+
+    // テストデータを準備
+    bkCash.loadMonthlyConstitutionalTestData(bkPetty, bkReconcile);
+    var bManager = new BackupManager({
+      pettyCashManager: bkPetty,
+      cashRegisterManager: bkCash,
+      reconciliationManager: bkReconcile
+    });
+
+    // 2. エクスポートデータ構造検証
+    var exportedObj = bManager.exportData();
+    assert("フェーズ7-1: エクスポートオブジェクトのsystem識別子が 'pharmacy-cash-management' であること", exportedObj.system === 'pharmacy-cash-management');
+    assert("フェーズ7-2: エクスポートオブジェクトのversionが '1.0' であること", exportedObj.version === '1.0');
+    assert("フェーズ7-3: エクスポート日時に有効なISO文字列が記録されていること", !isNaN(Date.parse(exportedObj.exportedAt)));
+    assert("フェーズ7-4: メタデータに小口現金2件、レジ締め2件、調剤報酬1ヶ月、返戻1件が記録されていること", exportedObj.metadata.pettyCashCount === 2 && exportedObj.metadata.cashRegisterCount === 2 && exportedObj.metadata.reconciliationMonthCount === 1 && exportedObj.metadata.remandItemCount === 1);
+    assert("フェーズ7-5: データ部に小口現金(transactions)、レジ締め(records)、調剤報酬(monthlyRecords & remandItems)が完全包含されていること", exportedObj.data.pettyCash.length === 2 && exportedObj.data.cashRegister.length === 2 && exportedObj.data.reconciliation.monthlyRecords.length === 1 && exportedObj.data.reconciliation.remandItems.length === 1);
+
+    // 3. JSON文字列化検証
+    var jsonString = bManager.generateExportJSON();
+    assert("フェーズ7-6: generateExportJSON() が有効なJSON文字列を返すこと", typeof jsonString === 'string' && jsonString.indexOf('pharmacy-cash-management') !== -1);
+    var parsedExport = JSON.parse(jsonString);
+    assert("フェーズ7-7: パースしたJSONオブジェクトがエクスポート元オブジェクトと完全一致すること", parsedExport.data.pettyCash[0].amount === 10000 && parsedExport.data.pettyCash[1].amount === 1000);
+
+    // 4. 【憲法検証】個人情報非保持ディープスキャン: 正常データ
+    var scanClean = BackupManager.scanForPersonalInfo(exportedObj);
+    assert("フェーズ7-8: 【憲法検証】規約準拠データ（カルテ番号A001）でスキャンが合格(safe: true)すること", scanClean.safe === true && scanClean.violations.length === 0);
+
+    // 5. 【憲法検証】個人情報非保持ディープスキャン: 漢字氏名混入時の検知・遮断
+    var taintedKanjiObj = JSON.parse(JSON.stringify(exportedObj));
+    taintedKanjiObj.data.reconciliation.remandItems[0].patientChartId = '山田花子';
+    var scanKanji = BackupManager.scanForPersonalInfo(taintedKanjiObj);
+    assert("フェーズ7-9: 【憲法検証】患者漢字氏名「山田花子」混入時にスキャンが不合格(safe: false)となること", scanKanji.safe === false && scanKanji.violations.length > 0 && scanKanji.violations[0].indexOf('山田花子') !== -1);
+
+    // 6. 【憲法検証】個人情報非保持ディープスキャン: ひらがな氏名混入時の検知・遮断
+    var taintedHiraganaObj = JSON.parse(JSON.stringify(exportedObj));
+    taintedHiraganaObj.data.reconciliation.remandItems[0].patientChartId = 'たなかたろう';
+    var scanHiragana = BackupManager.scanForPersonalInfo(taintedHiraganaObj);
+    assert("フェーズ7-10: 【憲法検証】患者ひらがな氏名「たなかたろう」混入時にスキャンが不合格となること", scanHiragana.safe === false && scanHiragana.violations[0].indexOf('たなかたろう') !== -1);
+
+    // 7. 【憲法検証】個人情報非保持ディープスキャン: カタカナ氏名混入時の検知・遮断
+    var taintedKatakanaObj = JSON.parse(JSON.stringify(exportedObj));
+    taintedKatakanaObj.data.reconciliation.remandItems[0].patientChartId = 'サトウイチロウ';
+    var scanKatakana = BackupManager.scanForPersonalInfo(taintedKatakanaObj);
+    assert("フェーズ7-11: 【憲法検証】患者カタカナ氏名「サトウイチロウ」混入時にスキャンが不合格となること", scanKatakana.safe === false && scanKatakana.violations[0].indexOf('サトウイチロウ') !== -1);
+
+    // 8. 【憲法検証】個人情報非保持ディープスキャン: 個人情報プロパティ(patientName等)混入検知
+    var taintedPropObj = JSON.parse(JSON.stringify(exportedObj));
+    taintedPropObj.data.reconciliation.remandItems[0].patientName = '鈴木一郎';
+    var scanProp = BackupManager.scanForPersonalInfo(taintedPropObj);
+    assert("フェーズ7-12: 【憲法検証】個人情報プロパティ(patientName)混入時にスキャンが不合格となること", scanProp.safe === false);
+
+    // 9. validateBackupData の検証
+    var valValid = BackupManager.validateBackupData(jsonString);
+    assert("フェーズ7-13: 正常JSONのvalidateBackupDataがvalid: trueと件数サマリーを返すこと", valValid.valid === true && valValid.summary.pettyCashCount === 2 && valValid.summary.cashRegisterCount === 2);
+
+    var valCorrupted = BackupManager.validateBackupData("invalid json text");
+    assert("フェーズ7-14: 不正JSON文字列のvalidateBackupDataが安全にvalid: falseとエラーを返すこと", valCorrupted.valid === false && valCorrupted.error.indexOf('JSON') !== -1);
+
+    var valTainted = BackupManager.validateBackupData(taintedKanjiObj);
+    assert("フェーズ7-15: 個人情報混入データのvalidateBackupDataが個人情報保護規約違反エラーを返すこと", valTainted.valid === false && valTainted.error.indexOf('個人情報') !== -1);
+
+    // 10. データ完全復元（インポート）の検証
+    // ストレージとマネージャーを一旦クリア
+    var freshPetty = new PettyCashManager(localStorage);
+    var freshCash = new CashRegisterManager(localStorage);
+    var freshReconcile = new ReconciliationManager(localStorage);
+    freshPetty.clearAll();
+    freshCash.clearAll();
+    freshReconcile.clearAll();
+    assert("フェーズ7-16: 復元前マネージャーがすべて空（初期状態）であること", freshPetty.transactions.length === 0 && freshCash.records.length === 0 && freshReconcile.monthlyRecords.length === 0);
+
+    // インポート実行
+    var importResult = bManager.importData(jsonString, {
+      pettyCashManager: freshPetty,
+      cashRegisterManager: freshCash,
+      reconciliationManager: freshReconcile
+    });
+    assert("フェーズ7-17: importData() が各データの復元件数サマリーを正しく返すこと", importResult.pettyCashCount === 2 && importResult.cashRegisterCount === 2 && importResult.reconciliationMonthCount === 1 && importResult.remandItemCount === 1);
+
+    // 復元後データの整合性検証（3モジュールすべて）
+    assert("フェーズ7-18: 小口現金の残高が9,000円・取引2件で完全復元されること", freshPetty.getCurrentBalance() === 9000 && freshPetty.transactions.length === 2);
+    assert("フェーズ7-19: レジ締めの過不足-200円および一致0円の2件が完全復元されること", freshCash.records.length === 2 && freshCash.records[0].discrepancy === -200 && freshCash.records[1].discrepancy === 0);
+    assert("フェーズ7-20: 調剤報酬消込(2026-07差額-5万)および未対応返戻(カルテ番号A001/5万)が完全復元されること", freshReconcile.monthlyRecords[0].discrepancy === -50000 && freshReconcile.remandItems[0].patientChartId === 'A001' && freshReconcile.remandItems[0].status === 'unhandled');
+
+    // 11. 不正データのインポート遮断検証（例外スロー）
+    var threwException = false;
+    try {
+      bManager.importData(taintedKanjiObj, {
+        pettyCashManager: freshPetty,
+        cashRegisterManager: freshCash,
+        reconciliationManager: freshReconcile
+      });
+    } catch (e) {
+      threwException = true;
+    }
+    assert("フェーズ7-21: 【憲法検証】個人情報混入データインポート時に例外がスローされ復元が遮断されること", threwException === true);
+
+    // 12. UI要素（HTML・CSS・MANUAL.md）の存在検証
+    // HTML・CSS・MANUALを再読み込み（最新の内容を反映）
+    var htmlCodeLatest = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/index.html', $.NSUTF8StringEncoding, null).js;
+    var cssCodeLatest = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/css/style.css', $.NSUTF8StringEncoding, null).js;
+    var manualCodeLatest = $.NSString.stringWithContentsOfFileEncodingError(manualPath, $.NSUTF8StringEncoding, null).js;
+
+    assert("フェーズ7-22: HTMLにバックアップ保存ボタン(btn-header-export)が存在すること", htmlCodeLatest.indexOf('id="btn-header-export"') !== -1);
+    assert("フェーズ7-23: HTMLにデータ復元ボタン(btn-header-import)が存在すること", htmlCodeLatest.indexOf('id="btn-header-import"') !== -1);
+    assert("フェーズ7-24: HTMLにデータ復元モーダル(backup-restore-dialog)およびドラッグ＆ドロップ枠が存在すること", htmlCodeLatest.indexOf('id="backup-restore-dialog"') !== -1 && htmlCodeLatest.indexOf('id="backup-dropzone"') !== -1);
+    assert("フェーズ7-25: CSSにバックアップボタンおよびスキャンボックス用スタイルが定義されていること", cssCodeLatest.indexOf('.btn-backup-export') !== -1 && cssCodeLatest.indexOf('.scan-box-success') !== -1 && cssCodeLatest.indexOf('.scan-box-error') !== -1);
+    assert("フェーズ7-26: MANUAL.mdにバックアップ・復元手順および個人情報非保持スキャン規約が明記されていること", manualCodeLatest.indexOf('データ保護・バックアップ＆復元手順') !== -1 && manualCodeLatest.indexOf('個人情報非保持ディープスキャン') !== -1);
+
     results.push("\n==============================================");
-    results.push("🎉 フェーズ1（14）＋ フェーズ2（19）＋ フェーズ3（25）＋ フェーズ4（25）＋ フェーズ5（12）＋ フェーズ6（22）全117項目に完全合格！");
-    results.push("外部検証基準（簡易操作マニュアル・月次横断集計・店長/本部捺印欄・A4印刷レイアウト）を完全達成。");
+    results.push("🎉 フェーズ1（14）＋ フェーズ2（19）＋ フェーズ3（25）＋ フェーズ4（25）＋ フェーズ5（12）＋ フェーズ6（22）＋ フェーズ7（26）全143項目に完全合格！");
+    results.push("外部検証基準（JSONエクスポート・安全復元・個人情報非保持ディープスキャン・ヘッダー操作UI・マニュアル更新）を完全達成。");
     results.push("==============================================");
     return results.join("\n");
   } catch (e) {

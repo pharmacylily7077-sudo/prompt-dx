@@ -78,6 +78,7 @@
   <script src="../js/petty-cash.js"></script>
   <script src="../js/cash-register.js"></script>
   <script src="../js/reconciliation.js"></script>
+  <script src="../js/backup.js"></script>
   <script>
     function runAllTests() {
       const resultsContainer = document.getElementById('test-results');
@@ -379,6 +380,68 @@
         assert('P6-7. 【返戻連携】未対応返戻が50,000円（カルテ番号A001）であること', mRep.reconciliation.unhandledRemandAmount === 50000);
         assert('P6-8. 【帳票レイアウト】店長確認印・本部受領印欄およびA4印刷スタイルが実装されていること', true);
 
+        // --------------------------------------------------
+        // 【フェーズ7: データ保護・バックアップ＆復元 検証】
+        // --------------------------------------------------
+        const bMgr = new BackupManager({
+          pettyCashManager: p6Petty,
+          cashRegisterManager: p6Cash,
+          reconciliationManager: p6Reconcile
+        });
+        const expData = bMgr.exportData();
+        assert('P7-1. 【エクスポート】識別子・バージョン・メタデータ（小口2件・レジ2件・消込1件）が正しく出力されること', expData.system === 'pharmacy-cash-management' && expData.metadata.pettyCashCount === 2 && expData.metadata.cashRegisterCount === 2);
+        
+        const jsonStr = bMgr.generateExportJSON();
+        assert('P7-2. 【JSONシリアライズ】有効なJSON文字列が生成され、全テーブルが包含されていること', typeof jsonStr === 'string' && expData.data.pettyCash.length === 2 && expData.data.cashRegister.length === 2);
+
+        const scanClean = BackupManager.scanForPersonalInfo(expData);
+        assert('P7-3. 【個人情報非保持スキャン】正常データ（カルテ番号A001）で安全合格判定されること', scanClean.safe === true);
+
+        const taintedKanji = JSON.parse(JSON.stringify(expData));
+        taintedKanji.data.reconciliation.remandItems[0].patientChartId = '山田花子';
+        const scanKanji = BackupManager.scanForPersonalInfo(taintedKanji);
+        assert('P7-4. 【個人情報非保持スキャン】患者漢字氏名「山田花子」混入時に遮断(safe: false)されること', scanKanji.safe === false && scanKanji.violations.length > 0);
+
+        const taintedKana = JSON.parse(JSON.stringify(expData));
+        taintedKana.data.reconciliation.remandItems[0].patientChartId = 'たなかたろう';
+        const scanKana = BackupManager.scanForPersonalInfo(taintedKana);
+        assert('P7-5. 【個人情報非保持スキャン】ひらがな氏名混入時に遮断されること', scanKana.safe === false);
+
+        const valRes = BackupManager.validateBackupData(jsonStr);
+        assert('P7-6. 【バリデーション】正常バックアップでvalid: trueと件数が返されること', valRes.valid === true && valRes.summary.pettyCashCount === 2);
+
+        const badValRes = BackupManager.validateBackupData('corrupted text');
+        assert('P7-7. 【バリデーション】破損ファイルで安全にvalid: falseとエラーが返されること', badValRes.valid === false);
+
+        // 新規インスタンスへの復元テスト
+        const restorePetty = new PettyCashManager();
+        const restoreCash = new CashRegisterManager();
+        const restoreReconcile = new ReconciliationManager();
+        restorePetty.clearAll();
+        restoreCash.clearAll();
+        restoreReconcile.clearAll();
+
+        const impSummary = bMgr.importData(jsonStr, {
+          pettyCashManager: restorePetty,
+          cashRegisterManager: restoreCash,
+          reconciliationManager: restoreReconcile
+        });
+        assert('P7-8. 【完全復元】小口現金残高9,000円および取引2件が正しく復元されること', restorePetty.getCurrentBalance() === 9000 && restorePetty.transactions.length === 2);
+        assert('P7-9. 【完全復元】レジ締め履歴（過不足-200円、一致0円）が正しく復元されること', restoreCash.records.length === 2 && restoreCash.records[0].discrepancy === -200);
+        assert('P7-10. 【完全復元】調剤報酬消込（差額-5万、返戻5万/未対応）が正しく復元されること', restoreReconcile.monthlyRecords[0].discrepancy === -50000 && restoreReconcile.remandItems[0].patientChartId === 'A001');
+
+        let blocked = false;
+        try {
+          bMgr.importData(taintedKanji, {
+            pettyCashManager: restorePetty,
+            cashRegisterManager: restoreCash,
+            reconciliationManager: restoreReconcile
+          });
+        } catch (e) {
+          blocked = true;
+        }
+        assert('P7-11. 【憲法防壁】個人情報混入データインポート試行時に復元が確実に遮断されること', blocked);
+
       } catch (err) {
         assert('例外エラーが発生しないこと', false, err.message);
       }
@@ -399,7 +462,7 @@
       if (allPassed) {
         summaryContainer.innerHTML = `
           <div class="summary-box">
-            🎉 全 ${testCases.length} 項目 すべて合格！ 開発憲法の外部検証基準（フェーズ1〜6 マニュアル作成＆月次集計レポート・A4印刷帳票）を完全達成。
+            🎉 全 ${testCases.length} 項目 すべて合格！ 開発憲法の外部検証基準（フェーズ1〜7 バックアップ保存＆安全復元・個人情報非保持ディープスキャン）を完全達成。
           </div>
         `;
       } else {
