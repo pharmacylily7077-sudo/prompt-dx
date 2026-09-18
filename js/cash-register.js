@@ -308,11 +308,12 @@ class CashRegisterManager {
 
   /**
    * 憲法検証用テストデータ投入（フェーズ2互換）
+   * @param {string} [targetDate] 対象日付（省略時は当日）
    */
-  loadConstitutionalTestData() {
-    const today = new Date().toISOString().substring(0, 10);
+  loadConstitutionalTestData(targetDate = null) {
+    const date = targetDate || new Date().toISOString().substring(0, 10);
     this.saveRecord({
-      date: today,
+      date: date,
       changeFund: 50000,
       presaleAmount: 10000,
       actualCash: 59800, // 不足 -200円

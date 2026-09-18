@@ -21,6 +21,13 @@
           <span>🛡️ 薬局を守るための厳格管理（不正・ズレ・請求放置の撲滅）</span>
         </div>
         <div class="header-actions">
+          <div id="cloud-sync-badge" class="cloud-sync-badge unconfigured" title="本部Googleスプレッドシート同期ステータス">
+            <span class="cloud-sync-dot"></span>
+            <span id="cloud-sync-text">クラウド: 未設定</span>
+          </div>
+          <button id="btn-cloud-settings" class="btn-header-action btn-cloud-config" title="本部Googleスプレッドシート同期URLを設定します">
+            <span>⚙️</span> クラウド設定
+          </button>
           <button id="btn-header-export" class="btn-header-action btn-backup-export" title="全データ（小口・レジ・消込）を1つのJSONファイルにバックアップ保存します">
             <span>💾</span> バックアップ保存
           </button>
@@ -1413,6 +1420,55 @@
     </div>
   </dialog>
 
+  <!-- クラウド同期設定モーダル -->
+  <dialog id="cloud-settings-dialog" class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <span>⚙️</span> 本部クラウド同期設定（Googleスプレッドシート連携）
+        </h3>
+        <button id="btn-close-cloud-modal" class="modal-close-btn" title="閉じる">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: #334155; margin-bottom: 1rem;">
+          本部のGoogleスプレッドシート（Google Apps Script ウェブアプリ）のURLを登録すると、日々の締めデータがリアルタイムに本部へ自動送信・記帳されます。
+        </p>
+        <div class="alert-box info-alert" style="margin-bottom: 1rem;">
+          <span>🛡️ <strong>完全無料・安心設計:</strong> サーバー契約不要、個人情報は一切送信されません。万が一のオフライン時も手元に安全に保存されます。</span>
+        </div>
+
+        <form id="cloud-settings-form">
+          <div class="form-group">
+            <label for="cloud-store-name" class="form-label">店舗名 <span class="required">*</span></label>
+            <input type="text" id="cloud-store-name" class="form-input" placeholder="例: リリー薬局 駅前店" value="リリー薬局" required>
+          </div>
+          <div class="form-group">
+            <label for="cloud-endpoint-url" class="form-label">本部GASウェブアプリURL</label>
+            <input type="url" id="cloud-endpoint-url" class="form-input" placeholder="https://script.google.com/macros/s/..." style="font-family: monospace; font-size: 0.85rem;">
+            <div class="form-hint">※ 本部のGoogleスプレッドシートでデプロイしたウェブアプリURLを貼り付けてください。</div>
+          </div>
+          <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" id="cloud-auto-sync" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
+            <label for="cloud-auto-sync" style="font-size: 0.88rem; cursor: pointer; margin-bottom: 0;">
+              締めデータ保存時に本部へ自動同期する
+            </label>
+          </div>
+
+          <div id="cloud-queue-status" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.5rem; display: none;">
+            <span>未送信キュー: <strong id="cloud-queue-count">0</strong> 件</span>
+            <button type="button" id="btn-cloud-retry-queue" class="btn-chip btn-chip-primary" style="margin-left: 0.5rem;">今すぐ再送</button>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-cancel-cloud-settings" class="btn btn-secondary">キャンセル</button>
+        <button type="button" id="btn-save-cloud-settings" class="btn btn-primary">
+          <span>💾</span> 設定を保存する
+        </button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- トースト通知コンテナ -->
   <div id="toast-container" class="toast-container"></div>
 
@@ -1421,6 +1477,7 @@
   <script src="js/cash-register.js"></script>
   <script src="js/reconciliation.js"></script>
   <script src="js/backup.js"></script>
+  <script src="js/cloud-sync.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

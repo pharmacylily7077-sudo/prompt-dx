@@ -235,6 +235,18 @@ document.addEventListener('DOMContentLoaded', () => {
         pettyAmountInput.focus();
 
         showToast(`${selectedType === 'income' ? '小口補充' : '出金'}を登録しました（残高: ${formatYen(pettyCashManager.getCurrentBalance())}）`);
+
+        // 本部クラウド自動同期
+        if (typeof cloudSyncManager !== 'undefined' && cloudSyncManager.isConfigured() && cloudSyncManager.settings.autoSync) {
+          cloudSyncManager.syncPettyCash({
+            date,
+            type: selectedType,
+            category,
+            amount,
+            currentBalance: pettyCashManager.getCurrentBalance(),
+            memo
+          }).catch(() => {});
+        }
       } catch (err) {
         showToast(err.message, 'error');
       }
@@ -802,6 +814,19 @@ document.addEventListener('DOMContentLoaded', () => {
             warmDialog.style.display = 'block';
           }
         }
+
+        // 本部クラウド自動同期（設定済みかつ有効時）
+        if (typeof cloudSyncManager !== 'undefined' && cloudSyncManager.isConfigured() && cloudSyncManager.settings.autoSync) {
+          cloudSyncManager.syncDailyClosing(saved).then(res => {
+            if (res && res.success) {
+              showToast('☁️ 本部Googleスプレッドシートへリアルタイム同期しました！', 'success');
+            } else if (res && res.status === 'queued') {
+              showToast('☁️ オフラインのため未送信キューに保存しました（復帰時に自動再送）', 'info');
+            }
+          }).catch(e => {
+            console.warn('クラウド同期エラー:', e);
+          });
+        }
       } catch (err) {
         showToast(err.message, 'error');
       }
@@ -1286,6 +1311,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         showToast(`${billingMonth} の請求・入金実績を保存しました`);
         loadReconcileMonth(billingMonth);
+
+        // 本部クラウド自動同期
+        if (typeof cloudSyncManager !== 'undefined' && cloudSyncManager.isConfigured() && cloudSyncManager.settings.autoSync) {
+          cloudSyncManager.syncReconciliation({
+            billingMonth,
+            billedAmount,
+            paidAmount,
+            discrepancy: paidAmount - billedAmount,
+            unresolvedRemandTotal: reconciliationManager.getUnresolvedRemandTotal(billingMonth),
+            memo
+          }).catch(() => {});
+        }
       } catch (err) {
         showToast(err.message, 'error');
       }
@@ -2210,6 +2247,126 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // フェーズ8 簡単・優しさの仕組み化の初期化
   setupPhase8KindnessAndSimplicity();
+
+  // ====================================================
+  // フェーズ9: 本部クラウド同期 初期設定
+  // ====================================================
+  const cloudSyncManager = new CloudSyncManager();
+
+  const setupPhase9CloudSync = () => {
+    const cloudSyncBadge = document.getElementById('cloud-sync-badge');
+    const cloudSyncText = document.getElementById('cloud-sync-text');
+    const btnCloudSettings = document.getElementById('btn-cloud-settings');
+    const cloudSettingsDialog = document.getElementById('cloud-settings-dialog');
+    const btnCloseCloudModal = document.getElementById('btn-close-cloud-modal');
+    const btnCancelCloudSettings = document.getElementById('btn-cancel-cloud-settings');
+    const btnSaveCloudSettings = document.getElementById('btn-save-cloud-settings');
+    const cloudStoreNameInput = document.getElementById('cloud-store-name');
+    const cloudEndpointUrlInput = document.getElementById('cloud-endpoint-url');
+    const cloudAutoSyncCheckbox = document.getElementById('cloud-auto-sync');
+    const cloudQueueStatus = document.getElementById('cloud-queue-status');
+    const cloudQueueCount = document.getElementById('cloud-queue-count');
+    const btnRetryQueue = document.getElementById('btn-cloud-retry-queue');
+
+    const updateCloudBadge = () => {
+      if (!cloudSyncBadge || !cloudSyncText) return;
+      cloudSyncBadge.classList.remove('unconfigured', 'connected', 'syncing', 'offline');
+
+      if (!cloudSyncManager.isConfigured()) {
+        cloudSyncBadge.classList.add('unconfigured');
+        cloudSyncText.textContent = 'クラウド: 未設定';
+        cloudSyncBadge.title = '本部Googleスプレッドシート同期URLが未設定です（ローカル保存のみ）';
+      } else if (cloudSyncManager.queue.length > 0) {
+        cloudSyncBadge.classList.add('offline');
+        cloudSyncText.textContent = `オフライン (${cloudSyncManager.queue.length}件保留)`;
+        cloudSyncBadge.title = 'オフラインのため未送信キューにデータが保留されています';
+      } else {
+        cloudSyncBadge.classList.add('connected');
+        cloudSyncText.textContent = 'クラウド: 本部連携中 ✓';
+        cloudSyncBadge.title = `本部スプレッドシートへリアルタイム自動同期中 (${cloudSyncManager.settings.storeName})`;
+      }
+
+      if (cloudQueueStatus && cloudQueueCount) {
+        if (cloudSyncManager.queue.length > 0) {
+          cloudQueueStatus.style.display = 'block';
+          cloudQueueCount.textContent = cloudSyncManager.queue.length;
+        } else {
+          cloudQueueStatus.style.display = 'none';
+        }
+      }
+    };
+
+    cloudSyncManager.addListener(updateCloudBadge);
+    updateCloudBadge();
+
+    // モーダル開閉
+    if (btnCloudSettings && cloudSettingsDialog) {
+      btnCloudSettings.addEventListener('click', () => {
+        if (cloudStoreNameInput) cloudStoreNameInput.value = cloudSyncManager.settings.storeName;
+        if (cloudEndpointUrlInput) cloudEndpointUrlInput.value = cloudSyncManager.settings.endpointUrl;
+        if (cloudAutoSyncCheckbox) cloudAutoSyncCheckbox.checked = cloudSyncManager.settings.autoSync;
+        updateCloudBadge();
+        if (typeof cloudSettingsDialog.showModal === 'function') {
+          cloudSettingsDialog.showModal();
+        } else {
+          cloudSettingsDialog.style.display = 'block';
+        }
+      });
+    }
+
+    const closeCloudModal = () => {
+      if (cloudSettingsDialog) {
+        if (typeof cloudSettingsDialog.close === 'function') {
+          cloudSettingsDialog.close();
+        } else {
+          cloudSettingsDialog.style.display = 'none';
+        }
+      }
+    };
+
+    if (btnCloseCloudModal) btnCloseCloudModal.addEventListener('click', closeCloudModal);
+    if (btnCancelCloudSettings) btnCancelCloudSettings.addEventListener('click', closeCloudModal);
+
+    // 設定保存
+    if (btnSaveCloudSettings) {
+      btnSaveCloudSettings.addEventListener('click', () => {
+        const storeName = cloudStoreNameInput?.value || 'リリー薬局';
+        const endpointUrl = cloudEndpointUrlInput?.value || '';
+        const autoSync = cloudAutoSyncCheckbox ? cloudAutoSyncCheckbox.checked : true;
+
+        cloudSyncManager.saveSettings({ endpointUrl, storeName, autoSync });
+        updateCloudBadge();
+        closeCloudModal();
+
+        if (cloudSyncManager.isConfigured()) {
+          showToast(`本部クラウド連携を設定しました（店舗名: ${storeName}）`, 'success');
+        } else {
+          showToast('クラウド設定を更新しました（URL未設定のためローカル保存のみ）', 'info');
+        }
+      });
+    }
+
+    // キュー再送
+    if (btnRetryQueue) {
+      btnRetryQueue.addEventListener('click', async () => {
+        btnRetryQueue.disabled = true;
+        btnRetryQueue.textContent = '再送中...';
+        try {
+          const res = await cloudSyncManager.retryQueue();
+          showToast(`${res.sentCount}件の保留データを本部へ再送しました`, 'success');
+        } catch (e) {
+          showToast('再送に失敗しました。ネット接続をご確認ください', 'error');
+        } finally {
+          btnRetryQueue.disabled = false;
+          btnRetryQueue.textContent = '今すぐ再送';
+          updateCloudBadge();
+        }
+      });
+    }
+  };
+
+  // フェーズ9 本部クラウド同期の初期化
+  setupPhase9CloudSync();
 
   // 初回ロード
   renderMonthlyReport('2026-09');

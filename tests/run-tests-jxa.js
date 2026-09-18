@@ -19,11 +19,14 @@ function run() {
   var cashRegisterCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/cash-register.js', $.NSUTF8StringEncoding, null).js;
   var reconciliationCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/reconciliation.js', $.NSUTF8StringEncoding, null).js;
   var backupCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/backup.js', $.NSUTF8StringEncoding, null).js;
+  var cloudSyncCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/cloud-sync.js', $.NSUTF8StringEncoding, null).js;
+  var gasCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/gas/Code.gs', $.NSUTF8StringEncoding, null).js;
 
   var PettyCashManager = eval(pettyCashCode + '; PettyCashManager;');
   var CashRegisterManager = eval(cashRegisterCode + '; CashRegisterManager;');
   var ReconciliationManager = eval(reconciliationCode + '; ReconciliationManager;');
   var BackupManager = eval(backupCode + '; BackupManager;');
+  var CloudSyncManager = eval(cloudSyncCode + '; CloudSyncManager;');
 
   var results = [];
   function assert(name, condition, detail) {
@@ -153,7 +156,7 @@ function run() {
     assert("フェーズ2-17: 上書き後の過不足が0円（一致）に更新されること", rReloaded.getRecordByDate("2026-09-17").discrepancy === 0);
 
     // 10. 憲法テストデータ投入メソッド検証
-    rReloaded.loadConstitutionalTestData();
+    rReloaded.loadConstitutionalTestData("2026-09-17");
     var constData = rReloaded.getRecordByDate("2026-09-17");
     assert("フェーズ2-18: 憲法検証データ投入で -200円 不足と手数料324円が反映されること", constData.discrepancy === -200 && constData.feeAmount === 324 && constData.netCreditAmount === 9676);
 
@@ -561,9 +564,68 @@ function run() {
     assert("フェーズ8-25: MANUAL.mdに過不足時の心理的安全性安心ガイド・自腹補填厳禁・30秒チェックが明記されていること", manualCodeLatest.indexOf('心理的安全性安心ガイド') !== -1 && manualCodeLatest.indexOf('焦らずできる30秒チェック') !== -1);
     assert("フェーズ8-26: MANUAL.mdに小口現金・調剤報酬返戻のかんたん入力プリセットおよび温かい労いモーダルが明記されていること", manualCodeLatest.indexOf('かんたん入力プリセット') !== -1 && manualCodeLatest.indexOf('温かい労いモーダル') !== -1);
 
+    results.push("\n=== 【フェーズ9: 本部リアルタイム同期・クラウド閲覧（Googleスプレッドシート連携） テスト】 ===");
+    
+    // 1. CloudSyncManagerの初期化と設定検証
+    var cManager = new CloudSyncManager(localStorage);
+    assert("フェーズ9-1: CloudSyncManager が正常に初期化されること", cManager !== null);
+    assert("フェーズ9-2: 初期状態で isConfigured() が false を返し、店舗名デフォルトが「リリー薬局」であること", cManager.isConfigured() === false && cManager.settings.storeName === 'リリー薬局');
+
+    // 設定保存と永続化
+    var testEndpoint = 'https://script.google.com/macros/s/AKfycbz_test_endpoint/exec';
+    cManager.saveSettings({
+      endpointUrl: testEndpoint,
+      storeName: 'リリー薬局 駅前店',
+      autoSync: true
+    });
+    assert("フェーズ9-3: saveSettings でエンドポイントURLと店舗名が正常保存されること", cManager.settings.endpointUrl === testEndpoint && cManager.settings.storeName === 'リリー薬局 駅前店');
+    assert("フェーズ9-4: 有効なURL設定時に isConfigured() が true を返すこと", cManager.isConfigured() === true);
+
+    // ストレージ永続化確認（別インスタンス読み込み）
+    var reloadedCManager = new CloudSyncManager(localStorage);
+    assert("フェーズ9-5: 別インスタンス再読み込み後もクラウド設定が維持されること", reloadedCManager.settings.endpointUrl === testEndpoint && reloadedCManager.settings.storeName === 'リリー薬局 駅前店');
+
+    // 2. セキュリティ憲法検証（個人情報非保持スキャン）
+    var cleanPayload = {
+      action: 'daily_closing',
+      storeName: 'リリー薬局',
+      data: { date: '2026-09-18', presaleAmount: 10000, memo: '10円渡し間違いの疑い' }
+    };
+    var scanClean = CloudSyncManager.scanSafety(cleanPayload);
+    assert("フェーズ9-6: 【憲法検証】規約準拠データで安全スキャンが合格(safe: true)すること", scanClean.safe === true);
+
+    var taintedPayload = {
+      action: 'daily_closing',
+      storeName: 'リリー薬局',
+      data: { date: '2026-09-18', patientName: '山田花子', memo: '患者氏名混入' }
+    };
+    var scanTainted = CloudSyncManager.scanSafety(taintedPayload);
+    assert("フェーズ9-7: 【憲法検証】患者氏名混入時に安全スキャンが不合格(safe: false)となること", scanTainted.safe === false);
+
+    // 3. オフラインキューイング機能の検証
+    assert("フェーズ9-8: 初期キューが空(0件)であること", cManager.queue.length === 0);
+    cManager.addToQueue({ action: 'daily_closing', test: 123 });
+    assert("フェーズ9-9: addToQueue で未送信キューに1件追加されること", cManager.queue.length === 1);
+    cManager.clearQueue();
+    assert("フェーズ9-10: clearQueue でキューが0件にクリアされること", cManager.queue.length === 0);
+
+    // 4. 本部受取用 Google Apps Script (gas/Code.gs) の検証
+    assert("フェーズ9-11: 本部受取用 gas/Code.gs が存在すること", gasCode !== null && gasCode.length > 0);
+    assert("フェーズ9-12: gas/Code.gs に doPost および doGet 関数が実装されていること", gasCode.indexOf('function doPost(') !== -1 && gasCode.indexOf('function doGet(') !== -1);
+    assert("フェーズ9-13: gas/Code.gs に日計締め台帳・小口出納簿・調剤報酬消込台帳のシート記帳処理が実装されていること", gasCode.indexOf('SHEET_DAILY_CLOSING') !== -1 && gasCode.indexOf('SHEET_PETTY_CASH') !== -1 && gasCode.indexOf('SHEET_RECONCILIATION') !== -1);
+    assert("フェーズ9-14: gas/Code.gs にヘッダー自動生成付きシート取得関数(getOrCreateSheet)が実装されていること", gasCode.indexOf('function getOrCreateSheet(') !== -1);
+
+    // 5. HTML・CSS・MANUAL.md の検証
+    assert("フェーズ9-15: HTMLにクラウド同期バッジ(cloud-sync-badge)が存在すること", htmlCodeLatest.indexOf('id="cloud-sync-badge"') !== -1);
+    assert("フェーズ9-16: HTMLにクラウド設定ボタン(btn-cloud-settings)が存在すること", htmlCodeLatest.indexOf('id="btn-cloud-settings"') !== -1);
+    assert("フェーズ9-17: HTMLにクラウド設定モーダル(cloud-settings-dialog)および店舗名・URL入力欄が存在すること", htmlCodeLatest.indexOf('id="cloud-settings-dialog"') !== -1 && htmlCodeLatest.indexOf('id="cloud-store-name"') !== -1 && htmlCodeLatest.indexOf('id="cloud-endpoint-url"') !== -1);
+    assert("フェーズ9-18: HTMLに cloud-sync.js がスクリプト読み込みされていること", htmlCodeLatest.indexOf('src="js/cloud-sync.js"') !== -1);
+    assert("フェーズ9-19: CSSにクラウド同期バッジ用スタイル(.cloud-sync-badge, .connected, .offline, .syncing)が定義されていること", cssCodeLatest.indexOf('.cloud-sync-badge') !== -1 && cssCodeLatest.indexOf('.cloud-sync-badge.connected') !== -1 && cssCodeLatest.indexOf('.cloud-sync-badge.offline') !== -1);
+    assert("フェーズ9-20: MANUAL.mdに本部Googleスプレッドシート連携手順およびGASセットアップ手順が明記されていること", manualCodeLatest.indexOf('本部リアルタイム同期・Googleスプレッドシート連携') !== -1 && manualCodeLatest.indexOf('gas/Code.gs') !== -1);
+
     results.push("\n==============================================");
-    results.push("🎉 フェーズ1（14）＋ フェーズ2（19）＋ フェーズ3（25）＋ フェーズ4（25）＋ フェーズ5（12）＋ フェーズ6（22）＋ フェーズ7（26）＋ フェーズ8（26）全169項目に完全合格！");
-    results.push("外部検証基準（金種集計・安心ガイド・クイック入力・労いモーダル・マニュアル更新）を完全達成。");
+    results.push("🎉 フェーズ1（14）＋ フェーズ2（19）＋ フェーズ3（25）＋ フェーズ4（25）＋ フェーズ5（12）＋ フェーズ6（22）＋ フェーズ7（26）＋ フェーズ8（26）＋ フェーズ9（20）全189項目に完全合格！");
+    results.push("外部検証基準（本部GAS受取プログラム・リアルタイム同期・個人情報遮断・オフライン保護・UI・マニュアル）を完全達成。");
     results.push("==============================================");
     return results.join("\n");
   } catch (e) {

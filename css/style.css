@@ -2395,3 +2395,84 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ====================================================
+   フェーズ9: 本部クラウド同期 スタイル
+   ==================================================== */
+.cloud-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  min-height: 32px;
+}
+
+.cloud-sync-badge.unconfigured {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+.cloud-sync-badge.connected {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.cloud-sync-badge.syncing {
+  background-color: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.cloud-sync-badge.offline {
+  background-color: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.cloud-sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.cloud-sync-badge.unconfigured .cloud-sync-dot {
+  background-color: #94a3b8;
+}
+
+.cloud-sync-badge.connected .cloud-sync-dot {
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+}
+
+.cloud-sync-badge.syncing .cloud-sync-dot {
+  background-color: #3b82f6;
+  animation: pulse 1s infinite;
+}
+
+.cloud-sync-badge.offline .cloud-sync-dot {
+  background-color: #f59e0b;
+}
+
+.btn-cloud-config {
+  background-color: #f8fafc;
+  color: var(--navy-dark);
+  border: 1.5px solid var(--border-color);
+}
+
+.btn-cloud-config:hover {
+  background-color: #e2e8f0;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+
