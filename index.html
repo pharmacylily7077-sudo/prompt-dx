@@ -12,7 +12,6 @@
   <header class="app-header">
     <div class="header-inner">
       <div class="brand-area">
-        <span class="brand-badge">調剤薬局DX</span>
         <h1 class="brand-title">売上・入金・返戻管理システム</h1>
         <span class="pharmacy-badge">リリー薬局</span>
       </div>
@@ -23,13 +22,13 @@
             <span id="cloud-sync-text">クラウド: 未設定</span>
           </div>
           <button id="btn-cloud-settings" class="btn-header-action btn-cloud-config" title="本部Googleスプレッドシート同期URLを設定します">
-            <span>⚙️</span> クラウド設定
+            クラウド設定
           </button>
           <button id="btn-header-export" class="btn-header-action btn-backup-export" title="全データ（小口・レジ・消込）を1つのJSONファイルにバックアップ保存します">
-            <span>💾</span> バックアップ保存
+            バックアップ保存
           </button>
           <button id="btn-header-import" class="btn-header-action btn-backup-import" title="保存したJSONバックアップファイルからデータを安全に復元します">
-            <span>📥</span> データ復元
+            データ復元
           </button>
         </div>
       </div>
@@ -67,7 +66,7 @@
         <div id="daily-card-discrepancy" class="summary-card primary">
           <div>
             <div class="summary-card-title">
-              <span>⚖️ レジ現金過不足</span>
+              <span>レジ現金過不足</span>
               <span id="daily-status-tag" class="badge badge-match">一致（正常）</span>
             </div>
             <div id="daily-summary-discrepancy" class="summary-card-value numeric">¥0</div>
@@ -78,7 +77,7 @@
         <div class="summary-card info">
           <div>
             <div class="summary-card-title">
-              <span>🧾 本日総売上（計）</span>
+              <span>本日総売上</span>
             </div>
             <div id="daily-summary-total-sales" class="summary-card-value numeric">¥0</div>
           </div>
@@ -88,7 +87,7 @@
         <div class="summary-card primary">
           <div>
             <div class="summary-card-title">
-              <span>💳 純入金見込計</span>
+              <span>純入金見込</span>
             </div>
             <div id="daily-summary-total-net" class="summary-card-value numeric">¥0</div>
           </div>
@@ -98,7 +97,7 @@
         <div class="summary-card danger">
           <div>
             <div class="summary-card-title">
-              <span>👛 本日小口経費出金</span>
+              <span>本日小口出金</span>
             </div>
             <div id="daily-summary-petty-expense" class="summary-card-value numeric">¥0</div>
           </div>
@@ -108,7 +107,7 @@
         <div class="summary-card">
           <div>
             <div class="summary-card-title">
-              <span>💵 手元実査現金（総額）</span>
+              <span>手元実査現金</span>
             </div>
             <div id="daily-summary-total-physical" class="summary-card-value numeric">¥0</div>
           </div>
@@ -123,7 +122,7 @@
         <div class="panel-card">
           <div class="panel-header">
             <h2 class="panel-title">
-              <span>📊</span> 本日の日計締め（1画面統合）
+              本日の日計締め
             </h2>
             <span id="daily-lock-status" class="badge badge-unconfirmed">未確定</span>
           </div>
@@ -493,18 +492,18 @@
         <div class="summary-card primary">
           <div>
             <div class="summary-card-title">
-              <span>💰 現在小口現金残高</span>
-              <span id="petty-balance-warning" style="display: none; color: var(--danger); font-size: 0.75rem; font-weight: bold;">⚠️ マイナス残高</span>
+              <span>小口現金残高</span>
+              <span id="petty-balance-warning" style="display: none; color: var(--danger); font-size: 0.75rem; font-weight: bold;">マイナス残高</span>
             </div>
             <div id="petty-summary-balance" class="summary-card-value numeric">¥0</div>
           </div>
-          <div class="summary-card-sub">※金庫内現金の実査カウントと一致しているか確認</div>
+          <div class="summary-card-sub">金庫内実査現金と一致しているか確認</div>
         </div>
 
         <div class="summary-card info">
           <div>
             <div class="summary-card-title">
-              <span>📥 今月補充合計</span>
+              <span>今月補充合計</span>
             </div>
             <div id="petty-summary-income" class="summary-card-value numeric">¥0</div>
           </div>
@@ -514,7 +513,7 @@
         <div class="summary-card danger">
           <div>
             <div class="summary-card-title">
-              <span>📤 今月出金合計</span>
+              <span>今月出金合計</span>
             </div>
             <div id="petty-summary-expense" class="summary-card-value numeric">¥0</div>
           </div>
@@ -524,7 +523,7 @@
         <div class="summary-card">
           <div>
             <div class="summary-card-title">
-              <span>📝 今月取引件数</span>
+              <span>今月取引件数</span>
             </div>
             <div id="petty-summary-count" class="summary-card-value numeric">0 件</div>
           </div>
@@ -539,7 +538,7 @@
         <div class="panel-card">
           <div class="panel-header">
             <h2 class="panel-title">
-              <span>✍️</span> 出納の登録
+              出納の登録
             </h2>
           </div>
           <div class="panel-body">
@@ -675,7 +674,7 @@
         <div class="summary-card info">
           <div>
             <div class="summary-card-title">
-              <span>📑 請求総額（レセプト）</span>
+              <span>請求総額</span>
             </div>
             <div id="reconcile-sum-billed" class="summary-card-value numeric">¥0</div>
           </div>
@@ -685,7 +684,7 @@
         <div class="summary-card primary">
           <div>
             <div class="summary-card-title">
-              <span>🏦 入金総額（支払確定）</span>
+              <span>入金総額</span>
             </div>
             <div id="reconcile-sum-paid" class="summary-card-value numeric">¥0</div>
           </div>
@@ -695,7 +694,7 @@
         <div id="reconcile-card-discrepancy" class="summary-card">
           <div>
             <div class="summary-card-title">
-              <span>⚖️ 入金差額（過不足）</span>
+              <span>入金差額</span>
               <span id="reconcile-status-tag" class="badge badge-match">一致（正常）</span>
             </div>
             <div id="reconcile-sum-discrepancy" class="summary-card-value numeric">¥0</div>
@@ -706,7 +705,7 @@
         <div class="summary-card danger">
           <div>
             <div class="summary-card-title">
-              <span>⚠️ 返戻・保留総額</span>
+              <span>返戻・保留総額</span>
             </div>
             <div id="reconcile-sum-remand-total" class="summary-card-value numeric">¥0</div>
           </div>
@@ -716,7 +715,7 @@
         <div id="reconcile-card-unaccounted" class="summary-card">
           <div>
             <div class="summary-card-title">
-              <span>🔍 原因未特定差額</span>
+              <span>未特定差額</span>
               <span id="reconcile-unaccounted-tag" class="badge badge-match">特定済</span>
             </div>
             <div id="reconcile-sum-unaccounted" class="summary-card-value numeric">¥0</div>
@@ -744,7 +743,7 @@
           <div class="panel-card">
             <div class="panel-header">
               <h2 class="panel-title">
-                <span>🏦</span> 請求・入金実績の登録
+                請求・入金実績の登録
               </h2>
               <span id="reconcile-record-status" class="badge badge-unconfirmed">未登録</span>
             </div>
@@ -803,16 +802,10 @@
           <div class="panel-card">
             <div class="panel-header">
               <h2 class="panel-title">
-                <span>➕</span> 返戻・保留案件の登録
+                返戻・保留案件の登録
               </h2>
             </div>
             <div class="panel-body">
-              <!-- プライバシー保護ガイド -->
-              <div class="compliance-note" style="margin-bottom: 1rem; padding: 0.6rem 0.75rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.78rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem;">
-                <span>🔒</span>
-                <span><strong>個人情報非保持の徹底:</strong> 患者氏名や処方情報は入力せず、カルテ番号（例: A001）のみで管理します。</span>
-              </div>
-
               <form id="reconcile-remand-form">
                 <!-- 対象請求月（連動） -->
                 <div class="form-group">
@@ -989,7 +982,7 @@
         <div id="monthly-card-discrepancy" class="summary-card primary">
           <div>
             <div class="summary-card-title">
-              <span>⚖️ 月間過不足累計</span>
+              <span>月間過不足累計</span>
               <span id="monthly-discrepancy-status-tag" class="badge badge-match">一致（正常）</span>
             </div>
             <div id="monthly-summary-discrepancy" class="summary-card-value numeric">¥0</div>
@@ -1000,7 +993,7 @@
         <div class="summary-card info">
           <div>
             <div class="summary-card-title">
-              <span>🧾 月間総売上（計）</span>
+              <span>月間総売上</span>
             </div>
             <div id="monthly-summary-total-sales" class="summary-card-value numeric">¥0</div>
           </div>
@@ -1010,7 +1003,7 @@
         <div class="summary-card primary">
           <div>
             <div class="summary-card-title">
-              <span>💳 純入金見込計</span>
+              <span>純入金見込</span>
             </div>
             <div id="monthly-summary-total-net" class="summary-card-value numeric">¥0</div>
           </div>
@@ -1020,7 +1013,7 @@
         <div class="summary-card danger">
           <div>
             <div class="summary-card-title">
-              <span>📤 小口経費出金計</span>
+              <span>小口経費出金計</span>
             </div>
             <div id="monthly-summary-petty-expense" class="summary-card-value numeric">¥0</div>
           </div>
@@ -1030,7 +1023,7 @@
         <div class="summary-card">
           <div>
             <div class="summary-card-title">
-              <span>🏦 調剤報酬入金差額</span>
+              <span>調剤報酬入金差額</span>
               <span id="monthly-reconcile-status-tag" class="badge badge-match">差額なし</span>
             </div>
             <div id="monthly-summary-reconcile-diff" class="summary-card-value numeric">¥0</div>
@@ -1085,15 +1078,10 @@
           </div>
         </div>
 
-        <!-- 適正管理バナー（印刷時にも明記） -->
-        <div class="report-compliance-banner">
-          <span>📋 <strong>月次集計報告書:</strong> 1円単位の現金過不足および調剤報酬消込の状況を適正に記録・保全するための月次報告書です。（個人情報非保持）</span>
-        </div>
-
         <!-- 月次主要4項目サマリーテーブル -->
         <div class="report-section">
           <div class="report-section-title">
-            <span>📊</span> 1. 月次主要収支・入金サマリー
+            1. 月次主要収支・入金サマリー
           </div>
           <table class="report-summary-table">
             <thead>
@@ -1205,7 +1193,7 @@
           <!-- 左: 過不足発生日および理由記録（エスカレーション・抑止力） -->
           <div class="report-sub-card">
             <div class="report-sub-title">
-              <span>⚖️</span> 2. 現金過不足 発生記録・エスカレーション明細
+              2. 現金過不足 発生記録
             </div>
             <div id="print-discrepancy-list-container">
               <table class="report-detail-table">
@@ -1222,7 +1210,7 @@
                 </tbody>
               </table>
               <div id="print-discrepancy-empty" class="report-empty-inline">
-                ✅ 当月の締めにおいて現金過不足は発生していません（全日完全一致）。
+                当月の締めにおいて現金過不足は発生していません（全日一致）。
               </div>
             </div>
           </div>
@@ -1230,7 +1218,7 @@
           <!-- 右: 小口現金 科目別経費内訳 -->
           <div class="report-sub-card">
             <div class="report-sub-title">
-              <span>👛</span> 3. 小口現金 科目別経費内訳
+              3. 小口現金 科目別経費内訳
             </div>
             <div id="print-petty-category-container">
               <table class="report-detail-table">
@@ -1256,7 +1244,7 @@
         <!-- 日別締め実績推移一覧テーブル -->
         <div class="report-section" style="margin-top: 1rem;">
           <div class="report-section-title">
-            <span>📅</span> 4. 日別締め実績一覧（全営業日推移）
+            4. 日別締め実績一覧
           </div>
           <div class="table-responsive">
             <table class="report-detail-table" style="font-size: 0.82rem;">
@@ -1284,8 +1272,8 @@
 
         <!-- 帳票フッター注記 -->
         <div class="report-footer-notes">
-          <div>※ <strong>個人情報非保持規約:</strong> 本帳票に患者氏名・生年月日・処方等の個人情報は一切含まれておりません。カルテ番号のみで管理しています。</div>
-          <div>※ <strong>厳格管理規約:</strong> 現金過不足の自腹補填・翌日繰越は厳禁です。事実をありのままに記録し、店長確認印および本部受領印をもって月次確定とします。</div>
+          <div>※ 本帳票に患者氏名・処方等の個人情報は含まれておりません（カルテ番号管理）。</div>
+          <div>※ 店長確認印および本部受領印をもって月次確定とします。</div>
         </div>
 
       </div>
@@ -1299,23 +1287,19 @@
     <div class="modal-content modal-lg">
       <div class="modal-header">
         <h3 class="modal-title">
-          <span>📥</span> データの復元（JSONインポート）
+          データの復元
         </h3>
         <button id="btn-close-backup-modal" class="modal-close-btn" title="閉じる">&times;</button>
       </div>
       <div class="modal-body">
         <div class="backup-modal-intro">
-          <p>以前に保存したJSONバックアップファイルを選択して、システム全体のデータを安全に復元します。</p>
-          <div class="alert-box info-alert" style="margin-top: 0.5rem;">
-            <span>🛡️ <strong>個人情報非保持ディープスキャン:</strong> インポート時に全データ（カルテ番号・明細）をスキャンし、患者氏名等の混入がないかを厳格に検査します。</span>
-          </div>
+          <p>以前に保存したバックアップファイルを選択してデータを復元します。</p>
         </div>
 
         <!-- ファイル選択エリア -->
         <div class="backup-dropzone" id="backup-dropzone">
           <input type="file" id="backup-file-input" accept=".json,application/json" style="display: none;">
-          <div class="dropzone-icon">📁</div>
-          <div class="dropzone-text"><strong>JSONファイルを選択</strong> または ここにドラッグ＆ドロップ</div>
+          <div class="dropzone-text"><strong>ファイルを選択</strong> または ここにドラッグ＆ドロップ</div>
           <button type="button" class="btn btn-secondary" id="btn-browse-backup-file" style="margin-top: 0.75rem;">
             ファイルを選択する
           </button>
@@ -1329,34 +1313,34 @@
 
         <!-- 復元前データサマリープレビュー -->
         <div id="backup-summary-preview" class="backup-summary-preview" style="display: none;">
-          <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: var(--navy-dark);">📊 復元対象データ一覧</h4>
+          <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem; color: var(--navy-dark);">復元対象データ一覧</h4>
           <div class="backup-summary-grid">
             <div class="backup-summary-item">
-              <span class="backup-item-label">👛 小口現金出納</span>
+              <span class="backup-item-label">小口現金出納</span>
               <span class="backup-item-val numeric" id="restore-count-petty">0 件</span>
             </div>
             <div class="backup-summary-item">
-              <span class="backup-item-label">📊 日計締め履歴</span>
+              <span class="backup-item-label">日計締め履歴</span>
               <span class="backup-item-val numeric" id="restore-count-cash">0 件</span>
             </div>
             <div class="backup-summary-item">
-              <span class="backup-item-label">📑 調剤報酬月別</span>
+              <span class="backup-item-label">調剤報酬月別</span>
               <span class="backup-item-val numeric" id="restore-count-reconcile">0 ヶ月</span>
             </div>
             <div class="backup-summary-item">
-              <span class="backup-item-label">⚠️ 返戻・保留案件</span>
+              <span class="backup-item-label">返戻・保留案件</span>
               <span class="backup-item-val numeric" id="restore-count-remand">0 件</span>
             </div>
           </div>
           <div class="alert-box danger-alert" style="margin-top: 1rem;">
-            <span>⚠️ <strong>ご注意:</strong> 復元を実行すると、現在のブラウザ上のデータはすべて上書きされます。必要に応じて事前に「バックアップ保存」を行ってください。</span>
+            <span>復元を実行すると、現在のデータは上書きされます。</span>
           </div>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" id="btn-cancel-restore" class="btn btn-secondary">キャンセル</button>
         <button type="button" id="btn-execute-restore" class="btn btn-primary" disabled style="background-color: var(--primary);">
-          <span>✅</span> データを上書き復元する
+          データを復元する
         </button>
       </div>
     </div>
@@ -1394,17 +1378,14 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3 class="modal-title">
-          <span>⚙️</span> 本部クラウド同期設定（Googleスプレッドシート連携）
+          本部クラウド同期設定
         </h3>
         <button id="btn-close-cloud-modal" class="modal-close-btn" title="閉じる">&times;</button>
       </div>
       <div class="modal-body">
         <p style="font-size: 0.85rem; color: #334155; margin-bottom: 1rem;">
-          本部のGoogleスプレッドシート（Google Apps Script ウェブアプリ）のURLを登録すると、日々の締めデータがリアルタイムに本部へ自動送信・記帳されます。
+          本部Googleスプレッドシート（Google Apps Script ウェブアプリ）のURLを登録すると、締めデータが本部へ自動送信・記帳されます。
         </p>
-        <div class="alert-box info-alert" style="margin-bottom: 1rem;">
-          <span>🔒 <strong>データ保護:</strong> 個人情報は送信されません。オフライン時も端末内に安全に保持されます。</span>
-        </div>
 
         <form id="cloud-settings-form">
           <div class="form-group">
@@ -1432,7 +1413,7 @@
       <div class="modal-footer">
         <button type="button" id="btn-cancel-cloud-settings" class="btn btn-secondary">キャンセル</button>
         <button type="button" id="btn-save-cloud-settings" class="btn btn-primary">
-          <span>💾</span> 設定を保存する
+          設定を保存
         </button>
       </div>
     </div>
