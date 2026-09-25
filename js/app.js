@@ -807,12 +807,8 @@ document.addEventListener('DOMContentLoaded', () => {
               <span style="color:var(--text-muted);">💳 純入金見込計:</span>
               <strong class="numeric" style="color:var(--primary-dark);">${formatYen(saved.totalNetExpected)}</strong>
             </div>
-          `;
-          if (typeof warmDialog.showModal === 'function') {
-            warmDialog.showModal();
-          } else {
-            warmDialog.style.display = 'block';
-          }
+          // 実務UI: 保存時の不要なポップアップ割り込みを停止（確認は静かなトーストで完了）
+          // if (typeof warmDialog.showModal === 'function') { warmDialog.showModal(); }
         }
 
         // 本部クラウド自動同期（設定済みかつ有効時）

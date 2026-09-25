@@ -17,9 +17,6 @@
         <span class="pharmacy-badge">リリー薬局</span>
       </div>
       <div class="header-right-area">
-        <div class="governance-note">
-          <span>🛡️ 薬局を守るための厳格管理（不正・ズレ・請求放置の撲滅）</span>
-        </div>
         <div class="header-actions">
           <div id="cloud-sync-badge" class="cloud-sync-badge unconfigured" title="本部Googleスプレッドシート同期ステータス">
             <span class="cloud-sync-dot"></span>
@@ -43,20 +40,16 @@
   <nav class="tab-navigation">
     <div class="tab-container">
       <button class="tab-btn active" data-tab="tab-daily">
-        <span>📊 ① 本日の日計締め</span>
-        <span class="badge-status">稼働中</span>
+        <span>① 日計締め</span>
       </button>
       <button class="tab-btn" data-tab="tab-petty">
-        <span>👛 ② 小口現金管理</span>
-        <span class="badge-status">稼働中</span>
+        <span>② 小口現金</span>
       </button>
       <button class="tab-btn" data-tab="tab-reconcile">
-        <span>📑 ③ 調剤報酬消込・返戻追跡</span>
-        <span class="badge-status">稼働中</span>
+        <span>③ 調剤報酬消込</span>
       </button>
       <button class="tab-btn" data-tab="tab-monthly">
-        <span>📈 ④ 月次集計レポート</span>
-        <span class="badge-status">稼働中</span>
+        <span>④ 月次集計</span>
       </button>
     </div>
   </nav>
@@ -142,7 +135,7 @@
                 <div class="label-with-actions">
                   <label for="daily-date" class="form-label">締め日 <span class="required">*</span></label>
                   <div class="quick-btn-group">
-                    <button type="button" id="btn-date-today" class="btn-chip" title="本日の日付をセット">📅 今日</button>
+                    <button type="button" id="btn-date-today" class="btn-chip" title="本日の日付をセット">今日</button>
                     <button type="button" id="btn-date-yesterday" class="btn-chip" title="昨日の日付をセット">昨日</button>
                   </div>
                 </div>
@@ -151,15 +144,13 @@
 
               <!-- ① レジ現金照合セクション -->
               <div class="section-divider">
-                <div class="section-subtitle">
-                  <span>💵</span> ① レジ現金照合（現金のズレを可視化）
-                </div>
+                <div class="section-subtitle">① レジ現金照合</div>
 
                 <!-- つり銭準備金 -->
                 <div class="form-group">
                   <div class="label-with-actions">
                     <label for="daily-change-fund" class="form-label">つり銭準備金（円） <span class="required">*</span></label>
-                    <button type="button" id="btn-reset-change-fund" class="btn-chip" title="店舗規定値 ¥50,000 にリセット">🔄 標準 ¥50,000</button>
+                    <button type="button" id="btn-reset-change-fund" class="btn-chip" title="店舗規定値 ¥50,000 にリセット">標準 ¥50,000</button>
                   </div>
                   <input type="number" id="daily-change-fund" class="form-input numeric" placeholder="例: 50000" min="0" step="1" value="50000" required>
                 </div>
@@ -175,8 +166,8 @@
                   <div class="label-with-actions">
                     <label for="daily-actual-cash" class="form-label">実査現金合計額（円） <span class="required">*</span></label>
                     <div class="quick-btn-group">
-                      <button type="button" id="btn-match-expected-cash" class="btn-chip btn-chip-highlight" title="あるべき現金をそのままセット（差額ゼロの日に1タップ）">⚡ ピッタリ一致（あるべき現金を反映）</button>
-                      <button type="button" id="btn-toggle-denomination" class="btn-chip btn-chip-primary" title="電卓不要！お札・硬貨の枚数を入力して自動計算">🧮 金種カウンターで計算</button>
+                      <button type="button" id="btn-match-expected-cash" class="btn-chip btn-chip-highlight" title="あるべき現金をそのままセット">計算値反映</button>
+                      <button type="button" id="btn-toggle-denomination" class="btn-chip btn-chip-primary" title="お札・硬貨の枚数を入力して自動計算">金種カウンター</button>
                     </div>
                   </div>
                   <input type="number" id="daily-actual-cash" class="form-input numeric" placeholder="例: 59800" min="0" step="1" required>
@@ -185,9 +176,7 @@
                 <!-- 金種別かんたん計算アシストパネル（開閉可能） -->
                 <div id="denomination-panel" class="denomination-panel" style="display: none;">
                   <div class="denomination-panel-header">
-                    <div class="denomination-panel-title">
-                      <span>🧮</span> 金種別かんたん計算アシスト（電卓不要）
-                    </div>
+                    <div class="denomination-panel-title">金種内訳入力</div>
                     <div class="denomination-panel-actions">
                       <button type="button" id="btn-clear-denomination" class="btn-chip-sm">クリア</button>
                       <button type="button" id="btn-close-denomination" class="btn-chip-sm">閉じる ✕</button>
@@ -335,9 +324,7 @@
 
               <!-- ② クレジット決済セクション -->
               <div class="section-divider">
-                <div class="section-subtitle">
-                  <span>💳</span> ② クレジット決済（手数料自動計算）
-                </div>
+                <div class="section-subtitle">② クレジット決済</div>
 
                 <!-- クレジット端末売上 -->
                 <div class="form-group">
@@ -366,9 +353,7 @@
 
               <!-- ③ 小口現金出納連携セクション -->
               <div class="section-divider">
-                <div class="section-subtitle">
-                  <span>👛</span> ③ 小口現金出納（本日の出納状況）
-                </div>
+                <div class="section-subtitle">③ 小口現金出納</div>
                 <div class="petty-inline-box">
                   <div class="petty-inline-grid">
                     <div>
@@ -385,14 +370,14 @@
                     </div>
                   </div>
                   <div style="font-size: 0.75rem; color: var(--text-muted);">
-                    ※ 取引登録は「② 小口現金管理」タブで行えます。本日分の出納が自動連携されます。
+                    ※ 取引登録は「② 小口現金」タブで行えます。本日分の出納が自動連携されます。
                   </div>
                 </div>
               </div>
 
               <!-- ④ 店舗日計総合サマリープレビュー -->
               <div class="comprehensive-preview-box">
-                <div class="comprehensive-preview-header">🏛️ 本日の店舗日計 総合着地見込</div>
+                <div class="comprehensive-preview-header">日計総合着地見込</div>
                 <div class="comprehensive-preview-grid">
                   <div class="comprehensive-preview-item">
                     <span class="comprehensive-preview-label">本日総売上</span>
@@ -413,20 +398,20 @@
               <div class="form-group">
                 <div class="label-with-actions">
                   <label for="daily-memo" class="form-label">過不足理由・引継ぎメモ</label>
-                  <span class="text-hint">ワンタップで定型文入力 ✍️</span>
+                  <span class="text-hint">定型文</span>
                 </div>
                 <div class="quick-memo-tags">
-                  <button type="button" class="btn-memo-tag" data-text="原因不明（再確認済・レシート保管済・店長報告）">❓ 原因不明（再確認済）</button>
-                  <button type="button" class="btn-memo-tag" data-text="100円硬貨の渡し間違い可能性あり">🪙 100円硬貨渡し間違いの疑い</button>
-                  <button type="button" class="btn-memo-tag" data-text="10円硬貨の渡し間違い可能性あり">🪙 10円硬貨渡し間違いの疑い</button>
-                  <button type="button" class="btn-memo-tag" data-text="レセコン打鍵ミス・キャンセル修正タイムラグ">💻 レセコン修正タイムラグ</button>
-                  <button type="button" class="btn-memo-tag" data-text="店長へ連絡済・翌朝精査予定">📞 店長連絡済</button>
+                  <button type="button" class="btn-memo-tag" data-text="原因不明（再確認済・レシート保管済・店長報告）">原因不明（再確認済）</button>
+                  <button type="button" class="btn-memo-tag" data-text="100円硬貨の渡し間違い可能性あり">100円渡し間違い疑い</button>
+                  <button type="button" class="btn-memo-tag" data-text="10円硬貨の渡し間違い可能性あり">10円渡し間違い疑い</button>
+                  <button type="button" class="btn-memo-tag" data-text="レセコン打鍵ミス・キャンセル修正タイムラグ">レセコン修正タイムラグ</button>
+                  <button type="button" class="btn-memo-tag" data-text="店長へ連絡済・翌朝精査予定">店長連絡済</button>
                 </div>
                 <textarea id="daily-memo" class="form-textarea" placeholder="例: 10円つり銭渡し間違いの疑い、レシート保管済"></textarea>
               </div>
 
               <button type="submit" class="btn btn-primary">
-                <span>🔒</span> 本日の締めデータを確定・保存する
+                日計締めを保存
               </button>
             </form>
           </div>
@@ -562,13 +547,13 @@
               
               <!-- かんたん入力プリセット（ワンタップで入力完了） -->
               <div class="quick-preset-bar">
-                <span class="quick-preset-title">⚡ かんたん入力:</span>
+                <span class="quick-preset-title">定型入力:</span>
                 <div class="quick-preset-tags">
-                  <button type="button" class="btn-petty-chip" data-type="expense" data-category="消耗品費" data-memo="コピー用紙・ボールペン購入">📄 用紙・ペン</button>
-                  <button type="button" class="btn-petty-chip" data-type="expense" data-category="清掃・衛生費" data-memo="患者様用消毒用エタノール・マスク">🧴 消毒液・マスク</button>
-                  <button type="button" class="btn-petty-chip" data-type="expense" data-category="通信運搬費" data-memo="郵便切手・レターパック代">✉️ 切手・郵送</button>
-                  <button type="button" class="btn-petty-chip" data-type="expense" data-category="雑費" data-memo="店舗清掃用ゴミ袋・洗剤">🧹 ゴミ袋・洗剤</button>
-                  <button type="button" class="btn-petty-chip btn-petty-chip-income" data-type="income" data-category="小口現金補充" data-amount="10000" data-memo="金庫より小口現金補充">📥 金庫補充(¥1万)</button>
+                  <button type="button" class="btn-petty-chip" data-type="expense" data-category="消耗品費" data-memo="コピー用紙・ボールペン購入">用紙・ペン</button>
+                  <button type="button" class="btn-petty-chip" data-type="expense" data-category="清掃・衛生費" data-memo="患者様用消毒用エタノール・マスク">消毒液・マスク</button>
+                  <button type="button" class="btn-petty-chip" data-type="expense" data-category="通信運搬費" data-memo="郵便切手・レターパック代">切手・郵送</button>
+                  <button type="button" class="btn-petty-chip" data-type="expense" data-category="雑費" data-memo="店舗清掃用ゴミ袋・洗剤">ゴミ袋・洗剤</button>
+                  <button type="button" class="btn-petty-chip btn-petty-chip-income" data-type="income" data-category="小口現金補充" data-amount="10000" data-memo="金庫より小口現金補充">金庫補充(¥1万)</button>
                 </div>
               </div>
 
@@ -578,11 +563,11 @@
                 <div class="type-toggle-group">
                   <div>
                     <input type="radio" name="petty-type" id="type-expense" value="expense" checked>
-                    <label for="type-expense" class="type-toggle-btn btn-expense">📤 出金（経費）</label>
+                    <label for="type-expense" class="type-toggle-btn btn-expense">出金</label>
                   </div>
                   <div>
                     <input type="radio" name="petty-type" id="type-income" value="income">
-                    <label for="type-income" class="type-toggle-btn btn-income">📥 入金（補充）</label>
+                    <label for="type-income" class="type-toggle-btn btn-income">入金（補充）</label>
                   </div>
                 </div>
               </div>
@@ -612,7 +597,7 @@
               </div>
 
               <button type="submit" class="btn btn-primary">
-                <span>✓</span> 出納を登録する
+                出納を登録
               </button>
             </form>
           </div>
@@ -622,11 +607,11 @@
         <div class="panel-card">
           <div class="panel-header">
             <h2 class="panel-title">
-              <span>📋</span> 小口出納履歴（最新順）
+              小口出納履歴
             </h2>
             <div style="display: flex; gap: 0.5rem; align-items: center;">
               <button id="btn-clear-petty-data" class="btn-test" style="color: var(--danger); border-color: #fecaca;" title="全データをリセット">
-                🗑️ 履歴消去
+                履歴消去
               </button>
             </div>
           </div>
@@ -672,15 +657,14 @@
         <div class="closing-action-inner">
           <div class="closing-action-left">
             <label for="reconcile-month-select" style="font-size: 0.9rem; font-weight: 700; color: var(--navy); display: flex; align-items: center; gap: 0.4rem;">
-              <span>📅</span> 請求対象月:
+              請求対象月:
             </label>
             <input type="month" id="reconcile-month-select" class="form-input" style="width: auto; padding: 0.4rem 0.75rem; font-weight: 700;">
-            <span class="sub-text" style="font-size: 0.8rem; color: var(--text-muted);">※ 通常、調剤月の翌月10日請求、翌々月20日前後入金（2ヶ月サイクル）</span>
           </div>
 
           <div class="closing-action-right" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <button id="btn-clear-reconcile-data" class="btn-test" style="color: var(--danger); border-color: #fecaca;" title="消込・返戻データを全消去">
-              🗑️ 全消去
+              全消去
             </button>
           </div>
         </div>
@@ -994,7 +978,7 @@
           </div>
           <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
             <button id="btn-print-monthly-report" class="btn btn-primary" title="店長確認印・本部受領印欄付きのA4帳票を印刷またはPDF出力">
-              🖨️ A4帳票を印刷 / PDF出力
+              A4帳票印刷 / PDF出力
             </button>
           </div>
         </div>
