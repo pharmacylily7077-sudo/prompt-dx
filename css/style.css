@@ -7,7 +7,7 @@
    =================================================== */
 
 :root {
-  /* メディカルグリーン（安心・一致・基調ブランド色） WCAG AA/AAA準拠 */
+  /* メディカルグリーン（基調ブランド色） WCAG AA/AAA準拠 */
   --primary: #057a55;
   --primary-hover: #046c4e;
   --primary-dark: #03543f;
@@ -1657,7 +1657,7 @@ body {
   text-align: center;
 }
 
-/* 安心適正管理宣言バナー */
+/* 月次集計報告バナー */
 .report-compliance-banner {
   background: var(--primary-light);
   border: 1.5px solid var(--primary-border);
@@ -2159,7 +2159,7 @@ body {
   color: var(--primary-dark);
 }
 
-/* 心理的安全性安心ガイドボックス */
+/* 過不足確認ガイドボックス */
 .kindness-box {
   margin-top: 0.75rem;
   padding: 0.85rem 1rem;

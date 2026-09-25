@@ -306,13 +306,13 @@
                   <div id="preview-discrepancy-note" style="font-size: 0.75rem;">※ レジ内の実査現金と、あるべき現金が一致しています。</div>
                 </div>
 
-                <!-- 心理的安全性安心ガイド（過不足発生時に自動表示） -->
+                <!-- 過不足確認ガイド（過不足発生時に自動表示） -->
                 <div id="kindness-guidance-box" class="kindness-box" style="display: none;">
                   <div class="kindness-header">
-                    <span class="kindness-icon">💚</span>
+                    <span class="kindness-icon">📋</span>
                     <div class="kindness-title-wrap">
-                      <strong class="kindness-title">安心してください。過不足はあなたの責任ではありません。</strong>
-                      <div class="kindness-subtitle">事実をそのまま記録することが、薬局とスタッフを守る盾になります（自腹補填は厳禁です）。</div>
+                      <strong class="kindness-title">過不足発生時の確認手順（自腹補填は行わないでください）</strong>
+                      <div class="kindness-subtitle">事実をそのまま記録することが店舗の適正管理につながります。下記項目をご確認ください。</div>
                     </div>
                   </div>
                   <div class="kindness-checklist">
@@ -439,14 +439,8 @@
               <span>📋</span> 日計締め履歴（最新順）
             </h2>
             <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-              <button id="btn-load-closing-test-data" class="btn-test" title="動作確認用のサンプルデータをセット">
-                🧪 【サンプル】実査200円不足＆クレジット1万円
-              </button>
-              <button id="btn-load-phase3-test-data" class="btn-test" style="color: var(--primary-dark); border-color: #a7f3d0;" title="Day1とDay2の複数日締めデータをセット">
-                🧪 【サンプル】複数日締め（Day1＆Day2）
-              </button>
               <button id="btn-clear-closing-data" class="btn-test" style="color: var(--danger); border-color: #fecaca;" title="全データをリセット">
-                🗑️ 全消去
+                🗑️ 履歴消去
               </button>
             </div>
           </div>
@@ -631,11 +625,8 @@
               <span>📋</span> 小口出納履歴（最新順）
             </h2>
             <div style="display: flex; gap: 0.5rem; align-items: center;">
-              <button id="btn-load-test-data" class="btn-test" title="動作確認用のサンプルデータをセット">
-                🧪 【サンプル】1万円補充+千円出金
-              </button>
               <button id="btn-clear-petty-data" class="btn-test" style="color: var(--danger); border-color: #fecaca;" title="全データをリセット">
-                🗑️ 全消去
+                🗑️ 履歴消去
               </button>
             </div>
           </div>
@@ -688,9 +679,6 @@
           </div>
 
           <div class="closing-action-right" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button id="btn-load-reconcile-test" class="btn-test" title="動作確認用のサンプルデータをセット">
-              🧪 【サンプル】請求100万/入金95万/返戻5万(A001)
-            </button>
             <button id="btn-clear-reconcile-data" class="btn-test" style="color: var(--danger); border-color: #fecaca;" title="消込・返戻データを全消去">
               🗑️ 全消去
             </button>
@@ -836,9 +824,9 @@
             </div>
             <div class="panel-body">
               <!-- プライバシー保護ガイド -->
-              <div class="compliance-note" style="margin-bottom: 1rem; padding: 0.6rem 0.75rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; font-size: 0.78rem; color: #166534; display: flex; align-items: center; gap: 0.5rem;">
-                <span>🛡️</span>
-                <span><strong>【安心のお約束】個人情報非保持:</strong> 患者様のお名前などは一切入力せず、カルテ番号（例: A001）のみで管理する安全設計です。</span>
+              <div class="compliance-note" style="margin-bottom: 1rem; padding: 0.6rem 0.75rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.78rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem;">
+                <span>🔒</span>
+                <span><strong>個人情報非保持の徹底:</strong> 患者氏名や処方情報は入力せず、カルテ番号（例: A001）のみで管理します。</span>
               </div>
 
               <form id="reconcile-remand-form">
@@ -1008,9 +996,6 @@
             <button id="btn-print-monthly-report" class="btn btn-primary" title="店長確認印・本部受領印欄付きのA4帳票を印刷またはPDF出力">
               🖨️ A4帳票を印刷 / PDF出力
             </button>
-            <button id="btn-load-monthly-test-data" class="btn-test" title="動作確認用の月次サンプルデータを一括投入">
-              🧪 【サンプル】月次一括データセット
-            </button>
           </div>
         </div>
       </div>
@@ -1118,7 +1103,7 @@
 
         <!-- 適正管理バナー（印刷時にも明記） -->
         <div class="report-compliance-banner">
-          <span>🛡️ <strong>【安心の適正管理】:</strong> 現金のズレや請求保留をうやむやにせず1円単位で事実を記録し、スタッフのお金と信頼を守るための公式月次報告書です。（患者個人情報非保持・安心設計）</span>
+          <span>📋 <strong>月次集計報告書:</strong> 1円単位の現金過不足および調剤報酬消込の状況を適正に記録・保全するための月次報告書です。（個人情報非保持）</span>
         </div>
 
         <!-- 月次主要4項目サマリーテーブル -->
@@ -1434,7 +1419,7 @@
           本部のGoogleスプレッドシート（Google Apps Script ウェブアプリ）のURLを登録すると、日々の締めデータがリアルタイムに本部へ自動送信・記帳されます。
         </p>
         <div class="alert-box info-alert" style="margin-bottom: 1rem;">
-          <span>🛡️ <strong>完全無料・安心設計:</strong> サーバー契約不要、個人情報は一切送信されません。万が一のオフライン時も手元に安全に保存されます。</span>
+          <span>🔒 <strong>データ保護:</strong> 個人情報は送信されません。オフライン時も端末内に安全に保持されます。</span>
         </div>
 
         <form id="cloud-settings-form">

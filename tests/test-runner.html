@@ -440,7 +440,7 @@
         } catch (e) {
           blocked = true;
         }
-        assert('P7-11. 【安心ガード】個人情報混入データインポート試行時に復元が確実に遮断されること', blocked);
+        assert('P7-11. 【安全ガード】個人情報混入データインポート試行時に復元が確実に遮断されること', blocked);
 
       } catch (err) {
         assert('例外エラーが発生しないこと', false, err.message);
