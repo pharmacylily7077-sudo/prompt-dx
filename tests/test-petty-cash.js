@@ -1,6 +1,6 @@
 /**
  * 小口現金機能 自動テストスクリプト (tests/test-petty-cash.js)
- * 開発憲法遵守: 暗算できるキリの良い数字（10,000円補充 → 1,000円出金 → 残高9,000円）を検証
+ * 厳格に検証: 暗算できるキリの良い数字（10,000円補充 → 1,000円出金 → 残高9,000円）を検証
  */
 
 // LocalStorageモック
@@ -37,7 +37,7 @@ const manager = new global.PettyCashManager();
 manager.clearAll();
 assert(manager.getCurrentBalance() === 0, '初期状態の残高が0円であること');
 
-// 2. 外部検証シナリオ: 10,000円補充
+// 2. 動作確認シナリオ: 10,000円補充
 console.log('\n--- ステップ1: 10,000円の小口補充 ---');
 const incomeTx = manager.addTransaction({
   date: '2026-09-17',
@@ -49,7 +49,7 @@ const incomeTx = manager.addTransaction({
 assert(incomeTx.amount === 10000, '登録された補充額が10,000円であること');
 assert(manager.getCurrentBalance() === 10000, '現在残高が10,000円であること');
 
-// 3. 外部検証シナリオ: 1,000円消耗品費出金
+// 3. 動作確認シナリオ: 1,000円消耗品費出金
 console.log('\n--- ステップ2: 1,000円の消耗品費出金 ---');
 const expenseTx = manager.addTransaction({
   date: '2026-09-17',

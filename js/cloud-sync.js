@@ -107,7 +107,7 @@ class CloudSyncManager {
   }
 
   /**
-   * 送信データの個人情報非保持安全検査（セキュリティ憲法遵守）
+   * 送信データの個人情報非保持安全検査（プライバシー保護ルール遵守）
    */
   static scanSafety(payload) {
     const text = JSON.stringify(payload);
@@ -133,7 +133,7 @@ class CloudSyncManager {
     // セキュリティ検査
     const scan = CloudSyncManager.scanSafety(payload);
     if (!scan.safe) {
-      throw new Error(`【セキュリティ憲法違反】${scan.reason}。送信を遮断しました。`);
+      throw new Error(`【プライバシー保護ルール】${scan.reason}。送信を安全に中止しました。`);
     }
 
     if (!this.isConfigured()) {

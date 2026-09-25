@@ -61,8 +61,8 @@
 <body>
 
   <div class="test-card">
-    <h1>🧪 調剤薬局システム 自動検証テストスイート（フェーズ1〜4）</h1>
-    <p>開発憲法ルール3準拠: 暗算できるキリの良い数字によるロジック・保存検証（小口現金＆レジ締め・クレジット＆1画面日計確定・履歴分離＆調剤報酬消込・返戻追跡）</p>
+    <h1>🧪 調剤薬局システム 自動動作検証スイート（フェーズ1〜7）</h1>
+    <p>厳格な動作検証: 暗算できるキリの良い数字によるロジック・保存検証（小口現金＆レジ締め・クレジット＆1画面日計確定・履歴分離＆調剤報酬消込・返戻追跡・バックアップ復元）</p>
     <div style="margin-top: 1rem;">
       <button id="run-tests" class="btn">テストを再実行する</button>
       <a href="../index.html" style="margin-left: 1rem; color: #059669;">本番画面を開く &rarr;</a>
@@ -103,7 +103,7 @@
         const manager = new PettyCashManager();
         assert('P1-1. 初期残高が0円であること', manager.getCurrentBalance() === 0, `現在残高: ${manager.getCurrentBalance()}円`);
 
-        // 2. 外部検証ステップ1: 10,000円補充
+        // 2. 動作確認ステップ1: 10,000円補充
         const incomeTx = manager.addTransaction({
           date: '2026-09-17',
           type: 'income',
@@ -114,7 +114,7 @@
         assert('P1-2. 補充データが10,000円で登録されること', incomeTx.amount === 10000);
         assert('P1-3. 補充後の現在残高が10,000円であること', manager.getCurrentBalance() === 10000, `現在残高: ${manager.getCurrentBalance()}円`);
 
-        // 3. 外部検証ステップ2: 1,000円出金（消耗品費）
+        // 3. 動作確認ステップ2: 1,000円出金（消耗品費）
         const expenseTx = manager.addTransaction({
           date: '2026-09-17',
           type: 'expense',
@@ -123,7 +123,7 @@
           memo: '事務用ボールペン購入'
         });
         assert('P1-4. 出金データが1,000円で登録されること', expenseTx.amount === 1000);
-        assert('P1-5. 【憲法検証】残高が暗算通りの9,000円（10,000 - 1,000）であること', manager.getCurrentBalance() === 9000, `現在残高: ${manager.getCurrentBalance()}円`);
+        assert('P1-5. 【厳格検証】残高が暗算通りの9,000円（10,000 - 1,000）であること', manager.getCurrentBalance() === 9000, `現在残高: ${manager.getCurrentBalance()}円`);
 
         // 4. サマリー集計テスト
         const summary = manager.getSummary('2026-09');
@@ -164,19 +164,19 @@
         assert('P2-2. つり銭5万+売上1万であるべき現金が60,000円であること', matchCalc.expectedCash === 60000);
         assert('P2-3. 実査6万で過不足額が0円（一致）であること', matchCalc.discrepancy === 0 && matchCalc.status === 'match');
 
-        // 【憲法検証】レジ現金照合: 実査現金200円不足
+        // 【厳格検証】レジ現金照合: 実査現金200円不足
         const shortageCalc = CashRegisterManager.calculateCashDiscrepancy(50000, 10000, 59800);
-        assert('P2-4. 【憲法検証】実査59,800円で過不足額が -200円（不足）であること', shortageCalc.discrepancy === -200 && shortageCalc.status === 'shortage');
+        assert('P2-4. 【厳格検証】実査59,800円で過不足額が -200円（不足）であること', shortageCalc.discrepancy === -200 && shortageCalc.status === 'shortage');
         assert('P2-5. 不足ラベルに「不足」と「-200」が含まれること', shortageCalc.statusLabel.includes('不足') && shortageCalc.statusLabel.includes('-200'));
 
         // レジ現金照合: 過剰
         const excessCalc = CashRegisterManager.calculateCashDiscrepancy(50000, 10000, 60100);
         assert('P2-6. 実査60,100円で過不足額が +100円（過剰）であること', excessCalc.discrepancy === 100 && excessCalc.status === 'excess');
 
-        // 【憲法検証】クレジット手数料・純入金計算（売上10,000円、手数料率3.24%）
+        // 【厳格検証】クレジット手数料・純入金計算（売上10,000円、手数料率3.24%）
         const creditCalc = CashRegisterManager.calculateCredit(10000, 3.24);
-        assert('P2-7. 【憲法検証】クレジット売上10,000円の手数料が324円であること', creditCalc.feeAmount === 324);
-        assert('P2-8. 【憲法検証】差引入金見込額が9,676円（10,000 - 324）であること', creditCalc.netCreditAmount === 9676);
+        assert('P2-7. 【厳格検証】クレジット売上10,000円の手数料が324円であること', creditCalc.feeAmount === 324);
+        assert('P2-8. 【厳格検証】差引入金見込額が9,676円（10,000 - 324）であること', creditCalc.netCreditAmount === 9676);
 
         // クレジット四捨五入計算
         const roundDown = CashRegisterManager.calculateCredit(1000, 3.24);
@@ -218,10 +218,10 @@
         assert('P2-16. 同一日付更新で件数が1件のままであること', reloadedReg.records.length === 1);
         assert('P2-17. 上書き更新後の過不足額が0円（一致）に更新されること', reloadedReg.getRecordByDate('2026-09-17').discrepancy === 0);
 
-        // 憲法テストデータ投入検証
+        // サンプルデータ投入検証
         reloadedReg.loadConstitutionalTestData();
         const constData = reloadedReg.getRecordByDate('2026-09-17');
-        assert('P2-18. 憲法テストデータ投入で -200円 不足と手数料324円がセットされること', constData.discrepancy === -200 && constData.feeAmount === 324 && constData.netCreditAmount === 9676);
+        assert('P2-18. サンプルデータ投入で -200円 不足と手数料324円がセットされること', constData.discrepancy === -200 && constData.feeAmount === 324 && constData.netCreditAmount === 9676);
 
         // 削除
         reloadedReg.deleteRecord(constData.id);
@@ -292,7 +292,7 @@
 
         // 2. 差額計算ロジック
         const dShort = ReconciliationManager.calculateDiscrepancy(1000000, 950000);
-        assert('P4-3. 【憲法検証】請求100万・入金95万で差額が -50,000円（不足）であること', dShort.discrepancy === -50000 && dShort.status === 'shortage');
+        assert('P4-3. 【厳格検証】請求100万・入金95万で差額が -50,000円（不足）であること', dShort.discrepancy === -50000 && dShort.status === 'shortage');
 
         const dMatch = ReconciliationManager.calculateDiscrepancy(1000000, 1000000);
         assert('P4-4. 請求100万・入金100万で差額0円（一致）であること', dMatch.discrepancy === 0 && dMatch.status === 'match');
@@ -305,7 +305,7 @@
         assert('P4-7. カルテ番号「A001」がバリデーション通過すること', ReconciliationManager.validatePatientChartId('A001') === 'A001');
         let piiErr = false;
         try { ReconciliationManager.validatePatientChartId('山田太郎'); } catch (e) { piiErr = true; }
-        assert('P4-8. 【憲法規約】患者氏名（漢字）入力時に個人情報保護エラーがスローされること', piiErr);
+        assert('P4-8. 【厳格検証】患者氏名（漢字）入力時に個人情報保護エラーがスローされること', piiErr);
 
         // 5. 請求月サマリー保存
         const savedMonth = recManager.saveMonthlyRecord({
@@ -330,7 +330,7 @@
 
         // 7. 差額完全特定
         const rSummary = recManager.getMonthlySummaryWithRemands('2026-07');
-        assert('P4-11. 【憲法検証】差額5万円に対し返戻5万円で原因未特定差額が0円（完全特定済）であること', rSummary.shortageAmount === 50000 && rSummary.unaccountedAmount === 0 && rSummary.reconciliationStatus === 'fully_explained');
+        assert('P4-11. 【厳格検証】差額5万円に対し返戻5万円で原因未特定差額が0円（完全特定済）であること', rSummary.shortageAmount === 50000 && rSummary.unaccountedAmount === 0 && rSummary.reconciliationStatus === 'fully_explained');
 
         // 8. ステータス変更: 未対応 → 再請求中 → 入金済/解決
         recManager.updateRemandStatus(rItem.id, 'rebilling', '再請求レセプト提出済');
@@ -341,10 +341,10 @@
         const rRepResolved = recManager.getMonthlySummaryWithRemands('2026-07');
         assert('P4-13. ステータスが入金済/解決に更新され、解決済が50,000円、未解決残高が0円になること', rRepResolved.resolvedAmount === 50000 && rRepResolved.unhandledAmount === 0 && rRepResolved.rebillingAmount === 0);
 
-        // 9. 憲法テストデータ投入メソッド
+        // 9. サンプルデータ投入メソッド
         recManager.loadPhase4ConstitutionalTestData();
         const p4Const = recManager.getMonthlySummaryWithRemands('2026-07');
-        assert('P4-14. 【憲法検証一括投入】請求100万、入金95万、差額-5万、返戻5万（A001・未対応）が完全復元されること', p4Const.billedAmount === 1000000 && p4Const.paidAmount === 950000 && p4Const.discrepancy === -50000 && p4Const.items[0].patientChartId === 'A001');
+        assert('P4-14. 【サンプルデータ一括投入】請求100万、入金95万、差額-5万、返戻5万（A001・未対応）が完全復元されること', p4Const.billedAmount === 1000000 && p4Const.paidAmount === 950000 && p4Const.discrepancy === -50000 && p4Const.items[0].patientChartId === 'A001');
 
         localStorage.removeItem(ReconciliationManager.STORAGE_KEY);
         ReconciliationManager.STORAGE_KEY = originalRecKey;
@@ -440,7 +440,7 @@
         } catch (e) {
           blocked = true;
         }
-        assert('P7-11. 【憲法防壁】個人情報混入データインポート試行時に復元が確実に遮断されること', blocked);
+        assert('P7-11. 【安心ガード】個人情報混入データインポート試行時に復元が確実に遮断されること', blocked);
 
       } catch (err) {
         assert('例外エラーが発生しないこと', false, err.message);
@@ -462,7 +462,7 @@
       if (allPassed) {
         summaryContainer.innerHTML = `
           <div class="summary-box">
-            🎉 全 ${testCases.length} 項目 すべて合格！ 開発憲法の外部検証基準（フェーズ1〜7 バックアップ保存＆安全復元・個人情報非保持ディープスキャン）を完全達成。
+            🎉 全 ${testCases.length} 項目 すべて合格！ 動作検証基準（フェーズ1〜7 バックアップ保存＆安全復元・個人情報非保持ディープスキャン）を完全達成。
           </div>
         `;
       } else {

@@ -202,7 +202,7 @@ class PettyCashManager {
   }
 
   /**
-   * 開発憲法検証用テストデータ投入
+   * 動作確認用サンプルデータ投入
    * （10,000円補充 → 1,000円消耗品費出金 → 残高9,000円）
    */
   loadConstitutionalTestData() {
@@ -216,7 +216,7 @@ class PettyCashManager {
       type: 'income',
       category: '小口現金補充',
       amount: 10000,
-      memo: '【憲法検証】初期補充金',
+      memo: '【サンプル】初期補充金',
       createdAt: new Date(Date.now() - 60000).toISOString()
     });
 
@@ -227,7 +227,7 @@ class PettyCashManager {
       type: 'expense',
       category: '消耗品費',
       amount: 1000,
-      memo: '【憲法検証】事務用品（ボールペン等）購入',
+      memo: '【サンプル】事務用品（ボールペン等）購入',
       createdAt: new Date().toISOString()
     });
 

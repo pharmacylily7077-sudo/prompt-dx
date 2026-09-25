@@ -66,7 +66,7 @@ function run() {
       memo: "事務用品購入"
     });
     assert("フェーズ1-4: 出金データが1,000円で登録されること", exp.amount === 1000);
-    assert("フェーズ1-5: 【憲法検証】残高が暗算通りの9,000円（10,000 - 1,000）であること", pManager.getCurrentBalance() === 9000);
+    assert("フェーズ1-5: 【厳格に検証】残高が暗算通りの9,000円（10,000 - 1,000）であること", pManager.getCurrentBalance() === 9000);
 
     // 4. サマリー集計
     var pSummary = pManager.getSummary("2026-09");
@@ -101,19 +101,19 @@ function run() {
     assert("フェーズ2-2: あるべき現金が60,000円（つり銭5万+売上1万）であること", matchCalc.expectedCash === 60000);
     assert("フェーズ2-3: 実査6万円で過不足額が0円（一致）であること", matchCalc.discrepancy === 0 && matchCalc.status === "match");
 
-    // 3. 【憲法検証】レジ現金照合: 実査現金200円不足
+    // 3. 【厳格に検証】レジ現金照合: 実査現金200円不足
     var shortageCalc = CashRegisterManager.calculateCashDiscrepancy(50000, 10000, 59800);
-    assert("フェーズ2-4: 【憲法検証】実査59,800円で過不足額が -200円（不足）であること", shortageCalc.discrepancy === -200 && shortageCalc.status === "shortage");
+    assert("フェーズ2-4: 【厳格に検証】実査59,800円で過不足額が -200円（不足）であること", shortageCalc.discrepancy === -200 && shortageCalc.status === "shortage");
     assert("フェーズ2-5: 不足表示ラベルに「不足」と「-200」が含まれること", shortageCalc.statusLabel.indexOf("不足") >= 0 && shortageCalc.statusLabel.indexOf("-200") >= 0);
 
     // 4. レジ現金照合: 過剰
     var excessCalc = CashRegisterManager.calculateCashDiscrepancy(50000, 10000, 60100);
     assert("フェーズ2-6: 実査60,100円で過不足額が +100円（過剰）であること", excessCalc.discrepancy === 100 && excessCalc.status === "excess");
 
-    // 5. 【憲法検証】クレジット手数料・純入金計算（売上10,000円、手数料率3.24%）
+    // 5. 【厳格に検証】クレジット手数料・純入金計算（売上10,000円、手数料率3.24%）
     var creditCalc = CashRegisterManager.calculateCredit(10000, 3.24);
-    assert("フェーズ2-7: 【憲法検証】クレジット売上10,000円の手数料が324円であること", creditCalc.feeAmount === 324);
-    assert("フェーズ2-8: 【憲法検証】差引入金見込額が9,676円（10,000 - 324）であること", creditCalc.netCreditAmount === 9676);
+    assert("フェーズ2-7: 【厳格に検証】クレジット売上10,000円の手数料が324円であること", creditCalc.feeAmount === 324);
+    assert("フェーズ2-8: 【厳格に検証】差引入金見込額が9,676円（10,000 - 324）であること", creditCalc.netCreditAmount === 9676);
 
     // 6. 手数料四捨五入
     var roundDown = CashRegisterManager.calculateCredit(1000, 3.24); // 32.4円 -> 32円
@@ -130,7 +130,7 @@ function run() {
       actualCash: 59800,
       creditSales: 10000,
       feeRate: 3.24,
-      memo: "憲法検証データ"
+      memo: "サンプルデータ"
     });
     assert("フェーズ2-11: 保存レコードの過不足が -200円 であること", saved.discrepancy === -200);
     assert("フェーズ2-12: 保存レコードのクレジット手数料が324円であること", saved.feeAmount === 324);
@@ -155,10 +155,10 @@ function run() {
     assert("フェーズ2-16: 同一日付の上書き更新で件数が1件のままであること", rReloaded.records.length === 1);
     assert("フェーズ2-17: 上書き後の過不足が0円（一致）に更新されること", rReloaded.getRecordByDate("2026-09-17").discrepancy === 0);
 
-    // 10. 憲法テストデータ投入メソッド検証
+    // 10. サンプルデータ投入メソッド検証
     rReloaded.loadConstitutionalTestData("2026-09-17");
     var constData = rReloaded.getRecordByDate("2026-09-17");
-    assert("フェーズ2-18: 憲法検証データ投入で -200円 不足と手数料324円が反映されること", constData.discrepancy === -200 && constData.feeAmount === 324 && constData.netCreditAmount === 9676);
+    assert("フェーズ2-18: サンプルデータ投入で -200円 不足と手数料324円が反映されること", constData.discrepancy === -200 && constData.feeAmount === 324 && constData.netCreditAmount === 9676);
 
     // 11. 削除
     rReloaded.deleteRecord(constData.id);
@@ -218,7 +218,7 @@ function run() {
 
     // 2. 差額計算ロジック（静的メソッド）
     var discShortage = ReconciliationManager.calculateDiscrepancy(1000000, 950000);
-    assert("フェーズ4-3: 【憲法検証】請求100万・入金95万で差額が -50,000円（不足）であること", discShortage.discrepancy === -50000 && discShortage.status === 'shortage' && discShortage.shortageAmount === 50000);
+    assert("フェーズ4-3: 【厳格に検証】請求100万・入金95万で差額が -50,000円（不足）であること", discShortage.discrepancy === -50000 && discShortage.status === 'shortage' && discShortage.shortageAmount === 50000);
 
     var discMatch = ReconciliationManager.calculateDiscrepancy(1000000, 1000000);
     assert("フェーズ4-4: 請求100万・入金100万で差額0円（一致）であること", discMatch.discrepancy === 0 && discMatch.status === 'match' && discMatch.shortageAmount === 0);
@@ -230,7 +230,7 @@ function run() {
     assert("フェーズ4-6: 2026-07請求の入金予定月が2026-09（2ヶ月後）であること", ReconciliationManager.calculateExpectedDepositMonth('2026-07') === '2026-09');
     assert("フェーズ4-7: 2026-11請求の入金予定月が年をまたいで2027-01であること", ReconciliationManager.calculateExpectedDepositMonth('2026-11') === '2027-01');
 
-    // 4. 【憲法検証: 個人情報非保持規約】カルテ番号バリデーション
+    // 4. 【厳格に検証: 個人情報非保持ルール】カルテ番号バリデーション
     var chartIdValid = ReconciliationManager.validatePatientChartId('A001');
     assert("フェーズ4-8: カルテ番号「A001」が正常にバリデーション通過すること", chartIdValid === 'A001');
 
@@ -240,7 +240,7 @@ function run() {
     } catch (e) {
       piiBlocked = true;
     }
-    assert("フェーズ4-9: 【憲法規約】患者氏名（漢字）入力時に個人情報保護エラーがスローされること", piiBlocked);
+    assert("フェーズ4-9: 【厳格に検証】患者氏名（漢字）入力時に個人情報保護エラーがスローされること", piiBlocked);
 
     var kanaBlocked = false;
     try {
@@ -248,7 +248,7 @@ function run() {
     } catch (e) {
       kanaBlocked = true;
     }
-    assert("フェーズ4-10: 【憲法規約】患者氏名（ひらがな）入力時に個人情報保護エラーがスローされること", kanaBlocked);
+    assert("フェーズ4-10: 【厳格に検証】患者氏名（ひらがな）入力時に個人情報保護エラーがスローされること", kanaBlocked);
 
     // 5. 請求月サマリーの保存・更新
     var savedRec = recManager.saveMonthlyRecord({
@@ -271,9 +271,9 @@ function run() {
     });
     assert("フェーズ4-12: カルテ番号A001の返戻案件が50,000円・未対応で登録されること", remand1.patientChartId === 'A001' && remand1.amount === 50000 && remand1.status === 'unhandled');
 
-    // 7. 【憲法検証: 差額完全特定レポート】
+    // 7. 【厳格に検証: 差額完全特定レポート】
     var rep1 = recManager.getMonthlySummaryWithRemands('2026-07');
-    assert("フェーズ4-13: 【憲法検証】差額5万円に対し返戻5万円で原因未特定差額が0円（完全特定済）であること", rep1.shortageAmount === 50000 && rep1.totalRemandAmount === 50000 && rep1.unaccountedAmount === 0 && rep1.reconciliationStatus === 'fully_explained');
+    assert("フェーズ4-13: 【厳格に検証】差額5万円に対し返戻5万円で原因未特定差額が0円（完全特定済）であること", rep1.shortageAmount === 50000 && rep1.totalRemandAmount === 50000 && rep1.unaccountedAmount === 0 && rep1.reconciliationStatus === 'fully_explained');
     assert("フェーズ4-14: 未対応集計が1件（50,000円）であること", rep1.unhandledCount === 1 && rep1.unhandledAmount === 50000);
 
     // 8. ステータス変更: 「未対応」→「再請求中」
@@ -318,11 +318,11 @@ function run() {
     assert("フェーズ4-22: 複数請求月（2026-07と2026-08）が独立して2件保持されること", recReloaded.monthlyRecords.length === 2);
     assert("フェーズ4-23: 2026-08請求分は差額0円（一致）として独立保持されること", recReloaded.getMonthlyRecord('2026-08').discrepancy === 0);
 
-    // 13. 【憲法外部検証データ投入メソッド検証】
+    // 13. 【動作確認用データ投入メソッド検証】
     recReloaded.loadPhase4ConstitutionalTestData();
     var constSummary = recReloaded.getMonthlySummaryWithRemands('2026-07');
-    assert("フェーズ4-24: 【憲法検証一括投入】請求100万、入金95万、差額-5万、返戻5万（A001・未対応）が完全復元されること", constSummary.billedAmount === 1000000 && constSummary.paidAmount === 950000 && constSummary.discrepancy === -50000 && constSummary.totalRemandAmount === 50000 && constSummary.items[0].patientChartId === 'A001' && constSummary.items[0].status === 'unhandled');
-    assert("フェーズ4-25: 【憲法検証一括投入】原因未特定差額が0円（完全特定済）であること", constSummary.unaccountedAmount === 0 && constSummary.reconciliationStatus === 'fully_explained');
+    assert("フェーズ4-24: 【厳格に検証】請求100万、入金95万、差額-5万、返戻5万（A001・未対応）が完全復元されること", constSummary.billedAmount === 1000000 && constSummary.paidAmount === 950000 && constSummary.discrepancy === -50000 && constSummary.totalRemandAmount === 50000 && constSummary.items[0].patientChartId === 'A001' && constSummary.items[0].status === 'unhandled');
+    assert("フェーズ4-25: 【厳格に検証】原因未特定差額が0円（完全特定済）であること", constSummary.unaccountedAmount === 0 && constSummary.reconciliationStatus === 'fully_explained');
 
     results.push("\n=== 【フェーズ5: UIデザインのブラッシュアップ テスト】 ===");
     var cssCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/css/style.css', $.NSUTF8StringEncoding, null).js;
@@ -356,7 +356,7 @@ function run() {
     var manualPath = currentDir + '/docs/MANUAL.md';
     var manualCode = $.NSString.stringWithContentsOfFileEncodingError(manualPath, $.NSUTF8StringEncoding, null).js;
     assert("フェーズ6-1: 簡易操作マニュアル(docs/MANUAL.md)が存在すること", manualCode && manualCode.length > 0);
-    assert("フェーズ6-2: 【憲法思想】マニュアルにお金とスタッフを守る基本精神が明記されていること", manualCode.indexOf('儲けるためではなく') !== -1 && manualCode.indexOf('守るため') !== -1);
+    assert("フェーズ6-2: 【基本精神】マニュアルにお金とスタッフを守る基本精神が明記されていること", manualCode.indexOf('儲けるためではなく') !== -1 && manualCode.indexOf('守るため') !== -1);
     assert("フェーズ6-3: 【業務手順】営業終了後の5分締め手順（STEP 1〜5）が明記されていること", manualCode.indexOf('5分締め') !== -1 && manualCode.indexOf('STEP 1') !== -1);
     assert("フェーズ6-4: 【抑止力】過不足発生時の自腹補填禁止およびエスカレーションルールが明記されていること", manualCode.indexOf('自腹で補填') !== -1 && manualCode.indexOf('エスカレーション') !== -1);
     assert("フェーズ6-5: 【セキュリティ規約】個人情報非保持（カルテ番号のみ、氏名厳禁）が明記されていること", manualCode.indexOf('カルテ番号') !== -1 && manualCode.indexOf('個人情報') !== -1);
@@ -370,7 +370,7 @@ function run() {
     var emptyReport = mCash.getMonthlyReport("2026-10", mPetty, mReconcile);
     assert("フェーズ6-6: データが存在しない月で安全にゼロサマリーが生成されること", emptyReport.closingDaysCount === 0 && emptyReport.grandTotalSales === 0);
 
-    // 憲法月次データ一括セット
+    // 月次データ一括セット
     mCash.loadMonthlyConstitutionalTestData(mPetty, mReconcile);
     var monthlyReport = mCash.getMonthlyReport("2026-09", mPetty, mReconcile);
 
@@ -422,33 +422,33 @@ function run() {
     var parsedExport = JSON.parse(jsonString);
     assert("フェーズ7-7: パースしたJSONオブジェクトがエクスポート元オブジェクトと完全一致すること", parsedExport.data.pettyCash[0].amount === 10000 && parsedExport.data.pettyCash[1].amount === 1000);
 
-    // 4. 【憲法検証】個人情報非保持ディープスキャン: 正常データ
+    // 4. 【厳格に検証】個人情報非保持ディープスキャン: 正常データ
     var scanClean = BackupManager.scanForPersonalInfo(exportedObj);
-    assert("フェーズ7-8: 【憲法検証】規約準拠データ（カルテ番号A001）でスキャンが合格(safe: true)すること", scanClean.safe === true && scanClean.violations.length === 0);
+    assert("フェーズ7-8: 【厳格に検証】規約準拠データ（カルテ番号A001）でスキャンが合格(safe: true)すること", scanClean.safe === true && scanClean.violations.length === 0);
 
-    // 5. 【憲法検証】個人情報非保持ディープスキャン: 漢字氏名混入時の検知・遮断
+    // 5. 【厳格に検証】個人情報非保持ディープスキャン: 漢字氏名混入時の検知・遮断
     var taintedKanjiObj = JSON.parse(JSON.stringify(exportedObj));
     taintedKanjiObj.data.reconciliation.remandItems[0].patientChartId = '山田花子';
     var scanKanji = BackupManager.scanForPersonalInfo(taintedKanjiObj);
-    assert("フェーズ7-9: 【憲法検証】患者漢字氏名「山田花子」混入時にスキャンが不合格(safe: false)となること", scanKanji.safe === false && scanKanji.violations.length > 0 && scanKanji.violations[0].indexOf('山田花子') !== -1);
+    assert("フェーズ7-9: 【厳格に検証】患者漢字氏名「山田花子」混入時にスキャンが不合格(safe: false)となること", scanKanji.safe === false && scanKanji.violations.length > 0 && scanKanji.violations[0].indexOf('山田花子') !== -1);
 
-    // 6. 【憲法検証】個人情報非保持ディープスキャン: ひらがな氏名混入時の検知・遮断
+    // 6. 【厳格に検証】個人情報非保持ディープスキャン: ひらがな氏名混入時の検知・遮断
     var taintedHiraganaObj = JSON.parse(JSON.stringify(exportedObj));
     taintedHiraganaObj.data.reconciliation.remandItems[0].patientChartId = 'たなかたろう';
     var scanHiragana = BackupManager.scanForPersonalInfo(taintedHiraganaObj);
-    assert("フェーズ7-10: 【憲法検証】患者ひらがな氏名「たなかたろう」混入時にスキャンが不合格となること", scanHiragana.safe === false && scanHiragana.violations[0].indexOf('たなかたろう') !== -1);
+    assert("フェーズ7-10: 【厳格に検証】患者ひらがな氏名「たなかたろう」混入時にスキャンが不合格となること", scanHiragana.safe === false && scanHiragana.violations[0].indexOf('たなかたろう') !== -1);
 
-    // 7. 【憲法検証】個人情報非保持ディープスキャン: カタカナ氏名混入時の検知・遮断
+    // 7. 【厳格に検証】個人情報非保持ディープスキャン: カタカナ氏名混入時の検知・遮断
     var taintedKatakanaObj = JSON.parse(JSON.stringify(exportedObj));
     taintedKatakanaObj.data.reconciliation.remandItems[0].patientChartId = 'サトウイチロウ';
     var scanKatakana = BackupManager.scanForPersonalInfo(taintedKatakanaObj);
-    assert("フェーズ7-11: 【憲法検証】患者カタカナ氏名「サトウイチロウ」混入時にスキャンが不合格となること", scanKatakana.safe === false && scanKatakana.violations[0].indexOf('サトウイチロウ') !== -1);
+    assert("フェーズ7-11: 【厳格に検証】患者カタカナ氏名「サトウイチロウ」混入時にスキャンが不合格となること", scanKatakana.safe === false && scanKatakana.violations[0].indexOf('サトウイチロウ') !== -1);
 
-    // 8. 【憲法検証】個人情報非保持ディープスキャン: 個人情報プロパティ(patientName等)混入検知
+    // 8. 【厳格に検証】個人情報非保持ディープスキャン: 個人情報プロパティ(patientName等)混入検知
     var taintedPropObj = JSON.parse(JSON.stringify(exportedObj));
     taintedPropObj.data.reconciliation.remandItems[0].patientName = '鈴木一郎';
     var scanProp = BackupManager.scanForPersonalInfo(taintedPropObj);
-    assert("フェーズ7-12: 【憲法検証】個人情報プロパティ(patientName)混入時にスキャンが不合格となること", scanProp.safe === false);
+    assert("フェーズ7-12: 【厳格に検証】個人情報プロパティ(patientName)混入時にスキャンが不合格となること", scanProp.safe === false);
 
     // 9. validateBackupData の検証
     var valValid = BackupManager.validateBackupData(jsonString);
@@ -494,7 +494,7 @@ function run() {
     } catch (e) {
       threwException = true;
     }
-    assert("フェーズ7-21: 【憲法検証】個人情報混入データインポート時に例外がスローされ復元が遮断されること", threwException === true);
+    assert("フェーズ7-21: 【厳格に検証】個人情報混入データインポート時に例外がスローされ復元が遮断されること", threwException === true);
 
     // 12. UI要素（HTML・CSS・MANUAL.md）の存在検証
     // HTML・CSS・MANUALを再読み込み（最新の内容を反映）
@@ -585,14 +585,14 @@ function run() {
     var reloadedCManager = new CloudSyncManager(localStorage);
     assert("フェーズ9-5: 別インスタンス再読み込み後もクラウド設定が維持されること", reloadedCManager.settings.endpointUrl === testEndpoint && reloadedCManager.settings.storeName === 'リリー薬局 駅前店');
 
-    // 2. セキュリティ憲法検証（個人情報非保持スキャン）
+    // 2. プライバシー保護・安全スキャン検証（個人情報非保持スキャン）
     var cleanPayload = {
       action: 'daily_closing',
       storeName: 'リリー薬局',
       data: { date: '2026-09-18', presaleAmount: 10000, memo: '10円渡し間違いの疑い' }
     };
     var scanClean = CloudSyncManager.scanSafety(cleanPayload);
-    assert("フェーズ9-6: 【憲法検証】規約準拠データで安全スキャンが合格(safe: true)すること", scanClean.safe === true);
+    assert("フェーズ9-6: 【厳格に検証】プライバシー保護ルール準拠データで安全スキャンが合格(safe: true)すること", scanClean.safe === true);
 
     var taintedPayload = {
       action: 'daily_closing',
@@ -600,7 +600,7 @@ function run() {
       data: { date: '2026-09-18', patientName: '山田花子', memo: '患者氏名混入' }
     };
     var scanTainted = CloudSyncManager.scanSafety(taintedPayload);
-    assert("フェーズ9-7: 【憲法検証】患者氏名混入時に安全スキャンが不合格(safe: false)となること", scanTainted.safe === false);
+    assert("フェーズ9-7: 【厳格に検証】患者氏名混入時に安全スキャンが不合格(safe: false)となること", scanTainted.safe === false);
 
     // 3. オフラインキューイング機能の検証
     assert("フェーズ9-8: 初期キューが空(0件)であること", cManager.queue.length === 0);
@@ -625,7 +625,7 @@ function run() {
 
     results.push("\n==============================================");
     results.push("🎉 フェーズ1（14）＋ フェーズ2（19）＋ フェーズ3（25）＋ フェーズ4（25）＋ フェーズ5（12）＋ フェーズ6（22）＋ フェーズ7（26）＋ フェーズ8（26）＋ フェーズ9（20）全189項目に完全合格！");
-    results.push("外部検証基準（本部GAS受取プログラム・リアルタイム同期・個人情報遮断・オフライン保護・UI・マニュアル）を完全達成。");
+    results.push("厳格な検証基準（本部GAS受取プログラム・リアルタイム同期・個人情報遮断・オフライン保護・UI・マニュアル）を完全達成。");
     results.push("==============================================");
     return results.join("\n");
   } catch (e) {

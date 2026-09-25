@@ -307,7 +307,7 @@ class CashRegisterManager {
   }
 
   /**
-   * 憲法検証用テストデータ投入（フェーズ2互換）
+   * 動作確認用サンプルデータ投入（フェーズ2互換）
    * @param {string} [targetDate] 対象日付（省略時は当日）
    */
   loadConstitutionalTestData(targetDate = null) {
@@ -319,12 +319,12 @@ class CashRegisterManager {
       actualCash: 59800, // 不足 -200円
       creditSales: 10000,
       feeRate: 3.24,     // 手数料 324円、純入金 9,676円
-      memo: '【憲法検証】実査現金200円不足、クレジット10,000円（手数料324円）'
+      memo: '【サンプル】実査現金200円不足、クレジット10,000円（手数料324円）'
     });
   }
 
   /**
-   * フェーズ3 外部検証用テストデータ投入（複数日：Day 1 & Day 2）
+   * 動作確認用サンプルデータ投入（複数日：Day 1 & Day 2）
    * @param {Object} [pettyCashManager]
    */
   loadPhase3ConstitutionalTestData(pettyCashManager = null) {
@@ -358,7 +358,7 @@ class CashRegisterManager {
       actualCash: 59800, // 不足 -200円
       creditSales: 10000,
       feeRate: 3.24,     // 手数料 324円、純入金 9,676円
-      memo: '【憲法検証 Day1】実査200円不足、消耗品費1,000円出金'
+      memo: '【サンプル Day1】実査200円不足、消耗品費1,000円出金'
     });
 
     // Day 2: 2026-09-18
@@ -369,7 +369,7 @@ class CashRegisterManager {
       actualCash: 70000, // 一致 ±0円
       creditSales: 5000,
       feeRate: 3.24,     // 手数料 162円、純入金 4,838円
-      memo: '【憲法検証 Day2】レジ現金完全一致、クレジット5,000円'
+      memo: '【サンプル Day2】レジ現金完全一致、クレジット5,000円'
     });
   }
 
@@ -565,13 +565,13 @@ class CashRegisterManager {
   }
 
   /**
-   * フェーズ6 月次集計 憲法検証用テストデータ投入
+   * 動作確認用月次サンプルデータ投入
    * （暗算検証可能なデータ: 窓口3万+クレジット1.5万=総売上4.5万、過不足累計-200円、小口経費1,000円、調剤報酬差額-5万円）
    * @param {Object} [pettyCashManager]
    * @param {Object} [reconciliationManager]
    */
   loadMonthlyConstitutionalTestData(pettyCashManager = null, reconciliationManager = null) {
-    // 1. 日計締め（フェーズ3の複数日データと同一基準）
+    // 1. 日計締め（複数日サンプルデータと同一基準）
     this.loadPhase3ConstitutionalTestData(pettyCashManager);
 
     // 2. 調剤報酬消込（2026-07請求分、入金予定月: 2026-09）
@@ -582,7 +582,7 @@ class CashRegisterManager {
         depositMonth: '2026-09',
         billedAmount: 1000000,
         paidAmount: 950000,
-        memo: '【憲法検証】7月調剤分レセプト請求（9月入金差額-5万円）'
+        memo: '【サンプル】7月調剤分レセプト請求（9月入金差額-5万円）'
       });
       reconciliationManager.addRemandItem({
         billingMonth: '2026-07',
@@ -590,7 +590,7 @@ class CashRegisterManager {
         amount: 50000,
         reason: '保険証資格喪失・無効（期限切れ・転職等）',
         status: 'unhandled',
-        handlingNote: '【憲法検証】7/12受診時保険証失効。新保険証確認中'
+        handlingNote: '【サンプル】7/12受診時保険証失効。新保険証確認中'
       });
     }
   }

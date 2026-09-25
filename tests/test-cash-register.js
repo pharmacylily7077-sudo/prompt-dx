@@ -1,6 +1,6 @@
 /**
  * レジ現金＆クレジット決済機能 自動テストスクリプト (tests/test-cash-register.js)
- * 開発憲法遵守: 実査現金200円不足（「不足 -200円」）およびクレジット10,000円の手数料324円引きを検証
+ * 厳格に検証: 実査現金200円不足（「不足 -200円」）およびクレジット10,000円の手数料324円引きを検証
  */
 
 const localStorageMock = (() => {
@@ -42,10 +42,10 @@ assert(matchCalc.expectedCash === 60000, 'つり銭5万+売上1万であるべ�
 assert(matchCalc.discrepancy === 0, '実査6万で過不足額が0円であること');
 assert(matchCalc.status === 'match', 'ステータスが "match" であること');
 
-// 3. レジ現金照合: 外部検証（200円不足パターン）
-console.log('\n--- ステップ2: 【憲法検証】レジ現金照合（200円不足パターン） ---');
+// 3. レジ現金照合: 厳格検証（200円不足パターン）
+console.log('\n--- ステップ2: 【厳格検証】レジ現金照合（200円不足パターン） ---');
 const shortageCalc = global.CashRegisterManager.calculateCashDiscrepancy(50000, 10000, 59800);
-assert(shortageCalc.discrepancy === -200, '【憲法検証】実査59,800円で過不足額が -200円 であること');
+assert(shortageCalc.discrepancy === -200, '【厳格検証】実査59,800円で過不足額が -200円 であること');
 assert(shortageCalc.status === 'shortage', 'ステータスが "shortage"（不足）であること');
 assert(shortageCalc.statusLabel.includes('不足') && shortageCalc.statusLabel.includes('-200'), '表示ラベルに「不足」と「-200」が含まれること');
 
@@ -55,11 +55,11 @@ const excessCalc = global.CashRegisterManager.calculateCashDiscrepancy(50000, 10
 assert(excessCalc.discrepancy === 100, '実査60,100円で過不足額が +100円 であること');
 assert(excessCalc.status === 'excess', 'ステータスが "excess"（過剰）であること');
 
-// 5. クレジット決済: 外部検証（売上10,000円・手数料率3.24%）
-console.log('\n--- ステップ4: 【憲法検証】クレジット手数料・純入金計算 ---');
+// 5. クレジット決済: 厳格検証（売上10,000円・手数料率3.24%）
+console.log('\n--- ステップ4: 【厳格検証】クレジット手数料・純入金計算 ---');
 const creditCalc = global.CashRegisterManager.calculateCredit(10000, 3.24);
-assert(creditCalc.feeAmount === 324, '【憲法検証】売上10,000円の手数料が324円（10,000 × 0.0324）であること');
-assert(creditCalc.netCreditAmount === 9676, '【憲法検証】差引入金見込額が9,676円（10,000 - 324）であること');
+assert(creditCalc.feeAmount === 324, '【厳格検証】売上10,000円の手数料が324円（10,000 × 0.0324）であること');
+assert(creditCalc.netCreditAmount === 9676, '【厳格検証】差引入金見込額が9,676円（10,000 - 324）であること');
 
 // 6. クレジット決済: 四捨五入検証
 console.log('\n--- ステップ5: クレジット手数料の四捨五入検証 ---');
@@ -82,7 +82,7 @@ const savedRecord = manager.saveRecord({
   actualCash: 59800,
   creditSales: 10000,
   feeRate: 3.24,
-  memo: '憲法検証データ'
+  memo: 'サンプルデータ'
 });
 assert(savedRecord.discrepancy === -200, '保存された過不足額が -200円 であること');
 assert(savedRecord.feeAmount === 324, '保存された手数料が 324円 であること');

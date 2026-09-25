@@ -253,12 +253,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 開発憲法検証ボタン（10,000円補充 → 1,000円出金 → 残高9,000円）
+  // 動作確認用サンプルデータボタン（10,000円補充 → 1,000円出金 → 残高9,000円）
   if (testDataBtn) {
     testDataBtn.addEventListener('click', () => {
-      if (confirm('【開発憲法 外部検証】\n「小口補充 10,000円」および「消耗品費 1,000円」の暗算用検証データをセットしますか？\n（現在のデータは検証データに置き換わります）')) {
+      if (confirm('【動作確認サンプル】\n「小口補充 10,000円」および「消耗品費 1,000円」のサンプルデータをセットしますか？\n（現在のデータはサンプルデータに置き換わります）')) {
         pettyCashManager.loadConstitutionalTestData();
-        showToast('外部検証データをセットしました（残高9,000円）');
+        showToast('サンプルデータをセットしました（残高9,000円）');
       }
     });
   }
@@ -833,30 +833,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // フェーズ2 外部検証ボタン
+  // 動作確認用サンプルデータボタン（レジ現金＆クレジット）
   if (closingTestBtn) {
     closingTestBtn.addEventListener('click', () => {
-      if (confirm('【開発憲法 外部検証】\n「つり銭準備金 50,000円」「レセコン売上 10,000円」「実査現金 59,800円（200円不足）」「クレジット 10,000円（手数料324円）」の検証データをセットしますか？')) {
+      if (confirm('【動作確認サンプル】\n「つり銭準備金 50,000円」「レセコン売上 10,000円」「実査現金 59,800円（200円不足）」「クレジット 10,000円（手数料324円）」のサンプルデータをセットしますか？')) {
         cashRegisterManager.loadConstitutionalTestData();
 
         const today = new Date().toISOString().substring(0, 10);
         if (dailyDateInput) dailyDateInput.value = today;
         loadDateData(today);
-        showToast('外部検証データをセットしました（実査200円不足⚠️、クレジット手数料324円）', 'error');
+        showToast('サンプルデータをセットしました（実査200円不足、クレジット手数料324円）', 'info');
       }
     });
   }
 
-  // フェーズ3 外部検証ボタン（複数日：Day 1 & Day 2）
+  // 複数日サンプルデータボタン（複数日：Day 1 & Day 2）
   if (phase3TestBtn) {
     phase3TestBtn.addEventListener('click', () => {
-      if (confirm('【開発憲法 フェーズ3外部検証】\n「Day1（2026-09-17: 200円不足・小口1千円出金）」および「Day2（2026-09-18: 一致・クレジット5千円）」の複数日日計締めデータをセットしますか？')) {
+      if (confirm('【動作確認サンプル】\n「Day1（2026-09-17: 200円不足・小口1千円出金）」および「Day2（2026-09-18: 一致・クレジット5千円）」の複数日サンプルデータをセットしますか？')) {
         cashRegisterManager.loadPhase3ConstitutionalTestData(pettyCashManager);
 
         // まずDay 1を表示
         if (dailyDateInput) dailyDateInput.value = '2026-09-17';
         loadDateData('2026-09-17');
-        showToast('フェーズ3検証データ（Day 1 & Day 2）をセットしました。日付を切り替えて履歴の完全性を確認してください。', 'success');
+        showToast('複数日サンプルデータ（Day 1 & Day 2）をセットしました。日付を切り替えて履歴を確認できます。', 'success');
       }
     });
   }
@@ -1411,13 +1411,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 憲法外部検証ボタン（フェーズ4）
+  // 動作確認用サンプルデータボタン（調剤報酬消込・返戻追跡）
   if (btnLoadReconcileTest) {
     btnLoadReconcileTest.addEventListener('click', () => {
-      if (confirm('【開発憲法 フェーズ4外部検証】\n「請求1,000,000円」「入金950,000円（差額 -50,000円）」「返戻50,000円（カルテ番号: A001, 未対応）」の検証データをセットしますか？')) {
+      if (confirm('【動作確認サンプル】\n「請求1,000,000円」「入金950,000円（差額 -50,000円）」「返戻50,000円（カルテ番号: A001, 未対応）」のサンプルデータをセットしますか？')) {
         reconciliationManager.loadPhase4ConstitutionalTestData();
         loadReconcileMonth('2026-07');
-        showToast('フェーズ4外部検証データをセットしました（請求100万、入金95万、差額-5万、返戻5万/A001）', 'error');
+        showToast('サンプルデータをセットしました（請求100万、入金95万、差額-5万、返戻5万/A001）', 'info');
       }
     });
   }
@@ -1748,17 +1748,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 憲法検証用月次テストデータ一括セット
+  // 動作確認用月次サンプルデータ一括セット
   if (btnLoadMonthlyTestData) {
     btnLoadMonthlyTestData.addEventListener('click', () => {
-      if (confirm('【開発憲法 フェーズ6外部検証】\n「2026-09」の月次検証データを一括セットしますか？\n・日計締め: Day1(-200円不足) & Day2(完全一致) 計総売上4.5万円、過不足累計-200円\n・小口現金: 補充1万円、出金1千円、残高9千円\n・調剤報酬: 7月請求分(9月入金)、請求100万、入金95万、差額-5万、返戻5万(A001/未対応)')) {
+      if (confirm('【動作確認サンプル】\n「2026-09」の月次サンプルデータを一括セットしますか？\n・日計締め: Day1(200円不足) & Day2(完全一致) 計総売上4.5万円、過不足累計-200円\n・小口現金: 補充1万円、出金1千円、残高9千円\n・調剤報酬: 7月請求分(9月入金)、請求100万、入金95万、差額-5万、返戻5万(A001/未対応)')) {
         cashRegisterManager.loadMonthlyConstitutionalTestData(pettyCashManager, reconciliationManager);
         if (monthlySelectMonth) monthlySelectMonth.value = '2026-09';
         renderPettyCash();
         renderDailyClosing();
         loadReconcileMonth('2026-07');
         renderMonthlyReport('2026-09');
-        showToast('月次検証データを一括投入しました（総売上4.5万、過不足-200円、小口経費1千円、調剤報酬差額-5万円）');
+        showToast('月次サンプルデータを一括投入しました（総売上4.5万、過不足-200円、小口経費1千円、調剤報酬差額-5万円）');
       }
     });
   }
@@ -1907,7 +1907,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="scan-box-error">
               <span>⚠️</span>
               <div>
-                <strong>復元を拒否しました: セキュリティ憲法違反または無効なデータ</strong>
+                <strong>復元を中止しました: 個人情報保護ルール違反または無効なデータ</strong>
                 <div>${escapeHtml(validation.error)}</div>
                 ${violationsHtml}
               </div>
