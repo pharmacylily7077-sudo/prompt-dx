@@ -7,61 +7,83 @@
    =================================================== */
 
 :root {
-  /* メディカルグリーン（基調ブランド色） WCAG AA/AAA準拠 */
-  --primary: #057a55;
-  --primary-hover: #046c4e;
-  --primary-dark: #03543f;
-  --primary-light: #ecfdf5;
-  --primary-border: #a7f3d0;
+  /* ===================================================
+     最高峰エグゼクティブ・パレット (Navy / Champagne Gold / Platinum Silver)
+     「大人の最高級万年筆・手帳、ロールスロイスの気品と静謐な美」
+     =================================================== */
+  /* ディープ・オックスフォードネイビー（基本骨格・重厚・信頼） */
+  --navy-dark: #071324;
+  --navy: #0d1e38;
+  --navy-light: #162f55;
+  --navy-surface: #1e3a63;
 
-  /* スレートネイビー / メディカルディープブルー（厳格さ・可視化・ヘッダー） */
-  --navy-dark: #091322;
-  --navy: #0f2442;
-  --navy-light: #1e3a5f;
-  
-  /* メディカルブルー（入金・補充・レセプト・情報） */
-  --info: #1d4ed8;
-  --info-hover: #1e40af;
-  --info-light: #eff6ff;
-  --info-border: #bfdbfe;
+  /* シャンパンゴールド / アンティークブラス（品格あるアクセント・本物の輝き） */
+  --gold-primary: #b8934a;
+  --gold-hover: #a3803b;
+  --gold-light: #faf6ee;
+  --gold-border: #dfc89a;
+  --gold-gradient: linear-gradient(135deg, #c5a059 0%, #aa8235 100%);
+  --gold-text: #826021;
 
-  /* 警告・不足・出金（守りの抑止力・現金のズレ・高コントラスト） */
+  /* プラチナシルバー / スレートチタン（金属光沢の洗練・高精細な階層） */
+  --silver-light: #f8fafc;
+  --silver-surface: #edf2f7;
+  --silver-border: #cbd5e1;
+  --silver-strong: #94a3b8;
+  --silver-gradient: linear-gradient(135deg, #ffffff 0%, #edf2f7 100%);
+
+  /* システム基調色（深淵なオックスフォードネイビー & シャンパンゴールドへ昇華） */
+  /* 互換定義: --primary: #057a55 */
+  --primary: #0d2346;
+  --primary-hover: #07162d;
+  --primary-dark: #040c1a;
+  --primary-light: #f1f4f9;
+  --primary-lightest: #f8fafc;
+  --primary-border: #cbd7e6;
+
+  /* 落ち着いたロイヤルサファイア（入金・情報） */
+  --info: #163a70;
+  --info-hover: #0f274c;
+  --info-light: #f0f4fa;
+  --info-border: #bfd0eb;
+
+  /* 警告・不足・出金（品格を損なわないクリムゾンレッド） */
   --danger: #b91c1c;
   --danger-hover: #991b1b;
   --danger-light: #fef2f2;
   --danger-border: #fca5a5;
 
-  /* 注意・過剰・再請求中（アンバー） */
+  /* 注意・再請求（上質なアンバーゴールド） */
   --warning: #b45309;
   --warning-hover: #92400e;
   --warning-light: #fffbeb;
   --warning-border: #fcd34d;
 
-  /* 成功・一致 */
-  --success: #047857;
+  /* 一致・正常（重厚なフォレストエメラルド） */
+  --success: #065f46;
   --success-light: #f0fdf4;
-  --success-border: #86efac;
+  --success-border: #a7f3d0;
 
-  /* テキスト色（薄暗い調剤室・旧型液晶でもかすれない高コントラスト設計） */
-  --text-main: #0f172a;       /* 背景白で 14.7:1 の極めて明瞭なコントラスト */
-  --text-body: #1e293b;       /* 9.5:1 */
-  --text-muted: #334155;      /* 従来の薄いグレーを排し 7.5:1 を確保 */
-  --text-subtle: #475569;     /* 補助説明テキスト用 (5.5:1) */
+  /* テキスト色（万年筆インクの漆黒と深い濃淡・最高峰の可読性） */
+  --text-main: #071324;
+  --text-body: #1e293b;
+  --text-muted: #334155;
+  --text-subtle: #64748b;
 
   /* 背景・枠線 */
-  --bg-app: #f1f5f9;          /* 目に優しく眩しくないライトスレート背景 */
+  --bg-app: #f4f6f9;
   --bg-card: #ffffff;
   --bg-subtle: #f8fafc;
   --border: #cbd5e1;
   --border-strong: #94a3b8;
 
-  /* シャドウ・形状 */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.1), 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.1), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.12), 0 4px 6px -4px rgba(15, 23, 42, 0.08);
-  --radius: 8px;
-  --radius-lg: 12px;
+  /* シャドウ・形状（端正な角丸・重厚で繊細な陰影） */
+  --shadow-xs: 0 1px 2px rgba(7, 19, 36, 0.04);
+  --shadow-sm: 0 1px 3px rgba(7, 19, 36, 0.07), 0 1px 2px rgba(7, 19, 36, 0.04);
+  --shadow-md: 0 4px 8px -1px rgba(7, 19, 36, 0.08), 0 2px 4px -2px rgba(7, 19, 36, 0.04);
+  --shadow-lg: 0 12px 20px -4px rgba(7, 19, 36, 0.12), 0 4px 6px -4px rgba(7, 19, 36, 0.05);
+  --radius: 6px;
+  --radius-lg: 10px;
 }
 
 *, *::before, *::after {
@@ -92,11 +114,11 @@ body {
    アプリケーションヘッダー
    =================================================== */
 .app-header {
-  background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
+  background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 60%, #152b4d 100%);
   color: #ffffff;
-  padding: 1rem 1.5rem;
-  box-shadow: var(--shadow-md);
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  padding: 1.1rem 1.75rem;
+  box-shadow: 0 4px 12px rgba(7, 19, 36, 0.16);
+  border-bottom: 2px solid var(--gold-primary);
 }
 
 .header-inner {
@@ -117,31 +139,32 @@ body {
 }
 
 .brand-badge {
-  background-color: var(--primary);
-  color: #ffffff;
+  background: var(--gold-gradient);
+  color: var(--navy-dark);
   font-size: 0.8rem;
-  font-weight: 700;
-  padding: 0.3rem 0.6rem;
+  font-weight: 800;
+  padding: 0.35rem 0.75rem;
   border-radius: 4px;
-  letter-spacing: 0.05em;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.08em;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  border: 1px solid #ebd9a8;
 }
 
 .brand-title {
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   font-weight: 700;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   color: #ffffff;
 }
 
 .pharmacy-badge {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
   padding: 0.3rem 0.85rem;
-  border-radius: 9999px;
-  color: #f1f5f9;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: #e2e8f0;
+  border: 1px solid rgba(203, 213, 225, 0.25);
 }
 
 .header-right-area {
@@ -157,7 +180,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.25);
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -184,25 +207,29 @@ body {
 }
 
 .btn-backup-export {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
+  border: 1px solid rgba(203, 213, 225, 0.3);
 }
 
 .btn-backup-export:hover {
-  background: rgba(255, 255, 255, 0.28);
-  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+  border-color: #cbd5e1;
+  color: #ffffff;
   transform: translateY(-1px);
 }
 
 .btn-backup-import {
-  background: var(--primary);
-  color: #ffffff;
-  border-color: var(--primary-light);
+  background: var(--gold-gradient);
+  color: var(--navy-dark);
+  border: 1px solid #ebd9a8;
+  font-weight: 800;
 }
 
 .btn-backup-import:hover {
-  background: var(--primary-dark);
+  background: linear-gradient(135deg, #d4af37 0%, #b8934a 100%);
   border-color: #ffffff;
+  color: #071324;
   transform: translateY(-1px);
 }
 
@@ -211,11 +238,11 @@ body {
    =================================================== */
 .tab-navigation {
   background-color: #ffffff;
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 1.5px solid #cbd5e1;
   position: sticky;
   top: 0;
   z-index: 50;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 4px rgba(7, 19, 36, 0.04);
 }
 
 .tab-container {
@@ -236,7 +263,7 @@ body {
   padding: 0.9rem 1.6rem;
   font-size: 1rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: #475569;
   background: none;
   border: none;
   border-bottom: 3px solid transparent;
@@ -247,14 +274,14 @@ body {
 }
 
 .tab-btn:hover {
-  color: var(--primary);
+  color: var(--navy);
   background-color: #f8fafc;
 }
 
 .tab-btn.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
-  background-color: var(--primary-light);
+  color: var(--navy-dark);
+  border-bottom-color: var(--gold-primary);
+  background: linear-gradient(180deg, #ffffff 0%, #faf6ee 100%);
 }
 
 .tab-btn .badge-status {
@@ -267,7 +294,7 @@ body {
 }
 
 .tab-btn.active .badge-status {
-  background-color: var(--primary);
+  background-color: var(--navy);
   color: #ffffff;
 }
 
@@ -308,29 +335,30 @@ body {
   background: var(--bg-card);
   padding: 1.25rem 1.35rem;
   border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid #e2e8f0;
-  border-left: 6px solid var(--border-strong);
+  box-shadow: 0 1px 3px rgba(7, 19, 36, 0.05);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--border-strong);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .summary-card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 12px rgba(7, 19, 36, 0.09);
+  border-color: #94a3b8;
 }
 
 .summary-card.primary {
-  border-left-color: var(--primary);
-  background: linear-gradient(145deg, #ffffff 0%, var(--primary-light) 100%);
-  border-color: var(--primary-border);
+  border-left-color: var(--gold-primary);
+  background: linear-gradient(145deg, #ffffff 0%, #fdfbf7 100%);
+  border-color: var(--gold-border);
 }
 
 .summary-card.info {
-  border-left-color: var(--info);
-  background: linear-gradient(145deg, #ffffff 0%, var(--info-light) 100%);
-  border-color: var(--info-border);
+  border-left-color: var(--navy-light);
+  background: linear-gradient(145deg, #ffffff 0%, #f1f4f9 100%);
+  border-color: #cbd7e6;
 }
 
 .summary-card.danger {
@@ -348,6 +376,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 0.4rem;
+  letter-spacing: 0.02em;
 }
 
 .summary-card-value {
@@ -359,11 +388,11 @@ body {
 }
 
 .summary-card.primary .summary-card-value {
-  color: var(--primary-dark);
+  color: var(--navy-dark);
 }
 
 .summary-card.info .summary-card-value {
-  color: var(--info);
+  color: var(--navy);
 }
 
 .summary-card.danger .summary-card-value {
@@ -407,8 +436,8 @@ body {
 
 .panel-header {
   padding: 1.1rem 1.35rem;
-  background-color: var(--bg-subtle);
-  border-bottom: 2px solid #e2e8f0;
+  background: linear-gradient(180deg, #f8fafc 0%, #edf2f7 100%);
+  border-bottom: 1.5px solid #cbd5e1;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -419,10 +448,11 @@ body {
 .panel-title {
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--navy);
+  color: var(--navy-dark);
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  letter-spacing: 0.02em;
 }
 
 .panel-body {
@@ -476,9 +506,9 @@ body {
 
 .form-input:focus, .form-select:focus, .form-textarea:focus {
   outline: none;
-  border-color: var(--primary);
+  border-color: var(--navy);
   background-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(5, 122, 85, 0.2);
+  box-shadow: 0 0 0 3px rgba(184, 147, 74, 0.22);
 }
 
 .form-input::placeholder, .form-textarea::placeholder {
@@ -559,26 +589,31 @@ body {
 }
 
 .btn-primary {
-  background-color: var(--primary);
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
   color: #ffffff;
-  box-shadow: 0 2px 4px rgba(5, 122, 85, 0.25);
+  border: 1px solid var(--navy-dark);
+  box-shadow: 0 2px 5px rgba(7, 19, 36, 0.16);
   width: 100%;
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-hover);
-  box-shadow: 0 4px 6px rgba(5, 122, 85, 0.3);
+  background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
+  border-color: var(--gold-primary);
+  box-shadow: 0 4px 10px rgba(7, 19, 36, 0.25);
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
   background-color: #ffffff;
-  color: var(--text-main);
+  color: var(--navy-dark);
   border: 1.5px solid var(--border);
+  box-shadow: 0 1px 2px rgba(7, 19, 36, 0.04);
 }
 
 .btn-secondary:hover {
-  background-color: #f1f5f9;
-  border-color: var(--border-strong);
+  background-color: #f8fafc;
+  border-color: var(--navy-light);
+  color: var(--navy-dark);
 }
 
 .btn-danger-outline {
@@ -640,12 +675,13 @@ body {
   position: sticky;
   top: 0;
   z-index: 5;
-  background-color: #f1f5f9;
-  color: var(--navy);
+  background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: var(--navy-dark);
   font-weight: 700;
   padding: 0.85rem 1rem;
-  border-bottom: 2px solid var(--border-strong);
+  border-bottom: 2px solid #cbd5e1;
   white-space: nowrap;
+  letter-spacing: 0.03em;
 }
 
 .data-table td {
@@ -661,7 +697,7 @@ body {
 }
 
 .data-table tbody tr:hover {
-  background-color: #eef2f6;
+  background-color: #f1f5fa;
 }
 
 /* ===================================================
@@ -990,7 +1026,7 @@ body {
 .comprehensive-preview-val {
   font-size: 1.25rem;
   font-weight: 800;
-  color: #38bdf8;
+  color: #dfba73;
 }
 
 /* モーダルダイアログ（タブレットでも快適表示） */
@@ -1006,7 +1042,7 @@ body {
 }
 
 .modal-dialog::backdrop {
-  background: rgba(15, 23, 42, 0.65);
+  background: rgba(7, 19, 36, 0.7);
   backdrop-filter: blur(3px);
 }
 
@@ -1023,6 +1059,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 2px solid var(--gold-primary);
 }
 
 .modal-title {
@@ -1361,8 +1398,8 @@ body {
 
 .status-select-inline:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(5, 122, 85, 0.25);
+  border-color: var(--navy);
+  box-shadow: 0 0 0 2px rgba(184, 147, 74, 0.25);
 }
 
 .status-select-inline.status-unhandled {
@@ -1990,25 +2027,27 @@ body {
 }
 
 .btn-chip-primary {
-  color: #046c4e;
-  background-color: #def7ec;
-  border-color: #84e1bc;
+  color: #826021;
+  background-color: #faf6ee;
+  border-color: #dfc89a;
 }
 
 .btn-chip-primary:hover {
-  background-color: #bcf0da;
-  border-color: #31c48d;
+  background-color: #f5eedb;
+  border-color: #b8934a;
+  color: #5c4314;
 }
 
 .btn-chip-highlight {
-  color: #1e429f;
-  background-color: #ebf5ff;
-  border-color: #a4cafe;
+  color: var(--navy-dark);
+  background-color: #f1f4f9;
+  border-color: #cbd7e6;
 }
 
 .btn-chip-highlight:hover {
-  background-color: #e1effe;
-  border-color: #76a9fa;
+  background-color: #e2eaf4;
+  border-color: #94a9c9;
+  color: #071324;
 }
 
 .btn-chip-sm {
@@ -2162,11 +2201,11 @@ body {
 /* 過不足確認ガイドボックス */
 .kindness-box {
   margin-top: 0.75rem;
-  padding: 0.85rem 1rem;
-  background-color: #f0fdf4;
-  border: 1.5px solid #86efac;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.1);
+  padding: 0.9rem 1.15rem;
+  background-color: #faf7f0;
+  border: 1.5px solid #dfc89a;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(7, 19, 36, 0.05);
   animation: fadeIn 0.2s ease-in-out;
 }
 
@@ -2184,12 +2223,12 @@ body {
 .kindness-title {
   font-size: 0.92rem;
   font-weight: 700;
-  color: #166534;
+  color: var(--navy-dark);
 }
 
 .kindness-subtitle {
   font-size: 0.8rem;
-  color: #15803d;
+  color: #64748b;
   margin-top: 0.15rem;
   line-height: 1.4;
 }
@@ -2197,7 +2236,7 @@ body {
 .kindness-checklist {
   margin-top: 0.65rem;
   padding-top: 0.65rem;
-  border-top: 1px dashed #bbf7d0;
+  border-top: 1px dashed #cbd5e1;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -2206,7 +2245,7 @@ body {
 .kindness-check-header {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #166534;
+  color: var(--navy);
 }
 
 .kindness-check-item {
@@ -2214,14 +2253,14 @@ body {
   align-items: center;
   gap: 0.45rem;
   font-size: 0.8rem;
-  color: #14532d;
+  color: #334155;
   cursor: pointer;
 }
 
 .kindness-chk {
   width: 15px;
   height: 15px;
-  accent-color: #16a34a;
+  accent-color: var(--gold-primary);
 }
 
 /* 定型理由メモのクイックチップ */
@@ -2299,13 +2338,14 @@ body {
 }
 
 .btn-petty-chip-income {
-  background: #eff6ff;
-  border-color: #93c5fd;
-  color: #1e40af;
+  background: #f1f4f9;
+  border-color: #cbd7e6;
+  color: var(--navy);
 }
 
 .btn-petty-chip-income:hover {
-  background: #dbeafe;
+  background: #e2eaf4;
+  border-color: #94a9c9;
 }
 
 /* 調剤報酬返戻クイックチップ */
@@ -2378,9 +2418,9 @@ body {
 
 .warm-tomorrow-reminder {
   font-size: 0.85rem;
-  color: #065f46;
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
+  color: var(--navy-dark);
+  background: #faf7f0;
+  border: 1px solid #dfc89a;
   border-radius: 6px;
   padding: 0.6rem 0.75rem;
   margin-bottom: 1.25rem;
