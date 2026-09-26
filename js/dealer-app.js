@@ -27,10 +27,7 @@
     syncManager = new global.DealerSyncManager();
     supremeManager = new global.DealerSupremeManager(contractManager, expenseManager, loanManager);
 
-    // 初回起動時、データが空なら自動で検証デモデータをロード
-    if (contractManager.getAllDeals().length === 0) {
-      loadDemoData();
-    }
+    // 本番実運用モード: 初期データは完全なクリーン状態（0件）からスタート
 
     bindTabs();
     bindModals();
@@ -1076,13 +1073,18 @@
       });
     }
 
-    // デモデータ投入
-    var btnDemo = document.getElementById('btn-demo-data');
-    if (btnDemo) {
-      btnDemo.addEventListener('click', function() {
-        if (confirm('検証用リアルデモデータ（30年トップ営業マンの不正シミュレーション・正常取引等）を再投入しますか？')) {
-          loadDemoData();
+    // 本番データ初期化（全消去）
+    var btnClearProd = document.getElementById('btn-clear-production');
+    if (btnClearProd) {
+      btnClearProd.addEventListener('click', function() {
+        if (confirm('【本番データ初期化】\n登録されているすべてのデータ（成約、諸費用、ローン、監査ログ）を消去し、まっさらな本番運用状態へリセットしますか？\n（この操作は取り消せません）')) {
+          contractManager.clearAll();
+          expenseManager.clearAll();
+          loanManager.clearAll();
+          auditManager.clearAll();
+          if (supremeManager && supremeManager.clearAll) supremeManager.clearAll();
           renderAll();
+          alert('本番運用データベースを初期化しました。1台目からリアルな本番成約データを入力してください。');
         }
       });
     }
