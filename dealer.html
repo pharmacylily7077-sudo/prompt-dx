@@ -2,11 +2,39 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>高級車販売 資金統制・不正根絶システム | 麻布ショールーム</title>
+
+  <!-- PWA メタタグ -->
+  <meta name="theme-color" content="#b8934a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="高級車販売DX">
+  <meta name="description" content="外車・高級車販売特化型 オーナー直結内部統制コックピット — 不正根絶・資金統制・三方照合・出庫ロック・フォレンジック監査">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- PWA アイコン・ファビコン -->
+  <link rel="apple-touch-icon" sizes="192x192" href="img/app-icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="img/app-icon-512.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="img/app-icon-192.png">
+  <link rel="icon" type="image/jpg" href="img/app-icon.jpg">
+  <link rel="manifest" href="manifest.json">
+
   <link rel="stylesheet" href="css/dealer.css">
 </head>
 <body>
+
+  <!-- ===================================================
+       堅牢性強化: オフラインバナー
+       =================================================== -->
+  <div id="fortify-offline-banner" class="fortify-offline-banner">
+    <span>📡 ネットワーク未接続 — オフラインモードで動作中（データはローカル保存されます）</span>
+  </div>
+
+  <!-- ===================================================
+       堅牢性強化: 未送信キューバッジ
+       =================================================== -->
+  <span id="fortify-queue-badge" class="fortify-queue-badge" style="display:none;"></span>
 
   <!-- ===================================================
        ヘッダー（グループ統制・エグゼクティブデザイン）
@@ -37,6 +65,17 @@
         </button>
         <button id="btn-clear-production" class="btn-header-tool" title="本番運用開始にあたり、テストデータを全消去してデータベースを完全初期化します">
           🗑️ 本番データ初期化
+        </button>
+        <!-- 堅牢性強化: バックアップ＆セキュリティ -->
+        <button id="btn-fortify-export" class="btn-header-tool" title="全データをJSON形式でバックアップ保存します（チェックサム付き暗号化）">
+          💾 バックアップ
+        </button>
+        <button id="btn-fortify-import" class="btn-header-tool" title="バックアップファイルからデータを復元します（改竄検知付き）">
+          📥 復元
+        </button>
+        <input type="file" id="fortify-import-file" accept=".json" style="display:none;">
+        <button id="btn-fortify-set-pin" class="btn-header-tool" title="共有端末向けセッションロックPIN（4桁）を設定/解除します。5分無操作で自動ロック。">
+          🔒 PIN設定
         </button>
       </div>
     </div>
@@ -1002,6 +1041,18 @@
       </div>
     </div>
   </div>
+  <!-- ===================================================
+       堅牢性強化: セッションロック画面
+       =================================================== -->
+  <div id="fortify-lock-screen" class="fortify-lock-screen">
+    <div class="fortify-lock-dialog">
+      <div class="fortify-lock-emblem">🔒</div>
+      <h2>セッションロック中</h2>
+      <p>5分間無操作のため画面をロックしました。<br>4桁PINを入力して再開してください。</p>
+      <input type="password" id="fortify-pin-input" class="fortify-pin-input" maxlength="4" pattern="\d{4}" placeholder="4桁PIN" inputmode="numeric" autocomplete="off">
+      <button id="btn-fortify-unlock" class="btn-gold fortify-unlock-btn">🔓 ロック解除</button>
+    </div>
+  </div>
 
   <!-- スクリプト群 -->
   <script src="js/dealer-contract.js"></script>
@@ -1010,6 +1061,7 @@
   <script src="js/dealer-audit.js"></script>
   <script src="js/dealer-supreme.js"></script>
   <script src="js/dealer-sync.js"></script>
+  <script src="js/dealer-fortify.js"></script>
   <script src="js/dealer-app.js"></script>
 </body>
 </html>

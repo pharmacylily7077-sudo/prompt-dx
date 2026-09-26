@@ -1,0 +1,41 @@
+{
+  "name": "高級車販売 資金統制・不正根絶システム",
+  "short_name": "高級車販売DX",
+  "description": "外車・高級車販売特化型 オーナー直結内部統制コックピット — 不正根絶・資金統制・三方照合・出庫ロック・フォレンジック監査",
+  "start_url": "./dealer.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#071324",
+  "theme_color": "#b8934a",
+  "lang": "ja",
+  "categories": ["business", "finance"],
+  "icons": [
+    {
+      "src": "img/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "img/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "新規成約締め登録",
+      "url": "./dealer.html#new-deal",
+      "description": "車両成約の新規登録を開始",
+      "icons": [{ "src": "img/app-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "不正検知コックピット",
+      "url": "./dealer.html#tab-audit",
+      "description": "月次粗利監査・フォレンジックスコアカード",
+      "icons": [{ "src": "img/app-icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
