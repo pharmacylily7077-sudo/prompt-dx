@@ -727,3 +727,133 @@ body {
     color: #555555;
   }
 }
+
+/* ===================================================
+   【至高の防護3大機能 スタイル】
+   =================================================== */
+/* 1. 専属行政書士用 陸運局出庫承認パス */
+.gate-pass-card {
+  background: #ffffff;
+  border: 2px solid var(--dealer-navy);
+  border-radius: 8px;
+  padding: 24px;
+  position: relative;
+  box-shadow: 0 4px 15px rgba(7, 19, 36, 0.1);
+}
+
+.gate-pass-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--dealer-gold);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.gate-pass-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--dealer-navy);
+  letter-spacing: 0.5px;
+}
+
+.gate-pass-barcode-area {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+  border: 1px dashed var(--dealer-silver-border);
+  padding: 12px 18px;
+  border-radius: 6px;
+  margin-top: 16px;
+}
+
+.barcode-strip {
+  font-family: monospace;
+  font-size: 26px;
+  letter-spacing: 4px;
+  color: var(--dealer-navy-dark);
+  font-weight: 900;
+}
+
+.security-token-pill {
+  background: var(--dealer-navy-dark);
+  color: #faf6ee;
+  border: 1px solid var(--dealer-gold);
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* 2. 第三者 50点パーツ検収アーカイブ */
+.parts-audit-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.parts-audit-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.parts-audit-item.verified {
+  border-left: 4px solid var(--dealer-success);
+  background: #f0fdf4;
+}
+
+.parts-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--dealer-navy);
+}
+
+.parts-detail {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* 3. オーナー室 VIP年次取引照合状 */
+.vip-statement-card {
+  background: #ffffff;
+  border: 1px solid var(--dealer-gold-border);
+  border-radius: 8px;
+  padding: 30px;
+  box-shadow: 0 4px 20px rgba(184, 147, 74, 0.15);
+  position: relative;
+}
+
+.vip-letterhead {
+  text-align: center;
+  border-bottom: 2px solid var(--dealer-navy);
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.vip-letter-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--dealer-navy);
+  letter-spacing: 1px;
+}
+
+.vip-warning-box {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-left: 4px solid #b45309;
+  border-radius: 4px;
+  padding: 14px 18px;
+  font-size: 12px;
+  color: #78350f;
+  line-height: 1.6;
+  margin-top: 20px;
+}

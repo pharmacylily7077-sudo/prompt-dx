@@ -20,12 +20,14 @@ function run() {
   var loanCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/dealer-loan.js', $.NSUTF8StringEncoding, null).js;
   var auditCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/dealer-audit.js', $.NSUTF8StringEncoding, null).js;
   var syncCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/dealer-sync.js', $.NSUTF8StringEncoding, null).js;
+  var supremeCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/dealer-supreme.js', $.NSUTF8StringEncoding, null).js;
 
   var DealerContractManager = eval(contractCode + '; DealerContractManager;');
   var DealerExpenseManager = eval(expenseCode + '; DealerExpenseManager;');
   var DealerLoanManager = eval(loanCode + '; DealerLoanManager;');
   var DealerAuditManager = eval(auditCode + '; DealerAuditManager;');
   var DealerSyncManager = eval(syncCode + '; DealerSyncManager;');
+  var DealerSupremeManager = eval(supremeCode + '; DealerSupremeManager;');
 
   var results = [];
   var passedCount = 0;
@@ -351,10 +353,121 @@ function run() {
     assert("6-9: docs/CAR_SALES_SPEC.md に30年トップセールスマンの不正手口と6大フォレンジック・トラップが明記されていること",
       specDoc.indexOf('6大フォレンジック・トラップ') !== -1 && specDoc.indexOf('歴30年トップセールスマン') !== -1);
 
+    results.push("\n=== 【第7部: 至高の防護・最終防衛線（行政書士パス・パーツ検収・VIP年次照合状）検証】 ===");
+    var supManager = new DealerSupremeManager(cManager, eManager, lManager, localStorage);
+    supManager.clearAll();
+
+    // 7-1. 【急所2 書類裏通し遮断】 専属行政書士用 陸運局出庫承認パスの発行拒否（預り金滞留時）
+    var passBlocked = false;
+    try {
+      supManager.generateScrivenerGatePass('CT-KANDA-001', '統制検査員');
+    } catch (e) {
+      passBlocked = true;
+    }
+    assert("7-1: 【厳格に検証】諸費用預り金滞留中の車両（神田案件）に対して行政書士出庫パス発行が拒否遮断されること", passBlocked === true);
+
+    // 7-2. クリーン案件に対する行政書士出庫パスの正常発行とセキュリティトークン検証
+    var dealClean = cManager.addDeal({
+      id: 'CT-CLEAN-001',
+      vin: 'W1N4632761X999999',
+      model: 'Mercedes-AMG G63',
+      salesRep: '佐藤 健一',
+      contractDate: '2026-09-01',
+      contractTotal: 25000000,
+      downPayment: 10000000,
+      loanPrincipal: 15000000,
+      tradeInAllowance: 0
+    });
+    var expClean = eManager.createRecord({
+      contractId: 'CT-CLEAN-001',
+      vin: 'W1N4632761X999999',
+      salesRep: '佐藤 健一',
+      depositReceived: 800000,
+      depositMethod: 'wire'
+    });
+    eManager.recordPaymentItem(expClean.id, 0, 500000, 'TAX-CLN-01', '2026-09-05');
+    eManager.finalizeSettlement(expClean.id, 200000, 100000, 'REF-CLN-01');
+    var loanClean = lManager.createLoan({
+      contractId: 'CT-CLEAN-001',
+      vin: 'W1N4632761X999999',
+      salesRep: '佐藤 健一',
+      loanCompany: 'オリコ',
+      contractPrincipal: 15000000,
+      kickbackAmount: 400000,
+      handlingFee: 100000
+    });
+    lManager.reconcileLoan(loanClean.id, 15300000, 400000, 100000, '2026-09-10', 'BNK-CLN-01');
+
+    var passClean = supManager.generateScrivenerGatePass('CT-CLEAN-001', '統制室長 木村');
+    assert("7-2: 0円精算済・ローン消込済車両に対して行政書士パスが発行されSecurity Tokenが生成されること", 
+      passClean.securityToken.indexOf('AUTH-PASS-') !== -1 && passClean.verifiedDepositBalance === 0);
+    assert("7-3: 行政書士パスに法的拘束力のある提携行政書士厳守義務条項が含まれていること",
+      passClean.scrivenerMandateClause.indexOf('提携行政書士 厳守義務条項') !== -1);
+
+    // 7-4. 【急所3 パーツ中抜き防止】 担当営業マン自身による自己検収の絶対禁止規約
+    var partsBlocked = false;
+    try {
+      supManager.recordPartsAudit({
+        contractId: 'CT-CLEAN-001',
+        vin: 'W1N4632761X999999',
+        inspectorName: '佐藤 健一'
+      });
+    } catch (e) {
+      partsBlocked = true;
+    }
+    assert("7-4: 【厳格に検証】担当営業マン自身によるパーツ検収が自己監査禁止規約により例外遮断されること", partsBlocked === true);
+
+    // 7-5. 第三者専任検査員によるパーツ検収アーカイブの正常保存
+    var partsRecord = supManager.recordPartsAudit({
+      contractId: 'CT-CLEAN-001',
+      vin: 'W1N4632761X999999',
+      inspectorName: '整備専任主任 渡辺',
+      inspectionStage: 'arrival',
+      odometerKm: 12500,
+      brakeVerified: true,
+      wheelVerified: true,
+      exhaustVerified: true,
+      interiorVerified: true,
+      ecuVerified: true,
+      photoArchiveCount: 50
+    });
+    assert("7-5: 第三者検査員によるパーツ検収が50枚写真アーカイブおよび5大アセット確認で正常保存されること",
+      partsRecord.photoArchiveCount === 50 && partsRecord.components.brakeSystem.verified === true && partsRecord.inspectorName === '整備専任主任 渡辺');
+
+    // 7-6. 【急所1 闇飛ばし封殺】 オーナー室直属 年次VIP顧客 取引照合状の生成と照合内容
+    var vipStatement = supManager.generateVipAnnualAuditStatement('ALL', 2026);
+    assert("7-6: 年次VIP照合状にオーナー直通特命監査ホットラインが明記されていること",
+      vipStatement.confidentialHotline.indexOf('オーナー直通特命監査ホットライン') !== -1);
+    assert("7-7: 年次VIP照合状に闇仲介・手渡し現金を牽制する重要警告条項が含まれていること",
+      vipStatement.warningClause.indexOf('社外の専門業者への直接売却の斡旋（闇飛ばし）') !== -1);
+    assert("7-8: 年次VIP照合状に公式成約車両リストおよび諸費用精算明細が含まれていること",
+      vipStatement.deals.length > 0 && vipStatement.deals[0].expenseRefund !== undefined);
+
+    // 7-9. UIおよび仕様書の至高防護対応検証
+    assert("7-9: dealer.html に至高の防護3大モーダル（modal-scrivener-pass, modal-parts-audit, modal-vip-audit）が存在すること",
+      dealerHtml.indexOf('modal-scrivener-pass') !== -1 &&
+      dealerHtml.indexOf('modal-parts-audit') !== -1 &&
+      dealerHtml.indexOf('modal-vip-audit') !== -1);
+
+    assert("7-10: dealer.html に至高の防護ボタン群（btn-open-parts-audit, btn-open-vip-letter）が存在すること",
+      dealerHtml.indexOf('btn-open-parts-audit') !== -1 &&
+      dealerHtml.indexOf('btn-open-vip-letter') !== -1);
+
+    assert("7-11: css/dealer.css に至高の防護用スタイル（.gate-pass-card, .parts-audit-grid, .vip-statement-card）が定義されていること",
+      dealerCss.indexOf('.gate-pass-card') !== -1 &&
+      dealerCss.indexOf('.parts-audit-grid') !== -1 &&
+      dealerCss.indexOf('.vip-statement-card') !== -1);
+
+    assert("7-12: docs/CAR_SALES_SPEC.md に第5章「至高の防護・最終防衛線3大包囲網」が明記されていること",
+      specDoc.indexOf('至高の防護・最終防衛線') !== -1 &&
+      specDoc.indexOf('急所1 闇飛ばし封殺') !== -1 &&
+      specDoc.indexOf('急所2 書類裏通し遮断') !== -1 &&
+      specDoc.indexOf('急所3 パーツ中抜き防止') !== -1);
+
     return results.join("\n") + "\n\n" +
       "==============================================\n" +
       "🎉 高級車販売 資金統制・不正根絶システム 精密外部検証 全" + passedCount + "項目に完全合格！\n" +
-      "30年トップ営業マンの欺瞞手口（諸費用着服、過小査定、架空加修、二重契約）の物理的封殺を確認。\n" +
+      "【至高の防護・最終防衛線】闇飛ばし・書類裏通し・パーツ中抜きの物理的封殺を確認。\n" +
       "==============================================";
 
   } catch (e) {

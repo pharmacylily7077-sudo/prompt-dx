@@ -6,12 +6,16 @@
 (function(global) {
   'use strict';
 
-  var contractManager, expenseManager, loanManager, auditManager, syncManager;
+  var contractManager, expenseManager, loanManager, auditManager, syncManager, supremeManager;
 
   // 通貨フォーマッター
   function formatYen(num) {
     var val = Number(num) || 0;
     return '¥' + val.toLocaleString('ja-JP');
+  }
+
+  function nl2br(str) {
+    return (str || '').replace(/\n/g, '<br>');
   }
 
   // 初期化
@@ -21,6 +25,7 @@
     loanManager = new global.DealerLoanManager();
     auditManager = new global.DealerAuditManager(contractManager, expenseManager, loanManager);
     syncManager = new global.DealerSyncManager();
+    supremeManager = new global.DealerSupremeManager(contractManager, expenseManager, loanManager);
 
     // 初回起動時、データが空なら自動で検証デモデータをロード
     if (contractManager.getAllDeals().length === 0) {
@@ -128,9 +133,11 @@
       // ゲートキーボタン
       var gateBtnHtml = '';
       if (deal.status !== 'delivered') {
-        gateBtnHtml = '<button class="btn-outline btn-gate-check" data-id="' + deal.id + '" style="font-size:11px; padding:4px 8px;">出庫ゲート審査</button>';
+        gateBtnHtml = '<button class="btn-outline btn-gate-check" data-id="' + deal.id + '" style="font-size:11px; padding:3px 6px;">出庫ゲート審査</button>' +
+                      '<button class="btn-outline btn-scrivener-pass" data-id="' + deal.id + '" style="font-size:11px; padding:3px 6px; margin-left:4px;" title="専属行政書士用 陸運局出庫承認パス">🛡️行政書士パス</button>';
       } else {
-        gateBtnHtml = '<span style="font-size:11px; color:var(--dealer-success); font-weight:700;">✓ 出庫済</span>';
+        gateBtnHtml = '<span style="font-size:11px; color:var(--dealer-success); font-weight:700;">✓ 出庫済</span>' +
+                      '<button class="btn-outline btn-scrivener-pass" data-id="' + deal.id + '" style="font-size:11px; padding:3px 6px; margin-left:4px;" title="専属行政書士用 陸運局出庫承認パス">🛡️行政書士パス</button>';
       }
 
       var downMethodLabel = deal.downPaymentMethod === 'cash' ? 
@@ -167,6 +174,13 @@
       btn.addEventListener('click', function() {
         var dealId = btn.getAttribute('data-id');
         openDeliveryGateModal(dealId);
+      });
+    });
+
+    document.querySelectorAll('.btn-scrivener-pass').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var dealId = btn.getAttribute('data-id');
+        openScrivenerPassModal(dealId);
       });
     });
   }
@@ -698,6 +712,102 @@
   }
 
   // ==========================================
+  // 専属行政書士用 陸運局出庫承認パス
+  // ==========================================
+  function openScrivenerPassModal(contractId) {
+    try {
+      var pass = supremeManager.generateScrivenerGatePass(contractId);
+      var container = document.getElementById('scrivener-pass-content');
+      container.innerHTML = 
+        '<div class="gate-pass-card">' +
+          '<div class="gate-pass-header">' +
+            '<div class="gate-pass-title">🏛️ 陸運局 登録申請・出庫承認パス（専属行政書士 専任用）</div>' +
+            '<div class="security-token-pill">' + pass.securityToken + '</div>' +
+          '</div>' +
+          '<p style="font-size:13px; margin-bottom:12px;">本承認書は、成約代金決済・諸費用預り金残高0円精算（公的レシート紐付済）および信販着金が完全確認されたことを証明する不可逆ゲートキーです。</p>' +
+          '<table class="dealer-table" style="font-size:12px; margin-bottom:14px;">' +
+            '<tr><td>管理契約番号</td><td><strong>' + pass.contractId + '</strong></td><td>車台番号(VIN)</td><td><span style="font-family:monospace;">' + pass.vin + '</span></td></tr>' +
+            '<tr><td>車種モデル</td><td><strong>' + pass.model + '</strong></td><td>担当営業</td><td>' + pass.salesRep + '</td></tr>' +
+            '<tr><td>諸費用残高照合</td><td><span style="color:var(--dealer-success); font-weight:700;">✓ 残高¥' + pass.verifiedDepositBalance + ' (公的領収書' + pass.verifiedReceiptCount + '点完備)</span></td><td>ローン・決済</td><td><span style="color:var(--dealer-success); font-weight:700;">✓ ' + pass.loanCleared + '</span></td></tr>' +
+            '<tr><td>統制監査実施者</td><td colspan="3"><strong>' + pass.inspectorName + '</strong> (承認日時: ' + pass.issueTimestamp + ')</td></tr>' +
+          '</table>' +
+          '<div class="gate-pass-barcode-area">' +
+            '<div class="barcode-strip">||| | |||| || ||| |||| | |||</div>' +
+            '<div style="text-align:right;"><span style="font-size:11px; color:#64748b;">Security Verified Hash</span><br><strong style="font-family:monospace; font-size:13px;">' + pass.securityToken + '</strong></div>' +
+          '</div>' +
+          '<div class="vip-warning-box" style="margin-top:14px; font-size:11px; border-left-color:var(--dealer-danger); color:#991b1b; background:#fef2f2;">' +
+            nl2br(pass.scrivenerMandateClause) +
+          '</div>' +
+        '</div>';
+      openModal('modal-scrivener-pass');
+    } catch (err) {
+      alert('【行政書士パス 発行拒否】\n' + err.message);
+    }
+  }
+
+  // ==========================================
+  // 第三者 50点パーツ検収アーカイブ モーダル
+  // ==========================================
+  function openPartsAuditModal() {
+    var select = document.getElementById('parts-contract-id');
+    if (select) {
+      select.innerHTML = '';
+      contractManager.getAllDeals().forEach(function(d) {
+        var opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = d.id + ': ' + d.model + ' (' + d.salesRep + ')';
+        select.appendChild(opt);
+      });
+    }
+    document.getElementById('parts-inspector-name').value = '統制室 専任検査員';
+    openModal('modal-parts-audit');
+  }
+
+  // ==========================================
+  // オーナー室直属 年次VIP顧客 取引照合状 モーダル
+  // ==========================================
+  function openVipAuditModal() {
+    var statement = supremeManager.generateVipAnnualAuditStatement('ALL', 2026);
+    var container = document.getElementById('vip-statement-content');
+    var rows = '';
+    statement.deals.forEach(function(d) {
+      rows += '<tr>' +
+        '<td><strong>' + d.contractDate + '</strong></td>' +
+        '<td><strong>' + d.model + '</strong><br><span style="font-family:monospace; font-size:10px;">' + d.vin + '</span></td>' +
+        '<td class="numeric font-bold">' + formatYen(d.contractTotal) + '</td>' +
+        '<td>' + d.tradeInModel + (d.tradeInAppraisal > 0 ? ' (' + formatYen(d.tradeInAppraisal) + ')' : '') + '</td>' +
+        '<td class="numeric">' + formatYen(d.expenseDeposit) + '</td>' +
+        '<td class="numeric font-bold" style="color:var(--dealer-success);">' + formatYen(d.expenseRefund) + '</td>' +
+        '<td>' + d.salesRep + '</td>' +
+      '</tr>';
+    });
+
+    container.innerHTML = 
+      '<div class="vip-statement-card">' +
+        '<div class="vip-letterhead">' +
+          '<div style="font-size:12px; color:var(--dealer-gold-text); font-weight:700;">' + statement.officialSender + '</div>' +
+          '<h2 class="vip-letter-title" style="margin-top:6px;">年次VIP顧客 お取引実績照合状 兼 公式御礼状</h2>' +
+          '<div style="font-size:11px; color:#64748b;">文書照合番号: ' + statement.letterId + ' ｜ 発行日: ' + statement.issueDate + '</div>' +
+        '</div>' +
+        '<p style="font-size:13px; margin-bottom:14px; line-height:1.7;">' +
+          '拝啓　平素は格別のご高配を賜り、心より厚く御礼申し上げます。<br>' +
+          '本状は、弊社代表オーナー室より、お客様の資産保全および最高峰のアフターサービス・保証権利を厳格に期するため、' +
+          '本年（' + statement.targetYear + '年）の公式お取引内容の一覧をご報告申し上げる親展状でございます。' +
+        '</p>' +
+        '<table class="dealer-table" style="font-size:12px; margin-bottom:14px;">' +
+          '<thead><tr><th>成約日</th><th>ご成約車両</th><th class="numeric">総お支払額</th><th>下取車両(査定額)</th><th class="numeric">諸費用受託</th><th class="numeric">余剰返還額</th><th>担当営業</th></tr></thead>' +
+          '<tbody>' + rows + '</tbody>' +
+        '</table>' +
+        '<div class="vip-warning-box">' +
+          nl2br(statement.warningClause) +
+          '<div style="margin-top:8px; font-weight:700;">' + statement.confidentialHotline + '</div>' +
+        '</div>' +
+      '</div>';
+
+    openModal('modal-vip-audit');
+  }
+
+  // ==========================================
   // フォームおよびボタンイベント
   // ==========================================
   function bindFormEvents() {
@@ -862,12 +972,38 @@
 
     // 法定税額シミュレーター入力変化
     var calcInputs = ['calc-displacement', 'calc-weight', 'calc-month', 'calc-term', 'calc-price'];
-    calcInputs.forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) {
-        el.addEventListener('input', runTaxSimulation);
-      }
-    });
+    // 第三者パーツ検収フォーム送信
+    var formParts = document.getElementById('form-parts-audit');
+    if (formParts) {
+      formParts.addEventListener('submit', function(e) {
+        e.preventDefault();
+        try {
+          var contractId = document.getElementById('parts-contract-id').value;
+          var stage = document.getElementById('parts-stage').value;
+          var inspector = document.getElementById('parts-inspector-name').value.trim();
+          var deal = contractManager.getDealById(contractId);
+
+          supremeManager.recordPartsAudit({
+            contractId: contractId,
+            vin: deal ? deal.vin : '',
+            model: deal ? deal.model : '',
+            inspectionStage: stage,
+            inspectorName: inspector,
+            brakeVerified: document.getElementById('chk-part-brake').checked,
+            wheelVerified: document.getElementById('chk-part-wheel').checked,
+            exhaustVerified: document.getElementById('chk-part-exhaust').checked,
+            interiorVerified: document.getElementById('chk-part-interior').checked,
+            ecuVerified: document.getElementById('chk-part-ecu').checked,
+            photoArchiveCount: 50
+          });
+
+          closeModal('modal-parts-audit');
+          alert('第三者パーツ検収レコード（50枚高精細アーカイブ紐付）を確定保存しました。');
+        } catch (err) {
+          alert('【パーツ検収ブロック】\n' + err.message);
+        }
+      });
+    }
   }
 
   // 法定税額シミュレーション実行
@@ -888,6 +1024,37 @@
   }
 
   function bindActionButtons() {
+    // 50点パーツ検収モーダル開く
+    var btnOpenParts = document.getElementById('btn-open-parts-audit');
+    if (btnOpenParts) {
+      btnOpenParts.addEventListener('click', function() {
+        openPartsAuditModal();
+      });
+    }
+
+    // オーナー室VIP年次取引照合状開く
+    var btnOpenVip = document.getElementById('btn-open-vip-letter');
+    if (btnOpenVip) {
+      btnOpenVip.addEventListener('click', function() {
+        openVipAuditModal();
+      });
+    }
+
+    // 行政書士出庫パス印刷
+    var btnPrintPass = document.getElementById('btn-print-scrivener-pass');
+    if (btnPrintPass) {
+      btnPrintPass.addEventListener('click', function() {
+        window.print();
+      });
+    }
+
+    // VIP親展状印刷
+    var btnPrintVip = document.getElementById('btn-print-vip-letter');
+    if (btnPrintVip) {
+      btnPrintVip.addEventListener('click', function() {
+        window.print();
+      });
+    }
     // 新規成約モーダル開く
     var btnOpenNewDeal = document.getElementById('btn-open-new-deal');
     if (btnOpenNewDeal) {

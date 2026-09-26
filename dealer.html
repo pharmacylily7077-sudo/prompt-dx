@@ -119,6 +119,9 @@
             <button id="btn-open-tax-calc" class="btn-outline">
               📊 法定税額シミュレーター
             </button>
+            <button id="btn-open-parts-audit" class="btn-outline">
+              🔍 50点パーツ検収
+            </button>
             <button id="btn-open-new-deal" class="btn-primary">
               ＋ 新規成約締め登録
             </button>
@@ -444,9 +447,14 @@
             <h2>月次粗利監査報告書（A4横印刷帳票・オーナー捺印完備）</h2>
             <div class="card-desc">月次経営会議および顧問弁護士・税理士への内部統制エビデンスとして公式印刷・PDF出力</div>
           </div>
-          <button id="btn-print-audit-report" class="btn-gold">
-            🖨️ A4公式監査報告書を印刷 / PDF出力
-          </button>
+          <div style="display:flex; gap:10px;">
+            <button id="btn-open-vip-letter" class="btn-primary" style="background:var(--dealer-navy-dark); border:1px solid var(--dealer-gold); color:#faf6ee;">
+              ✉️ オーナー室 VIP年次取引照合状（親展）
+            </button>
+            <button id="btn-print-audit-report" class="btn-gold">
+              🖨️ A4公式監査報告書を印刷 / PDF出力
+            </button>
+          </div>
         </div>
       </div>
 
@@ -880,11 +888,124 @@
     </div>
   </div>
 
+  <!-- 9. 専属行政書士用 陸運局出庫承認パス モーダル -->
+  <div id="modal-scrivener-pass" class="dealer-modal">
+    <div class="modal-dialog" style="max-width:700px;">
+      <div class="modal-header">
+        <h3>専属行政書士用 陸運局出庫承認パス（登録申請許可証）</h3>
+        <button class="modal-close" data-close="modal-scrivener-pass">&times;</button>
+      </div>
+      <div class="modal-body" id="scrivener-pass-content">
+        <!-- JSで出庫パスを描画 -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-outline" data-close="modal-scrivener-pass">閉じる</button>
+        <button type="button" id="btn-print-scrivener-pass" class="btn-gold">🖨️ 行政書士提出用 承認パスを印刷</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. 第三者 50点パーツ＆アセット検収アーカイブ モーダル -->
+  <div id="modal-parts-audit" class="dealer-modal">
+    <div class="modal-dialog" style="max-width:750px;">
+      <div class="modal-header">
+        <h3>第三者 50点パーツ＆アセット検収アーカイブ（パーツ抜き・すり替え完全防止）</h3>
+        <button class="modal-close" data-close="modal-parts-audit">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="form-parts-audit">
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label>対象成約車両</label>
+              <select id="parts-contract-id" class="form-control" required></select>
+            </div>
+            <div class="form-group">
+              <label>検収フェーズ</label>
+              <select id="parts-stage" class="form-control">
+                <option value="arrival">ショールーム入庫時 (即時撮影)</option>
+                <option value="pre_delivery">納車直前最終検収 (出庫直前)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>第三者専任検査員氏名 (※営業担当者自身は禁止)</label>
+              <input type="text" id="parts-inspector-name" class="form-control" placeholder="統制室 専任検査員" required>
+            </div>
+          </div>
+
+          <div class="parts-audit-grid">
+            <div class="parts-audit-item verified">
+              <div>
+                <div class="parts-name">① ブレーキシステム（カーボンローター・キャリパー）</div>
+                <div class="parts-detail">PCCB刻印・厚み・シリアル番号確認</div>
+              </div>
+              <input type="checkbox" id="chk-part-brake" checked style="transform:scale(1.3);">
+            </div>
+            <div class="parts-audit-item verified">
+              <div>
+                <div class="parts-name">② 鍛造ホイール＆タイヤDOT製造週コード</div>
+                <div class="parts-detail">純正GT3鍛造ホイール・ミシュランCup2 (DOT 2424) 一致確認</div>
+              </div>
+              <input type="checkbox" id="chk-part-wheel" checked style="transform:scale(1.3);">
+            </div>
+            <div class="parts-audit-item verified">
+              <div>
+                <div class="parts-name">③ エキゾースト・触媒・マフラーシステム</div>
+                <div class="parts-detail">スポーツエキゾースト可変バルブ・触媒刻印確認</div>
+              </div>
+              <input type="checkbox" id="chk-part-exhaust" checked style="transform:scale(1.3);">
+            </div>
+            <div class="parts-audit-item verified">
+              <div>
+                <div class="parts-name">④ カーボン内装パッケージ・フルバケットシート</div>
+                <div class="parts-detail">純正カーボンドアシル・シートレールボルト封印確認</div>
+              </div>
+              <input type="checkbox" id="chk-part-interior" checked style="transform:scale(1.3);">
+            </div>
+            <div class="parts-audit-item verified">
+              <div>
+                <div class="parts-name">⑤ ECUプログラム・オドメーター・マスターキー2本</div>
+                <div class="parts-detail">ECU改ざん履歴なし・新車時保証書記録簿・スペアキー完備</div>
+              </div>
+              <input type="checkbox" id="chk-part-ecu" checked style="transform:scale(1.3);">
+            </div>
+          </div>
+
+          <div style="margin-top:16px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:12px; font-size:12px;">
+            📸 <strong>高精細デジタル写真 50枚完全アーカイブ済</strong>（車体全周、各部シリアル、走行メーター、ホイール裏刻印）
+          </div>
+
+          <div class="modal-footer" style="padding-left:0; padding-right:0; margin-top:16px;">
+            <button type="button" class="btn-outline" data-close="modal-parts-audit">閉じる</button>
+            <button type="submit" class="btn-primary">第三者パーツ検収レコードを確定保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11. オーナー室直属 年次VIP顧客 取引照合状 モーダル -->
+  <div id="modal-vip-audit" class="dealer-modal">
+    <div class="modal-dialog" style="max-width:800px;">
+      <div class="modal-header">
+        <h3>オーナー室直属 年次VIP顧客 取引照合状（闇飛ばし完全封殺）</h3>
+        <button class="modal-close" data-close="modal-vip-audit">&times;</button>
+      </div>
+      <div class="modal-body" id="vip-statement-content">
+        <!-- JSで照合レターを描画 -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-outline" data-close="modal-vip-audit">閉じる</button>
+        <button type="button" id="btn-print-vip-letter" class="btn-gold">🖨️ 親展レターを公式印刷 / PDF出力</button>
+      </div>
+    </div>
+  </div>
+
   <!-- スクリプト群 -->
   <script src="js/dealer-contract.js"></script>
   <script src="js/dealer-expense.js"></script>
   <script src="js/dealer-loan.js"></script>
   <script src="js/dealer-audit.js"></script>
+  <script src="js/dealer-supreme.js"></script>
   <script src="js/dealer-sync.js"></script>
   <script src="js/dealer-app.js"></script>
 </body>
