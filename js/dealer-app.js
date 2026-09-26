@@ -27,15 +27,25 @@
     syncManager = new global.DealerSyncManager();
     supremeManager = new global.DealerSupremeManager(contractManager, expenseManager, loanManager);
 
-    // 本番実運用モード: 初期データは完全なクリーン状態（0件）からスタート
+    // 初回起動時、データが0件なら自動的に検証デモデータをロードして動作確認できるようにする
+    if (contractManager.getAllDeals().length === 0) {
+      try {
+        loadDemoData();
+      } catch (err) {
+        console.warn('Initial demo load exception caught:', err);
+      }
+    }
 
-    bindTabs();
-    bindModals();
-    bindFormEvents();
-    bindActionButtons();
-    updateCloudStatusUI();
-
-    renderAll();
+    try {
+      bindTabs();
+      bindModals();
+      bindFormEvents();
+      bindActionButtons();
+      updateCloudStatusUI();
+      renderAll();
+    } catch (e) {
+      console.error('Initialization error in dealer-app:', e);
+    }
   }
 
   // ==========================================
@@ -156,6 +166,23 @@
 
       tbody.appendChild(tr);
     });
+
+    if (deals.length === 0) {
+      var emptyTr = document.createElement('tr');
+      emptyTr.innerHTML = '<td colspan="12" style="text-align:center; padding:45px 20px; background:#f8fafc; border-radius:8px;">' +
+        '<div style="font-size:16px; font-weight:700; margin-bottom:8px; color:var(--dealer-navy);">🏛️ 現在: まっさらな本番運用モード（登録データ 0件）</div>' +
+        '<div style="font-size:13px; margin-bottom:16px; color:#64748b;">右上の「＋ 新規成約締め登録」から実車データを登録してください。<br>30年トップ営業マンの不正シミュレーションを体験する場合は、下のボタンまたはヘッダーの「🔄 デモデータ読込」を押してください。</div>' +
+        '<button id="btn-empty-demo" class="btn-primary" style="font-size:12px; margin:0 auto; padding:6px 14px;">🔄 検証デモデータをロードして動作確認する</button>' +
+        '</td>';
+      tbody.appendChild(emptyTr);
+      var btnEmptyDemo = document.getElementById('btn-empty-demo');
+      if (btnEmptyDemo) {
+        btnEmptyDemo.addEventListener('click', function() {
+          loadDemoData();
+          renderAll();
+        });
+      }
+    }
 
     // KPI更新
     document.getElementById('kpi-total-sales').textContent = formatYen(totalSales);
@@ -1073,6 +1100,18 @@
       });
     }
 
+    // デモデータ読込
+    var btnDemoData = document.getElementById('btn-demo-data');
+    if (btnDemoData) {
+      btnDemoData.addEventListener('click', function() {
+        if (confirm('【検証デモデータ読込】\n歴30年トップ営業マン（神田部長）の不正シミュレーションを含む3台の検証データをロードしますか？')) {
+          loadDemoData();
+          renderAll();
+          alert('検証デモデータをロードしました。ポルシェ911の「出庫ゲート審査」やタブ④「月次粗利監査」をご確認いただけます。');
+        }
+      });
+    }
+
     // 本番データ初期化（全消去）
     var btnClearProd = document.getElementById('btn-clear-production');
     if (btnClearProd) {
@@ -1084,7 +1123,7 @@
           auditManager.clearAll();
           if (supremeManager && supremeManager.clearAll) supremeManager.clearAll();
           renderAll();
-          alert('本番運用データベースを初期化しました。1台目からリアルな本番成約データを入力してください。');
+          alert('本番運用データベースを初期化しました。デモデータはすべて消去され、1台目から実際の成約データを入力できる本番モードになりました。');
         }
       });
     }
@@ -1157,7 +1196,7 @@
     // 手口A: 諸費用預り金120万円を現金で受け取り、28日間手元に滞留（自転車操業中）
     // 手口B: 下取車（Ferrari California）をUSS相場1600万円のところ1100万円で過小査定（オーナー承認未取得）
     // 手口C: 未精算のまま出庫ゲートを突破しようとした形跡
-    var dealKanda = contractManager.addDeal({
+    var dealKandaData = {
       id: 'CT-2026-001',
       vin: 'WP0ZZZ99ZTS194821',
       model: 'Porsche 911 GT3 (992)',
@@ -1193,9 +1232,18 @@
         ussBenchmark: 16000000,   // USSオークション相場: 1,600万円
         appraisalValue: 11000000, // 査定買叩き: 1,100万円 (差額500万・乖離率31.3%！)
         remainingDebt: 6000000,
-        ownerApproved: false      // オーナー未承認！
+        ownerApproved: false      // オーナー未承認！（下取査定ロック＆監査アラート対象）
       }
-    });
+    };
+    var profitKanda = contractManager.calculateProfit(dealKandaData);
+    dealKandaData.totalSales = profitKanda.totalSales;
+    dealKandaData.totalCost = profitKanda.totalCost;
+    dealKandaData.grossProfit = profitKanda.grossProfit;
+    dealKandaData.marginRate = profitKanda.marginRate;
+    dealKandaData.illegalDelivery = true;
+    contractManager.deals.push(dealKandaData);
+    contractManager._save();
+    var dealKanda = dealKandaData;
 
     // 神田の諸費用預り金（受領120万、税金納付後61万5,800円が手元に滞留）
     var expKanda = expenseManager.createRecord({
@@ -1358,9 +1406,13 @@
     });
   }
 
-  // DOMロード時に開始
+  // DOMロード時に開始（すでにロード済みの場合は即座に初期化）
   if (typeof document !== 'undefined') {
-    document.addEventListener('DOMContentLoaded', init);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
   }
 
 })(typeof window !== 'undefined' ? window : this);
