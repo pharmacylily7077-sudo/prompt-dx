@@ -21,6 +21,7 @@ function run() {
   var auditCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/dealer-audit.js', $.NSUTF8StringEncoding, null).js;
   var syncCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/dealer-sync.js', $.NSUTF8StringEncoding, null).js;
   var supremeCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/dealer-supreme.js', $.NSUTF8StringEncoding, null).js;
+  var forensicCode = $.NSString.stringWithContentsOfFileEncodingError(currentDir + '/js/dealer-forensic.js', $.NSUTF8StringEncoding, null).js;
 
   var DealerContractManager = eval(contractCode + '; DealerContractManager;');
   var DealerExpenseManager = eval(expenseCode + '; DealerExpenseManager;');
@@ -28,6 +29,7 @@ function run() {
   var DealerAuditManager = eval(auditCode + '; DealerAuditManager;');
   var DealerSyncManager = eval(syncCode + '; DealerSyncManager;');
   var DealerSupremeManager = eval(supremeCode + '; DealerSupremeManager;');
+  var DealerForensicManager = eval(forensicCode + '; DealerForensicManager;');
 
   var results = [];
   var passedCount = 0;
@@ -464,10 +466,81 @@ function run() {
       specDoc.indexOf('急所2 書類裏通し遮断') !== -1 &&
       specDoc.indexOf('急所3 パーツ中抜き防止') !== -1);
 
+    results.push("\n=== 【第8部: 過去不正フォレンジック分析エンジン（過去を遡って暴く刀）検証】 ===");
+    var fManager = new DealerForensicManager(localStorage);
+    fManager.clearAll();
+
+    // 8-1. 銀行通帳CSVの自動パース機能
+    var sampleBankCsv = "取引日,お預け入れ,お引出し,お取引内容\n" +
+                        "2024/04/10,18500000,0,フリカエ BMW M8 ダイキン サトウ\n" +
+                        "2024/05/15,10000000,0,オリコ ローン カンダ GT3\n";
+    var parsedBank = fManager.parseBankCSV(sampleBankCsv);
+    assert("8-1: 銀行通帳CSVが正常にパースされ入金額・摘要が抽出されること",
+      parsedBank.length === 2 &&
+      parsedBank[0].deposit === 18500000 &&
+      parsedBank[0].description.indexOf('BMW M8') !== -1);
+
+    // 8-2. 過去成約台帳CSV/TSVの自動パース機能
+    var sampleDealsCsv = "契約日,契約ID,VIN,車種,担当営業,契約総額,預り諸費用,実費納付額,精算日,現金受託額,ローン元金,下取査定額,USS相場,外注先,外注費\n" +
+                         "2024-05-12,CT-PAST-001,WP0ZZZ99Z,GT3,神田 敏幸,29800000,1250000,580000,2024-07-28,18000000,10000000,11000000,15500000,神田オート,2850000\n" +
+                         "2024-04-10,CT-PAST-002,WBA53AY05,BMW M8,佐藤 健一,18500000,750000,720000,2024-04-18,0,15000000,6800000,7000000,ヤナセ,450000\n";
+    var parsedDeals = fManager.parseDealsData(sampleDealsCsv);
+    assert("8-2: 過去成約台帳CSVが正常にパースされ各数値・担当営業が正しくマッピングされること",
+      parsedDeals.length === 2 &&
+      parsedDeals[0].salesRep === '神田 敏幸' &&
+      parsedDeals[0].contractTotal === 29800000 &&
+      parsedDeals[1].salesRep === '佐藤 健一');
+
+    // 8-3. 過去3年対照デモデータのロード検証
+    var demoPast = fManager.loadPastAuditDemo();
+    assert("8-3: 過去3年分の対照デモデータ（神田部長不正 vs 佐藤シニア適正）がロードできること",
+      demoPast.deals.length === 5 && demoPast.bank.length === 4);
+
+    // 8-4. 全量フォレンジック監査エンジンの実行と損害推定
+    var auditResult = fManager.runFullAudit();
+    assert("8-4: フォレンジック監査により推定損害総額および疑義取引件数が数学的に算出されること",
+      auditResult.summary.estimatedDamageAmount > 0 &&
+      auditResult.summary.suspiciousDealsCount > 0);
+
+    // 8-5. 諸費用長期滞留・流用疑義の自動検知
+    assert("8-5: 77日間滞留のポルシェ911諸費用（差額¥670,000）が滞留流用疑義として検知されること",
+      auditResult.stagnantExpenses.some(function(e) {
+        return e.salesRep === '神田 敏幸' && e.stagnantDays >= 60 && e.unaccountedAmount === 670000;
+      }));
+
+    // 8-6. 下取車USS相場買叩き（29%乖離・450万円中抜き疑義）の自動検知
+    assert("8-6: USS相場1550万円に対し1100万円査定（29%乖離・差額450万円）が買叩き疑義として自動抽出されること",
+      auditResult.tradeInUnderpriced.some(function(t) {
+        return t.salesRep === '神田 敏幸' && t.gapAmount === 4500000 && t.gapRate >= 25;
+      }));
+
+    // 8-7. 銀行通帳未着金（会社口座迂回・中抜き）の自動特定
+    assert("8-7: 成約台帳に存在するが公式銀行通帳に着金がない取引が不一致として自動検出されること",
+      auditResult.bankDiscrepancies.length > 0 &&
+      auditResult.bankDiscrepancies.some(function(b) { return b.salesRep === '神田 敏幸'; }));
+
+    // 8-8. 営業マン別行動統計スコアリング（神田部長CRITICAL vs 佐藤NORMAL）
+    var kandaProfile = auditResult.salesRepProfiles['神田 敏幸'];
+    var satoProfile = auditResult.salesRepProfiles['佐藤 健一'];
+    assert("8-8: 営業マン別プロファイルで神田部長が【CRITICAL】、佐藤が【NORMAL】と峻別されること",
+      kandaProfile && kandaProfile.rank === 'CRITICAL' &&
+      satoProfile && satoProfile.rank === 'NORMAL');
+
+    // 8-9. HTML上に第5タブ「過去不正フォレンジック分析」および取込モーダルが存在すること
+    assert("8-9: dealer.html に第5タブ (tab-forensic) およびインポートモーダル (modal-forensic-import) が実装されていること",
+      dealerHtml.indexOf('tab-forensic') !== -1 &&
+      dealerHtml.indexOf('modal-forensic-import') !== -1 &&
+      dealerHtml.indexOf('dealer-forensic.js') !== -1);
+
+    // 8-10. CSSにフォレンジックツールバーおよびタイムラインスタイルが定義されていること
+    assert("8-10: css/dealer.css にフォレンジック用スタイル（.forensic-toolbar-card, .timeline-item）が定義されていること",
+      dealerCss.indexOf('.forensic-toolbar-card') !== -1 &&
+      dealerCss.indexOf('.timeline-item') !== -1);
+
     return results.join("\n") + "\n\n" +
       "==============================================\n" +
       "🎉 高級車販売 資金統制・不正根絶システム 精密外部検証 全" + passedCount + "項目に完全合格！\n" +
-      "【至高の防護・最終防衛線】闇飛ばし・書類裏通し・パーツ中抜きの物理的封殺を確認。\n" +
+      "【未来の盾 ＆ 過去を暴く刀】出庫ロック・フォレンジック過去逆算の完全稼働を確認。\n" +
       "==============================================";
 
   } catch (e) {

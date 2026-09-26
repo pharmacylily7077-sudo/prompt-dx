@@ -6,7 +6,7 @@
 (function(global) {
   'use strict';
 
-  var contractManager, expenseManager, loanManager, auditManager, syncManager, supremeManager;
+  var contractManager, expenseManager, loanManager, auditManager, syncManager, supremeManager, forensicManager;
 
   // 通貨フォーマッター
   function formatYen(num) {
@@ -26,6 +26,9 @@
     auditManager = new global.DealerAuditManager(contractManager, expenseManager, loanManager);
     syncManager = new global.DealerSyncManager();
     supremeManager = new global.DealerSupremeManager(contractManager, expenseManager, loanManager);
+    if (global.DealerForensicManager) {
+      forensicManager = new global.DealerForensicManager();
+    }
 
     // 初回起動時、データが0件なら自動的に検証デモデータをロードして動作確認できるようにする
     if (contractManager.getAllDeals().length === 0) {
@@ -108,6 +111,7 @@
     renderExpenseTab();
     renderLoanTab();
     renderAuditTab();
+    renderForensicTab();
     updateBadges();
   }
 
@@ -504,6 +508,159 @@
 
         repBody.appendChild(tr);
       });
+    }
+  }
+
+  // ==========================================
+  // ⑤ 過去不正フォレンジック分析タブの描画
+  // ==========================================
+  function renderForensicTab() {
+    if (!forensicManager) return;
+    var audit = forensicManager.runFullAudit();
+
+    // KPI更新
+    var kpiDamage = document.getElementById('kpi-forensic-damage');
+    if (kpiDamage) kpiDamage.textContent = formatYen(audit.summary.estimatedDamageAmount);
+
+    var kpiSuspiciousCount = document.getElementById('kpi-forensic-suspicious-count');
+    if (kpiSuspiciousCount) kpiSuspiciousCount.textContent = audit.summary.suspiciousDealsCount + ' 件';
+
+    var kpiTotalDeals = document.getElementById('kpi-forensic-total-deals');
+    if (kpiTotalDeals) kpiTotalDeals.textContent = audit.summary.totalDeals + ' 台';
+
+    var kpiBankRecords = document.getElementById('kpi-forensic-bank-records');
+    if (kpiBankRecords) kpiBankRecords.textContent = audit.summary.totalBankRecords + ' 件';
+
+    var kpiWorstRep = document.getElementById('kpi-forensic-worst-rep');
+    if (kpiWorstRep) kpiWorstRep.textContent = audit.summary.highestRiskRep || '未検出';
+
+    var badgeRisk = document.getElementById('badge-forensic-risk-level');
+    if (badgeRisk) {
+      if (audit.summary.overallRiskLevel === 'CRITICAL') {
+        badgeRisk.className = 'badge badge-danger';
+        badgeRisk.textContent = '🚨 CRITICAL (横領・中抜き疑義)';
+      } else if (audit.summary.overallRiskLevel === 'ELEVATED') {
+        badgeRisk.className = 'badge badge-warning';
+        badgeRisk.textContent = '⚠️ ELEVATED (要精密監査)';
+      } else {
+        badgeRisk.className = 'badge badge-success';
+        badgeRisk.textContent = '正常 (NORMAL)';
+      }
+    }
+
+    var kpiMissingBank = document.getElementById('kpi-forensic-missing-bank-count');
+    if (kpiMissingBank) kpiMissingBank.textContent = audit.bankDiscrepancies.length + ' 件';
+
+    var reconcileRate = audit.summary.totalDeals > 0 ? 
+      Math.max(0, Math.round(((audit.summary.totalDeals - audit.bankDiscrepancies.length) / audit.summary.totalDeals) * 100)) : 100;
+    var kpiReconcileRate = document.getElementById('kpi-forensic-reconcile-rate');
+    if (kpiReconcileRate) kpiReconcileRate.textContent = reconcileRate + '%';
+
+    // ① 営業マン別行動統計テーブル
+    var repsTbody = document.getElementById('forensic-reps-table-body');
+    if (repsTbody) {
+      repsTbody.innerHTML = '';
+      var repKeys = Object.keys(audit.salesRepProfiles);
+      if (repKeys.length === 0) {
+        repsTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#64748b;">データなし</td></tr>';
+      } else {
+        repKeys.forEach(function(rName) {
+          var p = audit.salesRepProfiles[rName];
+          var tr = document.createElement('tr');
+          var riskBadge = p.rank === 'CRITICAL' ? '<span class="badge badge-danger">CRITICAL (極大)</span>' :
+                          (p.rank === 'ELEVATED' ? '<span class="badge badge-warning">ELEVATED</span>' : '<span class="badge badge-success">NORMAL</span>');
+          var cashColor = p.cashRatio >= 40 ? 'color:var(--dealer-danger); font-weight:bold;' : '';
+          var stagColor = p.avgStagnantDays >= 14 ? 'color:var(--dealer-danger); font-weight:bold;' : '';
+          var vendorText = p.topVendor !== 'なし' ? p.topVendor + ' (' + p.topVendorConcentration + '%)' : '均等分散';
+
+          tr.innerHTML = 
+            '<td><strong>' + p.salesRep + '</strong></td>' +
+            '<td class="numeric">' + p.totalDeals + ' 台</td>' +
+            '<td class="numeric" style="' + cashColor + '">' + p.cashRatio + '%</td>' +
+            '<td class="numeric" style="' + stagColor + '">' + p.avgStagnantDays + ' 日</td>' +
+            '<td><div style="font-size:11px;">' + vendorText + '</div></td>' +
+            '<td>' + riskBadge + '</td>';
+          repsTbody.appendChild(tr);
+        });
+      }
+    }
+
+    // ② 下取車買叩き・USS乖離テーブル
+    var tradeinTbody = document.getElementById('forensic-tradein-table-body');
+    if (tradeinTbody) {
+      tradeinTbody.innerHTML = '';
+      if (audit.tradeInUnderpriced.length === 0) {
+        tradeinTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#64748b;">USS相場乖離による過少査定・買叩きは検出されませんでした</td></tr>';
+      } else {
+        audit.tradeInUnderpriced.forEach(function(item) {
+          var tr = document.createElement('tr');
+          tr.innerHTML = 
+            '<td><strong>' + item.contractId + '</strong><br><span style="font-size:11px; color:#64748b;">' + item.model + '</span></td>' +
+            '<td>' + item.salesRep + '</td>' +
+            '<td class="numeric">' + formatYen(item.tradeInAppraised) + '<br><span style="font-size:10px; color:#64748b;">相場: ' + formatYen(item.ussMarketPrice) + '</span></td>' +
+            '<td class="numeric font-bold" style="color:var(--dealer-danger);">' + formatYen(item.gapAmount) + '</td>' +
+            '<td><span class="badge badge-danger">-' + item.gapRate + '%</span></td>' +
+            '<td><span style="font-size:11px; color:var(--dealer-danger); font-weight:700;">🚨 買叩き闇転売疑義</span></td>';
+          tradeinTbody.appendChild(tr);
+        });
+      }
+    }
+
+    // ③ 銀行通帳突合テーブル
+    var bankTbody = document.getElementById('forensic-bank-table-body');
+    if (bankTbody) {
+      bankTbody.innerHTML = '';
+      if (audit.bankDiscrepancies.length === 0) {
+        bankTbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px; color:#64748b;">通帳と成約台帳の不一致は検知されませんでした（または通帳未インポート）</td></tr>';
+      } else {
+        audit.bankDiscrepancies.forEach(function(b) {
+          var tr = document.createElement('tr');
+          tr.innerHTML = 
+            '<td><strong>' + b.contractId + '</strong></td>' +
+            '<td><span style="font-family:monospace; font-size:11px;">' + b.vin + '</span></td>' +
+            '<td>' + b.model + '</td>' +
+            '<td>' + b.salesRep + '</td>' +
+            '<td>' + b.contractDate + '</td>' +
+            '<td class="numeric font-bold">' + formatYen(b.expectedAmount) + '</td>' +
+            '<td class="numeric">' + formatYen(b.cashReceived) + '</td>' +
+            '<td><span class="badge badge-danger">🚨 通帳着金なし</span></td>' +
+            '<td><span style="font-size:11px; color:var(--dealer-danger);">' + b.note + '</span></td>';
+          bankTbody.appendChild(tr);
+        });
+      }
+    }
+
+    // ④ 時系列タイムライン
+    var timelineContainer = document.getElementById('forensic-timeline-container');
+    if (timelineContainer) {
+      if (audit.anomaliesTimeline.length === 0) {
+        timelineContainer.innerHTML = '<div style="text-align:center; color:#64748b; padding:20px;">検知された時系列異常イベントはありません</div>';
+      } else {
+        var html = '';
+        audit.anomaliesTimeline.forEach(function(ev) {
+          html += '<div class="timeline-item alert">' +
+                    '<div class="timeline-dot"></div>' +
+                    '<div class="timeline-date">' + ev.date + '</div>' +
+                    '<div class="timeline-content">' +
+                      '<div class="timeline-title">[' + ev.category + '] ' + ev.contractId + ' (' + ev.salesRep + ')</div>' +
+                      '<div class="timeline-desc">' + ev.detail + '</div>' +
+                    '</div>' +
+                    '<div class="timeline-amount">' + (ev.amount > 0 ? formatYen(ev.amount) : '') + '</div>' +
+                  '</div>';
+        });
+        timelineContainer.innerHTML = html;
+      }
+    }
+
+    // バッジ更新
+    var badgeForensicAlert = document.getElementById('badge-forensic-alert-count');
+    if (badgeForensicAlert) {
+      if (audit.summary.suspiciousDealsCount > 0) {
+        badgeForensicAlert.style.display = 'inline-block';
+        badgeForensicAlert.textContent = audit.summary.suspiciousDealsCount;
+      } else {
+        badgeForensicAlert.style.display = 'none';
+      }
     }
   }
 
@@ -1164,6 +1321,65 @@
         closeModal('modal-cloud-settings');
         updateCloudStatusUI();
         alert('オーナー専用クラウド同期設定を保存しました。');
+      });
+    }
+
+    // ==========================================
+    // ⑤ 過去不正フォレンジック操作ボタンのバインド
+    // ==========================================
+    var btnForensicDemo = document.getElementById('btn-forensic-load-demo');
+    if (btnForensicDemo) {
+      btnForensicDemo.addEventListener('click', function() {
+        if (confirm('【過去不正検証データ読込】\n神田部長による過去の「諸費用横領」「下取車買叩き・USS乖離」「通帳未入金」および佐藤シニアの適正取引を含む3年分の対照データをロードして監査を実行しますか？')) {
+          if (forensicManager) {
+            forensicManager.loadPastAuditDemo();
+            renderForensicTab();
+            alert('過去3年分のフォレンジック監査データをロードしました。疑義検知総額・通帳突合・タイムラインが即時生成されました。');
+          }
+        }
+      });
+    }
+
+    var btnForensicOpenImport = document.getElementById('btn-forensic-open-import');
+    if (btnForensicOpenImport) {
+      btnForensicOpenImport.addEventListener('click', function() {
+        openModal('modal-forensic-import');
+      });
+    }
+
+    var btnForensicExecImport = document.getElementById('btn-forensic-execute-import');
+    if (btnForensicExecImport) {
+      btnForensicExecImport.addEventListener('click', function() {
+        var bankText = document.getElementById('forensic-bank-text').value;
+        var dealsText = document.getElementById('forensic-deals-text').value;
+
+        var importedDeals = [];
+        var importedBank = [];
+
+        if (dealsText && dealsText.trim()) {
+          importedDeals = forensicManager.parseDealsData(dealsText);
+          if (importedDeals.length > 0) {
+            forensicManager.setDeals(importedDeals);
+          }
+        }
+
+        if (bankText && bankText.trim()) {
+          importedBank = forensicManager.parseBankCSV(bankText);
+          if (importedBank.length > 0) {
+            forensicManager.setBankRecords(importedBank);
+          }
+        }
+
+        closeModal('modal-forensic-import');
+        renderForensicTab();
+        alert('インポート完了: 成約台帳 ' + importedDeals.length + ' 件、銀行明細 ' + importedBank.length + ' 件を取り込み、過去不正スキャンを実行しました。');
+      });
+    }
+
+    var btnForensicPrint = document.getElementById('btn-forensic-print-report');
+    if (btnForensicPrint) {
+      btnForensicPrint.addEventListener('click', function() {
+        window.print();
       });
     }
   }

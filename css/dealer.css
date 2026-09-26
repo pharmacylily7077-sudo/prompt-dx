@@ -1033,3 +1033,83 @@ body {
   }
 }
 
+/* ===================================================
+   タブ⑤: 過去不正フォレンジック分析 スタイル
+   =================================================== */
+
+.forensic-toolbar-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid var(--dealer-gold);
+  border-left: 5px solid var(--dealer-gold);
+  border-radius: var(--dealer-radius);
+  padding: 16px 20px;
+  box-shadow: var(--dealer-shadow);
+  margin-bottom: 20px;
+}
+
+.timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 12px 14px;
+  border-left: 3px solid #cbd5e1;
+  margin-left: 12px;
+  position: relative;
+  background: #ffffff;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.timeline-item.alert {
+  border-left-color: var(--dealer-danger);
+  background: #fffafa;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -9px;
+  top: 14px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #94a3b8;
+  border: 2px solid #ffffff;
+}
+
+.timeline-item.alert .timeline-dot {
+  background: var(--dealer-danger);
+  box-shadow: 0 0 6px rgba(185, 28, 28, 0.4);
+}
+
+.timeline-date {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--dealer-navy);
+  min-width: 85px;
+}
+
+.timeline-content {
+  flex: 1;
+}
+
+.timeline-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dealer-navy);
+  margin-bottom: 2px;
+}
+
+.timeline-desc {
+  font-size: 12px;
+  color: var(--dealer-text-subtle);
+}
+
+.timeline-amount {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--dealer-danger);
+  white-space: nowrap;
+}
+
