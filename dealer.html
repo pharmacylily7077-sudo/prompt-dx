@@ -1057,6 +1057,20 @@
     </div>
   </div>
 
+  <!-- 強制キャッシュ＆Service Worker消去（最新コードを完全保証） -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        regs.forEach(function(r) { r.unregister(); });
+      });
+    }
+    if (window.caches) {
+      caches.keys().then(function(names) {
+        names.forEach(function(n) { caches.delete(n); });
+      });
+    }
+  </script>
+
   <!-- スクリプト群 -->
   <script src="js/dealer-contract.js"></script>
   <script src="js/dealer-expense.js"></script>

@@ -3,6 +3,13 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Service Worker キャッシュ強制更新（常に最新の本番コードを即時反映）
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      registrations.forEach(r => r.update());
+    }).catch(() => {});
+  }
+
   // ユーティリティ
   const formatYen = (amount) => {
     if (typeof amount !== 'number' || isNaN(amount)) return '¥0';

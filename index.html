@@ -1426,6 +1426,20 @@
   <!-- トースト通知コンテナ -->
   <div id="toast-container" class="toast-container"></div>
 
+  <!-- 強制キャッシュ＆Service Worker消去（最新コードを完全保証） -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        regs.forEach(function(r) { r.unregister(); });
+      });
+    }
+    if (window.caches) {
+      caches.keys().then(function(names) {
+        names.forEach(function(n) { caches.delete(n); });
+      });
+    }
+  </script>
+
   <!-- スクリプト読み込み -->
   <script src="js/petty-cash.js"></script>
   <script src="js/cash-register.js"></script>

@@ -332,24 +332,19 @@
   }
 
   // =====================================================
-  // 7. Service Worker 登録・更新通知
+  // 7. Service Worker 解除・キャッシュ完全消去（常に最新コードを保証）
   // =====================================================
   function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').then(function(registration) {
-        console.log('[Fortify] Service Worker 登録成功:', registration.scope);
-
-        // 更新チェック
-        registration.addEventListener('updatefound', function() {
-          var newWorker = registration.installing;
-          newWorker.addEventListener('statechange', function() {
-            if (newWorker.state === 'activated') {
-              showToast('🔄 システムが最新版に更新されました。ページを再読込してください。', 'info');
-            }
-          });
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        registrations.forEach(function(r) {
+          r.unregister();
         });
-      }).catch(function(err) {
-        console.warn('[Fortify] Service Worker 登録エラー:', err);
+      }).catch(function() {});
+    }
+    if (window.caches) {
+      caches.keys().then(function(names) {
+        names.forEach(function(n) { caches.delete(n); });
       });
     }
   }
