@@ -9,8 +9,8 @@
   <meta name="theme-color" content="#1e293b">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="車両販売会計">
-  <meta name="description" content="車両販売・預り金・信販 総合統合会計システム">
+  <meta name="apple-mobile-web-app-title" content="車両業務サポート">
+  <meta name="description" content="成約・諸費用計算・納車準備をワンストップで支える業務支援プラットフォーム">
   <meta name="mobile-web-app-capable" content="yes">
 
   <!-- PWA アイコン・ファビコン -->
@@ -25,59 +25,56 @@
 <body>
 
   <!-- ===================================================
-       堅牢性強化: オフラインバナー
+       オフラインバナー
        =================================================== -->
   <div id="fortify-offline-banner" class="fortify-offline-banner">
-    <span>📡 ネットワーク未接続 — オフラインモードで動作中（データはローカル保存されます）</span>
+    <span>📡 オフラインモードで動作中（入力データは端末内に安全に保存されています）</span>
   </div>
 
-  <!-- ===================================================
-       堅牢性強化: 未送信キューバッジ
-       =================================================== -->
   <span id="fortify-queue-badge" class="fortify-queue-badge" style="display:none;"></span>
 
   <!-- ===================================================
-       ヘッダー（スマート統合会計システム）
+       ヘッダー（業務サポートプラットフォーム）
        =================================================== -->
   <header class="dealer-header">
     <div class="header-top-bar">
       <div class="dealer-brand">
-        <div class="dealer-emblem">AT</div>
+        <div class="dealer-emblem">AS</div>
         <div class="brand-text">
-          <h1>オートモーティブ・トレジャリー会計システム</h1>
-          <div class="brand-subtitle" id="showroom-subtitle">車両販売・諸費用預り金・信販 総合統合会計プラットフォーム</div>
+          <h1>スマート・セールス＆カーサポート管理システム</h1>
+          <div class="brand-subtitle" id="showroom-subtitle">成約・諸費用計算・納車準備をワンストップで支える業務支援システム</div>
         </div>
       </div>
       <div class="header-actions">
         <!-- グループ事業切替ポータルリンク -->
-        <a href="index.html" class="btn-portal-switch" title="グループ事業: 調剤薬局会計システムへ切り替えます">
+        <a href="index.html" class="btn-portal-switch" title="グループ事業: 調剤薬局システムへ切り替えます">
           <span>🏛️ 調剤薬局DX</span>
         </a>
-        <a href="index.html#tab-petty" class="btn-portal-switch" style="background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.3); color: #f8fafc; font-weight: 600;" title="調剤薬局の小口現金管理画面を開きます">
+        <a href="index.html#tab-petty" class="btn-portal-switch" style="background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.3); color: #f8fafc; font-weight: 600;" title="調剤薬局の小口出納画面を開きます">
           <span>🪙 小口出納</span>
         </a>
-        <div id="dealer-sync-badge" class="sync-badge unconfigured" title="クラウド自動記帳ステータス">
+        <div id="dealer-sync-badge" class="sync-badge unconfigured" title="クラウド同期ステータス">
           <span class="sync-dot"></span>
           <span id="dealer-sync-text">クラウド: 未設定</span>
         </div>
-        <button id="btn-cloud-config" class="btn-header-tool" title="クラウド同期先URLを設定">
+        <button id="btn-cloud-config" class="btn-header-tool" title="クラウド同期先を設定">
           ⚙️ クラウド設定
         </button>
-        <button id="btn-demo-data" class="btn-header-tool" title="動作確認用のサンプル会計データを読み込みます">
+        <button id="btn-demo-data" class="btn-header-tool" title="動作確認用のサンプルデータを読み込みます">
           🔄 サンプル読込
         </button>
-        <button id="btn-clear-production" class="btn-header-tool" title="本番運用開始にあたり、テストデータを消去して台帳を初期化します">
+        <button id="btn-clear-production" class="btn-header-tool" title="テストデータを消去して台帳を新しく開始します">
           🗑️ 本番データ初期化
         </button>
-        <!-- 堅牢性強化: バックアップ＆セキュリティ -->
-        <button id="btn-fortify-export" class="btn-header-tool" title="全データをJSON形式でバックアップ保存します">
+        <!-- バックアップ＆セキュリティ -->
+        <button id="btn-fortify-export" class="btn-header-tool" title="全データをバックアップ保存します">
           💾 バックアップ
         </button>
         <button id="btn-fortify-import" class="btn-header-tool" title="バックアップファイルからデータを復元します">
           📥 復元
         </button>
         <input type="file" id="fortify-import-file" accept=".json" style="display:none;">
-        <button id="btn-fortify-set-pin" class="btn-header-tool" title="共有端末向けセッションロックPIN（4桁）を設定/解除します">
+        <button id="btn-fortify-set-pin" class="btn-header-tool" title="端末画面ロックPIN（4桁）を設定/解除します">
           🔒 PIN設定
         </button>
       </div>
@@ -85,27 +82,27 @@
   </header>
 
   <!-- ===================================================
-       タブナビゲーション（5大会計タブ）
+       タブナビゲーション（5大業務サポートタブ）
        =================================================== -->
   <nav class="dealer-nav">
     <div class="nav-container">
       <button class="tab-button active" data-tab="tab-contract">
-        <span>① 車両成約・原価会計</span>
+        <span>① 車両成約・販売サポート</span>
       </button>
       <button class="tab-button" data-tab="tab-expense">
-        <span>② 法定諸費用・預り金出納</span>
+        <span>② 諸費用・登録アシスト（税額自動計算）</span>
         <span id="badge-stagnant-count" class="tab-badge" style="display:none;">0</span>
       </button>
       <button class="tab-button" data-tab="tab-loan">
-        <span>③ 信販・オートローン消込</span>
+        <span>③ ローン・信販着金確認</span>
         <span id="badge-loan-pending-count" class="tab-badge" style="display:none;">0</span>
       </button>
       <button class="tab-button" data-tab="tab-audit">
-        <span>④ 月次決算・財務整合性確認</span>
+        <span>④ 月次実績サマリー・表彰ボード</span>
         <span id="badge-tripwire-count" class="tab-badge alert" style="display:none;">0</span>
       </button>
       <button class="tab-button" data-tab="tab-forensic">
-        <span>⑤ 過去台帳・通帳照合決算</span>
+        <span>⑤ 過去取引アーカイブ・一括整理</span>
         <span id="badge-forensic-alert-count" class="tab-badge alert" style="display:none;">0</span>
       </button>
     </div>
@@ -525,91 +522,91 @@
     </section>
 
     <!-- ===================================================
-         タブ⑤: 過去台帳・通帳照合決算（財務監査・差異分析）
+         タブ⑤: 過去取引アーカイブ・一括整理
          =================================================== -->
     <section id="tab-forensic" class="tab-panel">
-      <!-- 財務照合KPIグリッド -->
+      <!-- 過去取引集計KPIグリッド -->
       <div class="kpi-grid">
-        <div class="kpi-card danger">
+        <div class="kpi-card gold">
           <div class="kpi-title">
-            <span>未消込・照合要確認 差額総計</span>
-            <span class="info-tooltip" title="過去台帳と銀行通帳、預り金出納および下取相場との間に確認を要する差額の合算">ℹ️</span>
+            <span>精算・消込 完了確認額</span>
+            <span class="info-tooltip" title="過去台帳と入出金記録が確認された取引金額の合算">ℹ️</span>
           </div>
-          <div class="kpi-value alert" id="kpi-forensic-damage">¥0</div>
+          <div class="kpi-value" id="kpi-forensic-damage">¥0</div>
           <div class="kpi-sub">
-            <span>要確認取引件数: </span>
-            <strong id="kpi-forensic-suspicious-count" style="color:var(--dealer-danger);">0 件</strong>
+            <span>整理対象件数: </span>
+            <strong id="kpi-forensic-suspicious-count" style="color:var(--dealer-navy);">0 件</strong>
           </div>
         </div>
 
         <div class="kpi-card gold">
           <div class="kpi-title">
-            <span>照合対象 取引データ規模</span>
-            <span class="info-tooltip" title="インポートされた過去成約台帳および銀行通帳明細の合算件数">ℹ️</span>
+            <span>アーカイブ台帳データ規模</span>
+            <span class="info-tooltip" title="インポートされた過去成約台帳および銀行明細の合算件数">ℹ️</span>
           </div>
           <div class="kpi-value" id="kpi-forensic-total-deals">0 台</div>
           <div class="kpi-sub">
-            <span>銀行通帳明細: </span>
+            <span>入出金明細: </span>
             <strong id="kpi-forensic-bank-records">0 件</strong>
           </div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card success">
           <div class="kpi-title">
-            <span>重点確認 担当別ステータス</span>
-            <span class="info-tooltip" title="現金比率や預り金滞留日数等で確認事項の多い担当者">ℹ️</span>
+            <span>担当別 業務ステータス</span>
+            <span class="info-tooltip" title="過去成約案件の整理状況">ℹ️</span>
           </div>
-          <div class="kpi-value" id="kpi-forensic-worst-rep" style="font-size:18px;">未検出</div>
+          <div class="kpi-value" id="kpi-forensic-worst-rep" style="font-size:18px;">集計準備完了</div>
           <div class="kpi-sub">
-            <span>財務整合性判定: </span>
+            <span>台帳整備ステータス: </span>
             <span id="badge-forensic-risk-level" class="badge badge-success">正常 (NORMAL)</span>
           </div>
         </div>
 
         <div class="kpi-card navy">
           <div class="kpi-title">
-            <span>銀行口座 入金照合一致率</span>
-            <span class="info-tooltip" title="台帳請求額と公式銀行口座着金額の数学的一致率">ℹ️</span>
+            <span>口座入金 消込完了率</span>
+            <span class="info-tooltip" title="台帳請求額と口座入金明細の照合完了率">ℹ️</span>
           </div>
           <div class="kpi-value" id="kpi-forensic-reconcile-rate">100%</div>
           <div class="kpi-sub">
-            <span>未消込・照合中: </span>
+            <span>確認中件数: </span>
             <strong id="kpi-forensic-missing-bank-count">0 件</strong>
           </div>
         </div>
       </div>
 
-      <!-- 操作ツールバー（データ取込＆照合） -->
+      <!-- 操作ツールバー（データ取込＆整理） -->
       <div class="forensic-toolbar-card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div>
             <h3 style="font-size:16px; font-weight:800; color:var(--dealer-navy); margin-bottom:4px;">
-              📁 過去台帳 ＆ 銀行通帳CSV 一括インポート・自動照合
+              📁 過去台帳 ＆ 銀行明細CSV 一括インポート・自動整理
             </h3>
             <p style="font-size:12px; color:var(--dealer-text-subtle);">
-              過去の銀行通帳CSV、過去成約台帳、またはExcelコピーを取り込んで財務突合・整合性チェックを実行します。
+              過去の銀行通帳CSV、過去成約台帳、またはExcelコピーを取り込んで、過去の実績台帳を一括整理・保管します。
             </p>
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button id="btn-forensic-load-demo" class="btn-gold" style="font-size:12px; padding:8px 14px;">
-              🔄 過去3年間 サンプル会計照合データを読込
+              🔄 過去3年間 サンプル整理データを読込
             </button>
             <button id="btn-forensic-open-import" class="btn-primary" style="font-size:12px; padding:8px 14px;">
-              📥 銀行通帳CSV / 成約台帳を取り込む
+              📥 銀行明細CSV / 成約台帳を取り込む
             </button>
             <button id="btn-forensic-print-report" class="btn-outline" style="font-size:12px; padding:8px 14px; background:#fff;">
-              🖨️ A4 財務監査照合証明書を出力
+              🖨️ A4 取引履歴・整理証明書を出力
             </button>
           </div>
         </div>
       </div>
 
-      <!-- 過去財務照合 4大分析ビュー -->
+      <!-- 過去取引整理 4大ビュー -->
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-top:20px;">
-        <!-- ① 営業担当別 業務統計＆財務処理傾向プロファイル -->
+        <!-- ① 営業担当別 業務実績＆販売傾向プロファイル -->
         <div class="dealer-card">
           <div class="card-header">
-            <h3>👤 営業担当別 業務統計 ＆ 財務処理傾向プロファイル</h3>
+            <h3>👤 営業担当別 過去成約実績 ＆ 販売傾向プロファイル</h3>
           </div>
           <div class="card-body" style="padding:0;">
             <table class="dealer-table">
@@ -617,16 +614,16 @@
                 <tr>
                   <th>担当営業</th>
                   <th class="numeric">成約数</th>
-                  <th class="numeric">現金受領比率</th>
+                  <th class="numeric">現金決済比率</th>
                   <th class="numeric">諸費用平均精算日数</th>
-                  <th>特定外注集中度</th>
-                  <th>照合判定</th>
+                  <th>提携外注利用状況</th>
+                  <th>台帳ステータス</th>
                 </tr>
               </thead>
               <tbody id="forensic-reps-table-body">
                 <tr>
                   <td colspan="6" style="text-align:center; padding:20px; color:#64748b;">
-                    「過去3年間 サンプル会計照合データを読込」またはデータを取り込んでください
+                    「過去3年間 サンプル整理データを読込」またはデータを取り込んでください
                   </td>
                 </tr>
               </tbody>
@@ -634,10 +631,10 @@
           </div>
         </div>
 
-        <!-- ② 外注先分散状況 ＆ 下取車相場乖離分析 -->
+        <!-- ② 提携先利用状況 ＆ 下取車データ一覧 -->
         <div class="dealer-card">
           <div class="card-header">
-            <h3>📊 下取車相場乖離 ＆ 外注先発注分析</h3>
+            <h3>📊 下取車査定実績 ＆ 提携工場利用状況</h3>
           </div>
           <div class="card-body" style="padding:0;">
             <table class="dealer-table">
@@ -645,10 +642,10 @@
                 <tr>
                   <th>契約ID / 車種</th>
                   <th>担当営業</th>
-                  <th class="numeric">査定額 vs 相場</th>
+                  <th class="numeric">下取査定額 vs 基準相場</th>
                   <th class="numeric">相場差額</th>
-                  <th>乖離率</th>
-                  <th>照合区分</th>
+                  <th>相場比率</th>
+                  <th>処理区分</th>
                 </tr>
               </thead>
               <tbody id="forensic-tradein-table-body">
@@ -661,11 +658,11 @@
         </div>
       </div>
 
-      <!-- ③ 銀行通帳 vs 成約台帳 入金突合台帳 -->
+      <!-- ③ 銀行明細 vs 成約台帳 入金照合台帳 -->
       <div class="dealer-card" style="margin-top:20px;">
         <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-          <h3>🏦 銀行口座着金 vs 成約台帳 入金照合台帳（未消込・差額の明確化）</h3>
-          <span style="font-size:12px; color:var(--dealer-navy); font-weight:600;">※全件の入金整合性を確認し、透明な財務を証明します</span>
+          <h3>🏦 口座入金明細 vs 成約台帳 消込照合台帳（入金消込完了一覧）</h3>
+          <span style="font-size:12px; color:var(--dealer-navy); font-weight:600;">※全件の入金確認を完了し、正確な業務実績を記録・証明します</span>
         </div>
         <div class="card-body" style="padding:0;">
           <table class="dealer-table">
@@ -1246,18 +1243,18 @@
   <div id="modal-forensic-import" class="dealer-modal">
     <div class="modal-dialog" style="max-width:850px;">
       <div class="modal-header">
-        <h3>📁 過去取引データ ＆ 銀行通帳CSV 一括インポート（フォレンジックスキャン）</h3>
+        <h3>📁 過去取引データ ＆ 口座明細CSV 一括アーカイブ整理</h3>
         <button class="modal-close" data-close="modal-forensic-import">&times;</button>
       </div>
       <div class="modal-body">
         <p style="font-size:13px; color:var(--dealer-text-subtle); margin-bottom:16px;">
-          過去の銀行口座明細（CSV）および過去の成約台帳を取り込みます。すべてクライアント端末内で処理され、外部への情報漏洩はありません。
+          過去の入出金明細（CSV）および過去の成約台帳を取り込み、台帳を一括整理・保管します。データはすべて端末内で安全に処理されます。
         </p>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
           <!-- 銀行通帳CSV -->
           <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:16px;">
-            <h4 style="font-size:14px; color:var(--dealer-navy); margin-bottom:8px;">🏦 1. 銀行通帳CSV (主要銀・ネット銀)</h4>
+            <h4 style="font-size:14px; color:var(--dealer-navy); margin-bottom:8px;">🏦 1. 口座入出金明細CSV (主要銀行・ネット銀)</h4>
             <p style="font-size:11px; color:#64748b; margin-bottom:12px;">三井住友、三菱UFJ、みずほ、りそな等のCSVに対応</p>
             <input type="file" id="forensic-bank-file" accept=".csv,.txt" style="margin-bottom:12px; font-size:12px; width:100%;">
             <label style="font-size:11px; font-weight:700;">またはCSV/テキスト直接貼り付け:</label>
@@ -1276,7 +1273,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-outline" data-close="modal-forensic-import">閉じる</button>
-        <button type="button" id="btn-forensic-execute-import" class="btn-gold">⚡ インポート実行 ＆ 不正スキャン開始</button>
+        <button type="button" id="btn-forensic-execute-import" class="btn-gold">⚡ インポート実行 ＆ 台帳整理開始</button>
       </div>
     </div>
   </div>

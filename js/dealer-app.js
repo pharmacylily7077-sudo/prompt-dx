@@ -1122,9 +1122,9 @@
         renderAll();
 
         if (result.success) {
-          alert('出庫ゲート解除成功: 納車完了ステータスへ移行しました。');
+          alert('納車準備チェック完了: 納車完了ステータスへ移行しました。');
         } else {
-          alert('🚨【違法出庫ロック検知】未解決の統制項目があるため、違法出庫としてオーナーへ緊急通報されました。\n' + result.blockers.join('\n'));
+          alert('【納車前チェック未完了】以下の項目を確認のうえ完了してください:\n' + result.blockers.join('\n'));
         }
       });
     }
@@ -1261,10 +1261,10 @@
     var btnDemoData = document.getElementById('btn-demo-data');
     if (btnDemoData) {
       btnDemoData.addEventListener('click', function() {
-        if (confirm('【検証デモデータ読込】\n歴30年トップ営業マン（神田部長）の不正シミュレーションを含む3台の検証データをロードしますか？')) {
+        if (confirm('【サンプル会計データの読込】\n動作確認用の成約・諸費用・ローンデータをロードしますか？')) {
           loadDemoData();
           renderAll();
-          alert('検証デモデータをロードしました。ポルシェ911の「出庫ゲート審査」やタブ④「月次粗利監査」をご確認いただけます。');
+          alert('サンプル会計データを読み込みました。各タブの機能をご確認いただけます。');
         }
       });
     }
@@ -1273,24 +1273,24 @@
     var btnClearProd = document.getElementById('btn-clear-production');
     if (btnClearProd) {
       btnClearProd.addEventListener('click', function() {
-        if (confirm('【本番データ初期化】\n登録されているすべてのデータ（成約、諸費用、ローン、監査ログ）を消去し、まっさらな本番運用状態へリセットしますか？\n（この操作は取り消せません）')) {
+        if (confirm('【台帳初期化】\n登録されているすべてのデータをクリアし、新しい本番台帳を開始しますか？')) {
           contractManager.clearAll();
           expenseManager.clearAll();
           loanManager.clearAll();
           auditManager.clearAll();
           if (supremeManager && supremeManager.clearAll) supremeManager.clearAll();
           renderAll();
-          alert('本番運用データベースを初期化しました。デモデータはすべて消去され、1台目から実際の成約データを入力できる本番モードになりました。');
+          alert('台帳を初期化しました。新しい成約データを入力できるクリーンな状態です。');
         }
       });
     }
 
-    // 即時ディープスキャン実行
+    // 整合性チェック実行
     var btnScan = document.getElementById('btn-scan-tripwires');
     if (btnScan) {
       btnScan.addEventListener('click', function() {
         renderAuditTab();
-        alert('6大フォレンジック・トリップワイヤーの全件ディープスキャンを完了しました。');
+        alert('最新の財務整合性チェックを実行しました。');
       });
     }
 
@@ -1330,11 +1330,11 @@
     var btnForensicDemo = document.getElementById('btn-forensic-load-demo');
     if (btnForensicDemo) {
       btnForensicDemo.addEventListener('click', function() {
-        if (confirm('【過去不正検証データ読込】\n神田部長による過去の「諸費用横領」「下取車買叩き・USS乖離」「通帳未入金」および佐藤シニアの適正取引を含む3年分の対照データをロードして監査を実行しますか？')) {
+        if (confirm('【サンプル整理データの読込】\n過去3年分の成約台帳および口座入金記録サンプルをロードして、台帳整理の動作を確認しますか？')) {
           if (forensicManager) {
             forensicManager.loadPastAuditDemo();
             renderForensicTab();
-            alert('過去3年分のフォレンジック監査データをロードしました。疑義検知総額・通帳突合・タイムラインが即時生成されました。');
+            alert('過去3年分のサンプル取引データをロードしました。入金消込一覧および業務タイムラインが表示されます。');
           }
         }
       });
@@ -1372,7 +1372,7 @@
 
         closeModal('modal-forensic-import');
         renderForensicTab();
-        alert('インポート完了: 成約台帳 ' + importedDeals.length + ' 件、銀行明細 ' + importedBank.length + ' 件を取り込み、過去不正スキャンを実行しました。');
+        alert('インポート完了: 成約台帳 ' + importedDeals.length + ' 件、口座明細 ' + importedBank.length + ' 件を取り込み、台帳整理を完了しました。');
       });
     }
 
