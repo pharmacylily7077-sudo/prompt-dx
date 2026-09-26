@@ -34,12 +34,40 @@
   <span id="fortify-queue-badge" class="fortify-queue-badge" style="display:none;"></span>
 
   <!-- ===================================================
+       オーナー専用ステルスバナー（オーナーモード時のみ表示）
+       =================================================== -->
+  <div id="owner-stealth-banner" class="owner-stealth-banner" style="display:none;">
+    <div class="owner-banner-inner">
+      <div class="owner-banner-status">
+        <span class="owner-crown">👑</span>
+        <span class="owner-title">PRESIDENT PRIVATE COCKPIT</span>
+        <span class="badge-stealth">現場ステルス中</span>
+      </div>
+      <div class="owner-banner-metrics" id="owner-quick-metrics">
+        <span>諸費用滞留: <strong id="owner-metric-expense">¥0</strong></span>
+        <span class="sep">|</span>
+        <span>信販未着金: <strong id="owner-metric-loan">¥0</strong></span>
+        <span class="sep">|</span>
+        <span>下取相場ズレ: <strong id="owner-metric-tradein">¥0</strong></span>
+      </div>
+      <div class="owner-banner-actions">
+        <button id="btn-open-killer-phrases" class="btn-owner-gold">
+          ⚡ 必殺の一言（カンペ）
+        </button>
+        <button id="btn-toggle-stealth-view" class="btn-owner-stealth" title="現場スタッフに見せる時はここをタップ">
+          👁️ 現場ビューへ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================
        ヘッダー（業務サポートプラットフォーム）
        =================================================== -->
   <header class="dealer-header">
     <div class="header-top-bar">
-      <div class="dealer-brand">
-        <div class="dealer-emblem">DMS</div>
+      <div class="dealer-brand" id="dealer-brand-logo" title="DMS Cloud (トリプルタップでオーナーコンソール切替)">
+        <div class="dealer-emblem" id="dealer-emblem">DMS</div>
         <div class="brand-text">
           <h1>DMS Cloud (Dealer Management System)</h1>
           <div class="brand-subtitle" id="showroom-subtitle">Vehicle Sales & Operations Platform</div>
@@ -76,6 +104,10 @@
         <input type="file" id="fortify-import-file" accept=".json" style="display:none;">
         <button id="btn-fortify-set-pin" class="btn-header-tool" title="端末画面ロックPIN（4桁）を設定/解除します">
           🔒 PIN設定
+        </button>
+        <!-- オーナー専用クイック起動ボタン（オーナーモード時に表示） -->
+        <button id="btn-owner-header-trigger" class="btn-header-tool btn-owner-accent" style="display:none;" title="オーナー専用コックピット">
+          👑 必殺カンペ
         </button>
       </div>
     </div>
@@ -159,7 +191,7 @@
         <div class="card-header-bar">
           <div class="card-title-group">
             <h2>車両別成約・個別原価締め台帳</h2>
-            <div class="card-desc">車台番号（VIN 17桁）単位で仕入・加修・成約代金を1円単位で完全ガラス張り化</div>
+            <div class="card-desc">車台番号（VIN 17桁）単位で仕入・加修・成約代金を自動集計し粗利を可視化</div>
           </div>
           <div style="display:flex; gap:10px;">
             <button id="btn-open-tax-calc" class="btn-outline">
@@ -189,7 +221,7 @@
                 <th class="numeric">粗利率</th>
                 <th>決済内訳</th>
                 <th>ステータス</th>
-                <th>出庫ゲート審査</th>
+                <th>納車前チェック</th>
               </tr>
             </thead>
             <tbody id="deal-table-body">
@@ -230,13 +262,13 @@
           <div class="kpi-sub">登録代行・納車準備手数料</div>
         </div>
 
-        <div id="card-stagnant-deposit" class="kpi-card danger">
+        <div id="card-stagnant-deposit" class="kpi-card">
           <div class="kpi-title">
-            <span>手元未精算 滞留預り金残高</span>
+            <span>諸費用精算待ち残高（お釣り等）</span>
             <span id="badge-stagnant-status" class="badge badge-success">正常 (¥0)</span>
           </div>
           <div id="kpi-exp-stagnant-balance" class="kpi-value">¥0</div>
-          <div class="kpi-sub">納車後も手元に精算未了残高が残っている案件</div>
+          <div class="kpi-sub">お客様への返金または精算手続き待ちの残高</div>
         </div>
       </div>
 
@@ -244,15 +276,15 @@
       <div class="content-card">
         <div class="card-header-bar">
           <div class="card-title-group">
-            <h2>諸費用預り金 出納・三方突合台帳</h2>
-            <div class="card-desc">預託額 ＝ 法定実費レシート納付 ＋ 店舗代行売上 ＋ 顧客返還額（1円単位で残高0円必須）</div>
+            <h2>諸費用預り金 出納・精算管理台帳</h2>
+            <div class="card-desc">預託額 ＝ 法定実費納付 ＋ 店舗代行売上 ＋ お客様返金（お釣りの渡し忘れ防止・差額ゼロ精算）</div>
           </div>
         </div>
 
-        <!-- 滞留預り金 警告アラート枠（動的表示） -->
+        <!-- 滞留預り金 案内枠（動的表示・ステルス仕様） -->
         <div id="expense-stagnant-alert-box" class="tripwire-container" style="display:none;">
           <div class="tripwire-header">
-            <h3>⚠️【財務照合アラート】納車済・諸費用預り金の未精算残高を検知</h3>
+            <h3>💡【業務リマインド】お客様への返金・諸費用精算手続き待ちの案件があります</h3>
           </div>
           <ul id="expense-stagnant-alert-list" class="tripwire-list"></ul>
         </div>
@@ -269,9 +301,9 @@
                 <th class="numeric">法定納付実費</th>
                 <th class="numeric">代行売上</th>
                 <th class="numeric">顧客返金</th>
-                <th class="numeric">手元預り残高</th>
-                <th>三方照合判定</th>
-                <th>顧客公式受領書</th>
+                <th class="numeric">精算待ち残高</th>
+                <th>精算判定</th>
+                <th>預り証・領収書</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -313,13 +345,13 @@
           <div class="kpi-sub">信販会社からの推進手数料（店舗粗利）</div>
         </div>
 
-        <div class="kpi-card warning">
+        <div class="kpi-card">
           <div class="kpi-title">
-            <span>未着金ローン債権（回収待機）</span>
+            <span>信販着金待ち・確認中残高</span>
             <span id="badge-overdue-loan" class="badge badge-info">進行中</span>
           </div>
           <div id="kpi-loan-pending-total" class="kpi-value">¥0</div>
-          <div class="kpi-sub">30日超未着金または納車後未着金は警戒</div>
+          <div class="kpi-sub">信販承認後の着金スケジュール管理</div>
         </div>
       </div>
 
@@ -327,8 +359,8 @@
       <div class="content-card">
         <div class="card-header-bar">
           <div class="card-title-group">
-            <h2>信販会社オートローン 入金消込台帳</h2>
-            <div class="card-desc">信販会社の振込決定通知書と着金額を1円単位で完全消込（未特定差額ゼロ原則）</div>
+            <h2>信販会社オートローン 入金照合台帳</h2>
+            <div class="card-desc">信販会社の決定通知書と着金予定日をスムーズに管理・消込</div>
           </div>
         </div>
 
@@ -346,7 +378,7 @@
                 <th>着金日</th>
                 <th class="numeric">実着金額</th>
                 <th class="numeric">キックバック</th>
-                <th>差額照合</th>
+                <th>照合状況</th>
                 <th>ステータス</th>
                 <th>操作</th>
               </tr>
@@ -362,8 +394,8 @@
       <div class="content-card">
         <div class="card-header-bar">
           <div class="card-title-group">
-            <h2>下取車残債一括立替・頭金立替金 追跡管理</h2>
-            <div class="card-desc">他社信販会社への一括返済立替金および顧客頭金立替の回収・焦げ付き防止</div>
+            <h2>下取車残債一括立替・頭金管理</h2>
+            <div class="card-desc">他社ローン残債一括返済および頭金の入出金スケジュール管理</div>
           </div>
           <button id="btn-open-new-advance" class="btn-outline">
             ＋ 新規立替金登録
@@ -418,48 +450,48 @@
           <div class="kpi-sub">車両粗利 ＋ 代行手数料 ＋ ローンバック</div>
         </div>
 
-        <div class="kpi-card danger">
+        <div class="kpi-card">
           <div class="kpi-title">
-            <span>未精算・滞留預り金総額</span>
-            <span class="badge badge-danger">要監査</span>
+            <span>精算手続き中 預り金総額</span>
+            <span class="badge badge-info">確認中</span>
           </div>
           <div id="kpi-audit-stagnant-deposit" class="kpi-value">¥0</div>
-          <div class="kpi-sub">精算手続き中の諸費用預り金残高</div>
+          <div class="kpi-sub">手続き中の諸費用預り金残高</div>
         </div>
 
         <div class="kpi-card">
           <div class="kpi-title">
-            <span>要確認・照合未了件数</span>
+            <span>手続き・精算待ち件数</span>
             <span id="badge-audit-tripwire-status" class="badge badge-success">全件正常</span>
           </div>
           <div id="kpi-audit-tripwire-count" class="kpi-value">0 件</div>
-          <div class="kpi-sub">預り金精算待ち・ローン着金消込確認等</div>
+          <div class="kpi-sub">諸費用お釣り精算・信販着金確認等</div>
         </div>
       </div>
 
-      <!-- 財務整合性 リアルタイム照合ログ -->
+      <!-- 店舗全体 進行中案件ステータス -->
       <div class="content-card">
         <div class="card-header-bar">
           <div class="card-title-group">
-            <h2>📋 財務整合性 リアルタイム照合ステータス</h2>
-            <div class="card-desc">預り金出納・信販消込・原価証憑の整合性をリアルタイムに照合・可視化</div>
+            <h2>📋 店舗全体 進行中案件ステータス</h2>
+            <div class="card-desc">諸費用精算・信販着金・納車前確認の進行状況をリアルタイム表示</div>
           </div>
           <button id="btn-scan-tripwires" class="btn-outline">
-            🔍 整合性チェック再実行
+            🔄 ステータス最新化
           </button>
         </div>
 
         <div id="audit-tripwire-container">
-          <!-- JSで動的警告リストを描画 -->
+          <!-- JSで動的リストを描画（通常時はリマインド、オーナーモード時は詳細トリップワイヤー） -->
         </div>
       </div>
 
-      <!-- 営業担当別 業務・財務処理状況一覧 -->
+      <!-- 営業担当別 成約・実績サマリー -->
       <div class="content-card">
         <div class="card-header-bar">
           <div class="card-title-group">
-            <h2>👤 営業担当別 業務・財務処理状況一覧</h2>
-            <div class="card-desc">成約台数・粗利実績・預り金精算サイクル等の透明な業務指標</div>
+            <h2>👤 営業担当別 成約・実績サマリー</h2>
+            <div class="card-desc">成約台数・粗利実績・完了状況等の営業KPI</div>
           </div>
         </div>
 
@@ -473,10 +505,10 @@
                 <th class="numeric">粗利総額</th>
                 <th class="numeric">平均粗利率</th>
                 <th class="numeric">現金決済比率</th>
-                <th class="numeric">平均預り金滞留日数</th>
-                <th class="numeric">手元預り残高</th>
-                <th class="numeric">フォレンジックスコア</th>
-                <th>統制リスク判定</th>
+                <th class="numeric">精算サイクル(平均日)</th>
+                <th class="numeric">精算待ち残高</th>
+                <th class="numeric owner-only-col">フォレンジックスコア</th>
+                <th class="owner-only-col">統制リスク判定</th>
               </tr>
             </thead>
             <tbody id="salesrep-scorecard-body">
@@ -490,15 +522,15 @@
       <div class="content-card no-print">
         <div class="card-header-bar">
           <div class="card-title-group">
-            <h2>月次粗利監査報告書（A4横印刷帳票・オーナー捺印完備）</h2>
-            <div class="card-desc">月次経営会議および顧問弁護士・税理士への内部統制エビデンスとして公式印刷・PDF出力</div>
+            <h2>月次実績報告書（A4横公式帳票・捺印枠完備）</h2>
+            <div class="card-desc">月次経営報告および顧問税理士への月次エビデンスとして公式印刷・PDF出力</div>
           </div>
           <div style="display:flex; gap:10px;">
-            <button id="btn-open-vip-letter" class="btn-primary" style="background:var(--dealer-navy-dark); border:1px solid var(--dealer-gold); color:#faf6ee;">
+            <button id="btn-open-vip-letter" class="btn-primary owner-only-btn" style="background:var(--dealer-navy-dark); border:1px solid var(--dealer-gold); color:#faf6ee;">
               ✉️ オーナー室 VIP年次取引照合状（親展）
             </button>
             <button id="btn-print-audit-report" class="btn-gold">
-              🖨️ A4公式監査報告書を印刷 / PDF出力
+              🖨️ A4公式月次実績報告書を印刷 / PDF出力
             </button>
           </div>
         </div>
@@ -1274,6 +1306,130 @@
       <div class="modal-footer">
         <button type="button" class="btn-outline" data-close="modal-forensic-import">閉じる</button>
         <button type="button" id="btn-forensic-execute-import" class="btn-gold">⚡ インポート実行 ＆ 台帳整理開始</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================
+       13. オーナー専用 必殺透視コックピット モーダル
+       =================================================== -->
+  <div id="modal-owner-cockpit" class="dealer-modal">
+    <div class="modal-dialog owner-cockpit-dialog" style="max-width:980px; width:95vw;">
+      <div class="modal-header owner-modal-header">
+        <div class="owner-header-branding">
+          <span class="crown-icon">👑</span>
+          <div>
+            <h3>PRESIDENT STEALTH CONSOLE</h3>
+            <div class="owner-header-subtitle">オーナー専用 必殺の一言 ＆ リアルタイム透視コックピット</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button type="button" class="btn-stealth-hide" data-close="modal-owner-cockpit">
+            👁️ 現場ビューへ隠す
+          </button>
+          <button class="modal-close" data-close="modal-owner-cockpit">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body owner-modal-body">
+        
+        <!-- コンセプトガイド -->
+        <div class="owner-concept-banner">
+          <div class="concept-icon">💡</div>
+          <div class="concept-text">
+            <strong>【絶対的ステルス運用の極意】</strong><br>
+            現場の社員・営業マンには「計算が楽になるスマートな見積メモ」として無警戒に使わせています。<br>
+            集計された矛盾や差額を、<strong>「あ、そういえばあの件さ...」と現場でサラッと一言突くだけ</strong>で、社内に「うちの社長は計算が異常に早い。小細工は絶対に通じない」という本物の畏敬と抑止力が生まれます。
+          </div>
+        </div>
+
+        <!-- 3大透視KPI -->
+        <div class="kpi-grid owner-kpi-grid" style="margin-bottom:20px;">
+          <div class="kpi-card gold">
+            <div class="kpi-title">
+              <span>① 諸費用ネコババ（手元滞留金）</span>
+              <span class="badge badge-warning" id="owner-kpi-stagnant-count">0 件</span>
+            </div>
+            <div class="kpi-value font-mono" id="owner-kpi-stagnant-total">¥0</div>
+            <div class="kpi-sub">法定実費納付済後の未返還・手元プール金</div>
+          </div>
+
+          <div class="kpi-card warning">
+            <div class="kpi-title">
+              <span>② 信販未着金・直抜きリスク</span>
+              <span class="badge badge-danger" id="owner-kpi-loan-count">0 件</span>
+            </div>
+            <div class="kpi-value font-mono" id="owner-kpi-loan-total">¥0</div>
+            <div class="kpi-sub">承認済未着金・現金回収フラグ</div>
+          </div>
+
+          <div class="kpi-card navy">
+            <div class="kpi-title">
+              <span>③ 下取買叩き・USS相場乖離</span>
+              <span class="badge badge-info" id="owner-kpi-tradein-count">0 件</span>
+            </div>
+            <div class="kpi-value font-mono" id="owner-kpi-tradein-total">¥0</div>
+            <div class="kpi-sub">業者横流し・裏キックバック疑義差額</div>
+          </div>
+        </div>
+
+        <!-- 必殺の一言（キラーフレーズ）カンペ集 -->
+        <div class="content-card owner-phrases-card">
+          <div class="card-header-bar">
+            <div class="card-title-group">
+              <h2 style="color:var(--dealer-gold-dark, #b45309); font-size:16px;">
+                ⚡ 現場でサラッと放つ「必殺の一言」カンペ一覧（神の一手）
+              </h2>
+              <div class="card-desc">
+                数字の暗算など不要。このフレーズをそのまま口にするだけで、営業マンは顔面蒼白になり白状します。
+              </div>
+            </div>
+          </div>
+
+          <div id="owner-killer-phrases-list" class="owner-phrases-container">
+            <!-- JSで動的生成 -->
+          </div>
+        </div>
+
+        <!-- 営業マン別・不整合集計表 -->
+        <div class="content-card" style="margin-top:16px;">
+          <div class="card-header-bar">
+            <div class="card-title-group">
+              <h2 style="font-size:15px; color:var(--dealer-navy);">👤 営業マン別 資金滞留・疑惑マトリクス</h2>
+              <div class="card-desc">誰の手元にいくら残高があるかをリアルタイムで一覧化</div>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="dealer-table">
+              <thead>
+                <tr>
+                  <th>営業担当</th>
+                  <th class="numeric">成約台数</th>
+                  <th class="numeric">諸費用手元残高</th>
+                  <th class="numeric">信販未着金債権</th>
+                  <th class="numeric">現金決済比率</th>
+                  <th>オーナー推奨アクション</th>
+                </tr>
+              </thead>
+              <tbody id="owner-rep-matrix-body">
+                <!-- JSで動的描画 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- エグゼクティブ操作ボタン -->
+        <div class="owner-footer-actions">
+          <button type="button" id="btn-owner-open-vip" class="btn-primary" style="background:#1e293b; border:1px solid #d97706; color:#fef3c7;">
+            ✉️ オーナー室 VIP年次取引照合状（親展）を開く
+          </button>
+          <button type="button" id="btn-owner-print-audit" class="btn-gold">
+            🖨️ A4公式監査報告書を出力
+          </button>
+          <button type="button" class="btn-outline" data-close="modal-owner-cockpit">
+            閉じる
+          </button>
+        </div>
+
       </div>
     </div>
   </div>

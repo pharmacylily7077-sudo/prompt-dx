@@ -7,6 +7,7 @@
   'use strict';
 
   var contractManager, expenseManager, loanManager, auditManager, syncManager, supremeManager, forensicManager;
+  var STORAGE_KEY_OWNER_MODE = 'car_dealer_owner_stealth_mode_v1';
 
   // 通貨フォーマッター
   function formatYen(num) {
@@ -16,6 +17,56 @@
 
   function nl2br(str) {
     return (str || '').replace(/\n/g, '<br>');
+  }
+
+  // ==========================================
+  // オーナーモード＆ステルス管理
+  // ==========================================
+  function isOwnerMode() {
+    try {
+      return localStorage.getItem(STORAGE_KEY_OWNER_MODE) === 'true';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function setOwnerMode(active) {
+    try {
+      localStorage.setItem(STORAGE_KEY_OWNER_MODE, active ? 'true' : 'false');
+    } catch (e) {}
+    if (active) {
+      document.body.classList.add('owner-mode-active');
+    } else {
+      document.body.classList.remove('owner-mode-active');
+    }
+  }
+
+  function checkOwnerModeUrl() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('mode') === 'owner' || params.get('owner') === '1') {
+        setOwnerMode(true);
+      } else if (params.get('mode') === 'staff' || params.get('staff') === '1') {
+        setOwnerMode(false);
+      } else {
+        // 保存状態を反映
+        if (isOwnerMode()) {
+          document.body.classList.add('owner-mode-active');
+        }
+      }
+    } catch (e) {}
+  }
+
+  function showToast(msg) {
+    var existing = document.querySelector('.owner-toast');
+    if (existing) existing.remove();
+    var toast = document.createElement('div');
+    toast.className = 'owner-toast';
+    toast.innerHTML = '<span>' + msg + '</span>';
+    document.body.appendChild(toast);
+    setTimeout(function() {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 3000);
   }
 
   // 初期化
@@ -29,6 +80,8 @@
     if (global.DealerForensicManager) {
       forensicManager = new global.DealerForensicManager();
     }
+
+    checkOwnerModeUrl();
 
     // 初回起動時、データが0件なら自動的に検証デモデータをロードして動作確認できるようにする
     if (contractManager.getAllDeals().length === 0) {
@@ -44,6 +97,7 @@
       bindModals();
       bindFormEvents();
       bindActionButtons();
+      bindOwnerEvents();
       updateCloudStatusUI();
       renderAll();
     } catch (e) {
@@ -113,6 +167,7 @@
     renderAuditTab();
     renderForensicTab();
     updateBadges();
+    renderOwnerCockpit();
   }
 
   // ==========================================
@@ -139,20 +194,25 @@
       var statusBadge = '<span class="badge badge-info">' + deal.status + '</span>';
       if (deal.status === 'delivered') statusBadge = '<span class="badge badge-success">納車完了</span>';
       if (deal.status === 'contracted') statusBadge = '<span class="badge badge-warning">成約済・準備中</span>';
-      if (deal.illegalDelivery) statusBadge = '<span class="badge badge-lock">🚨違法出庫ロック</span>';
+      if (deal.illegalDelivery) {
+        statusBadge = isOwnerMode() ? 
+          '<span class="badge badge-lock">🚨違法出庫(未着金納車)</span>' : 
+          '<span class="badge badge-warning">書類・着金確認中</span>';
+      }
 
-      // ゲートキーボタン
+      // ゲートキーボタン（現場画面では納車前チェック）
       var gateBtnHtml = '';
       if (deal.status !== 'delivered') {
-        gateBtnHtml = '<button class="btn-outline btn-gate-check" data-id="' + deal.id + '" style="font-size:11px; padding:3px 6px;">出庫ゲート審査</button>' +
-                      '<button class="btn-outline btn-scrivener-pass" data-id="' + deal.id + '" style="font-size:11px; padding:3px 6px; margin-left:4px;" title="専属行政書士用 陸運局出庫承認パス">🛡️行政書士パス</button>';
+        gateBtnHtml = '<button class="btn-outline btn-gate-check" data-id="' + deal.id + '" style="font-size:11px; padding:3px 6px;">納車前チェック</button>' +
+                      '<button class="btn-outline btn-scrivener-pass" data-id="' + deal.id + '" style="font-size:11px; padding:3px 6px; margin-left:4px;" title="登録・陸運局承認">📋登録手続確認</button>';
       } else {
-        gateBtnHtml = '<span style="font-size:11px; color:var(--dealer-success); font-weight:700;">✓ 出庫済</span>' +
-                      '<button class="btn-outline btn-scrivener-pass" data-id="' + deal.id + '" style="font-size:11px; padding:3px 6px; margin-left:4px;" title="専属行政書士用 陸運局出庫承認パス">🛡️行政書士パス</button>';
+        gateBtnHtml = '<span style="font-size:11px; color:var(--dealer-success); font-weight:700;">✓ 納車完了</span>' +
+                      '<button class="btn-outline btn-scrivener-pass" data-id="' + deal.id + '" style="font-size:11px; padding:3px 6px; margin-left:4px;" title="登録・陸運局承認">📋登録手続確認</button>';
       }
 
       var downMethodLabel = deal.downPaymentMethod === 'cash' ? 
-        '<span style="color:var(--dealer-danger); font-weight:700;">頭金: 現金手渡し</span>' : '頭金: 振込';
+        (isOwnerMode() ? '<span style="color:var(--dealer-danger); font-weight:700;">頭金: 現金受領(要照合)</span>' : '<span style="color:var(--dealer-navy); font-weight:600;">頭金: 現金受領</span>') : 
+        '頭金: 振込';
 
       tr.innerHTML = 
         '<td><strong>' + deal.id + '</strong></td>' +
@@ -237,27 +297,29 @@
       var tr = document.createElement('tr');
 
       var matchBadge = match.isFullyReconciled ? 
-        '<span class="badge badge-success">✓ 三方一致 (差額¥0)</span>' : 
-        '<span class="badge badge-danger">🚨未精算・不一致</span>';
+        '<span class="badge badge-success">✓ 精算完了 (残高¥0)</span>' : 
+        (isOwnerMode() ? '<span class="badge badge-danger">🚨手元残高滞留</span>' : '<span class="badge badge-warning">精算手続中</span>');
 
       var receiptBadge = match.allReceiptsAttached ?
-        '<span style="color:var(--dealer-success); font-size:11px;">領収書完備</span>' :
-        '<span style="color:var(--dealer-danger); font-size:11px; font-weight:700;">領収書未済: ' + match.missingReceiptCount + '件</span>';
+        '<span style="color:var(--dealer-success); font-size:11px;">領収書登録済</span>' :
+        (isOwnerMode() ? 
+          '<span style="color:var(--dealer-danger); font-size:11px; font-weight:700;">領収書未済: ' + match.missingReceiptCount + '件</span>' :
+          '<span style="color:#64748b; font-size:11px;">領収書確認中: ' + match.missingReceiptCount + '件</span>');
 
-      var balanceColor = match.balance === 0 ? 'color:var(--dealer-success);' : 'color:var(--dealer-danger); font-weight:bold;';
+      var balanceColor = match.balance === 0 ? 'color:var(--dealer-success);' : (isOwnerMode() ? 'color:var(--dealer-danger); font-weight:bold;' : 'color:var(--dealer-navy); font-weight:bold;');
 
       tr.innerHTML = 
         '<td><strong>' + rec.contractId + '</strong></td>' +
         '<td><span style="font-family:monospace; font-size:11px;">' + rec.vin + '</span></td>' +
         '<td>' + rec.salesRep + '</td>' +
-        '<td>' + rec.depositDate + ' (' + (rec.depositMethod === 'cash' ? '<strong style="color:var(--dealer-danger);">現金</strong>' : '振込') + ')</td>' +
+        '<td>' + rec.depositDate + ' (' + (rec.depositMethod === 'cash' ? (isOwnerMode() ? '<strong style="color:var(--dealer-danger);">現金</strong>' : '現金') : '振込') + ')</td>' +
         '<td class="numeric font-bold">' + formatYen(match.depositReceived) + '</td>' +
         '<td class="numeric">' + formatYen(match.actualPaidTotal) + '<br>' + receiptBadge + '</td>' +
         '<td class="numeric">' + formatYen(match.dealerFeeRevenue) + '</td>' +
         '<td class="numeric">' + formatYen(match.customerRefund) + '</td>' +
         '<td class="numeric" style="' + balanceColor + '">' + formatYen(match.balance) + '</td>' +
         '<td>' + matchBadge + '</td>' +
-        '<td><button class="btn-outline btn-view-notice" data-id="' + rec.id + '" style="font-size:11px; padding:3px 6px;">📄公式受領書</button></td>' +
+        '<td><button class="btn-outline btn-view-notice" data-id="' + rec.id + '" style="font-size:11px; padding:3px 6px;">📄預り証・領収書</button></td>' +
         '<td>' +
           '<div style="display:flex; gap:4px;">' +
             '<button class="btn-outline btn-pay-item" data-id="' + rec.id + '" style="font-size:11px; padding:3px 6px;">実費納付</button>' +
@@ -275,8 +337,8 @@
 
     var badgeStagnant = document.getElementById('badge-stagnant-status');
     if (totalStagnantBalance > 0) {
-      badgeStagnant.className = 'badge badge-danger';
-      badgeStagnant.textContent = '滞留警戒あり';
+      badgeStagnant.className = isOwnerMode() ? 'badge badge-danger' : 'badge badge-warning';
+      badgeStagnant.textContent = isOwnerMode() ? '滞留警戒あり' : '精算待ちあり';
     } else {
       badgeStagnant.className = 'badge badge-success';
       badgeStagnant.textContent = '正常 (¥0)';
@@ -292,7 +354,11 @@
       stagnantAlerts.forEach(function(a) {
         var li = document.createElement('li');
         li.className = 'tripwire-item';
-        li.innerHTML = '<strong>[' + a.contractId + ' / ' + a.salesRep + ']</strong> ' + a.message;
+        if (isOwnerMode()) {
+          li.innerHTML = '<strong>[' + a.contractId + ' / ' + a.salesRep + ']</strong> ' + a.message;
+        } else {
+          li.innerHTML = '<strong>[精算待ち | ' + a.contractId + ' | 担当: ' + a.salesRep + ']</strong> お客様への返金・諸費用精算手続き待ち残高があります';
+        }
         alertList.appendChild(li);
       });
     } else {
@@ -447,15 +513,25 @@
     document.getElementById('kpi-audit-tripwire-count').textContent = summary.tripwireAlertCount + ' 件';
 
     var statusBadge = document.getElementById('badge-audit-tripwire-status');
-    if (summary.criticalAlertsCount > 0) {
-      statusBadge.className = 'badge badge-danger';
-      statusBadge.textContent = '🚨重大統制警告 ' + summary.criticalAlertsCount + '件';
-    } else if (summary.tripwireAlertCount > 0) {
-      statusBadge.className = 'badge badge-warning';
-      statusBadge.textContent = '要確認 ' + summary.tripwireAlertCount + '件';
+    if (isOwnerMode()) {
+      if (summary.criticalAlertsCount > 0) {
+        statusBadge.className = 'badge badge-danger';
+        statusBadge.textContent = '🚨重大統制警告 ' + summary.criticalAlertsCount + '件';
+      } else if (summary.tripwireAlertCount > 0) {
+        statusBadge.className = 'badge badge-warning';
+        statusBadge.textContent = '要確認 ' + summary.tripwireAlertCount + '件';
+      } else {
+        statusBadge.className = 'badge badge-success';
+        statusBadge.textContent = '全件正常';
+      }
     } else {
-      statusBadge.className = 'badge badge-success';
-      statusBadge.textContent = '全件正常';
+      if (summary.tripwireAlertCount > 0) {
+        statusBadge.className = 'badge badge-info';
+        statusBadge.textContent = '確認中 ' + summary.tripwireAlertCount + '件';
+      } else {
+        statusBadge.className = 'badge badge-success';
+        statusBadge.textContent = '全件正常';
+      }
     }
 
     // トリップワイヤー検知ログの描画
@@ -463,15 +539,24 @@
     var container = document.getElementById('audit-tripwire-container');
     if (container) {
       if (tripwires.length === 0) {
-        container.innerHTML = '<div style="padding:16px; background:#f0fdf4; border:1px solid #a7f3d0; border-radius:6px; color:#065f46; font-size:13px; font-weight:600;">✓ 現在、6大フォレンジック・トリップワイヤーの違反および異常値は検知されていません。</div>';
+        container.innerHTML = '<div style="padding:16px; background:#f0fdf4; border:1px solid #a7f3d0; border-radius:6px; color:#065f46; font-size:13px; font-weight:600;">✓ 現在、保留中または手続き待ちの案件はありません。</div>';
       } else {
-        var html = '<div class="tripwire-container"><div class="tripwire-header"><h3>🚨 統制トリップワイヤー検知案件 (' + tripwires.length + '件)</h3></div><ul class="tripwire-list">';
-        tripwires.forEach(function(tw) {
-          var levelClass = tw.level === 'CRITICAL' ? 'style="border-color:#b91c1c; background:#fff1f2;"' : '';
-          html += '<li class="tripwire-item" ' + levelClass + '><strong>[' + tw.level + ' | ' + tw.contractId + ' | 担当: ' + tw.salesRep + ']</strong> ' + tw.message + '</li>';
-        });
-        html += '</ul></div>';
-        container.innerHTML = html;
+        if (isOwnerMode()) {
+          var html = '<div class="tripwire-container"><div class="tripwire-header"><h3>🚨 統制トリップワイヤー検知案件 (' + tripwires.length + '件)</h3></div><ul class="tripwire-list">';
+          tripwires.forEach(function(tw) {
+            var levelClass = tw.level === 'CRITICAL' ? 'style="border-color:#b91c1c; background:#fff1f2;"' : '';
+            html += '<li class="tripwire-item" ' + levelClass + '><strong>[' + tw.level + ' | ' + tw.contractId + ' | 担当: ' + tw.salesRep + ']</strong> ' + tw.message + '</li>';
+          });
+          html += '</ul></div>';
+          container.innerHTML = html;
+        } else {
+          var html = '<div class="tripwire-container"><div class="tripwire-header"><h3>💡 進行中・確認待ち案件一覧 (' + tripwires.length + '件)</h3></div><ul class="tripwire-list">';
+          tripwires.forEach(function(tw) {
+            html += '<li class="tripwire-item"><strong>[手続確認 | ' + tw.contractId + ' | 担当: ' + tw.salesRep + ']</strong> 諸費用精算・信販着金等の確認を進めてください</li>';
+          });
+          html += '</ul></div>';
+          container.innerHTML = html;
+        }
       }
     }
 
@@ -484,15 +569,19 @@
         var tr = document.createElement('tr');
 
         var riskBadge = '<span class="badge badge-success">NORMAL (正常)</span>';
-        if (rep.riskLevel === 'CRITICAL') {
-          riskBadge = '<span class="badge badge-danger">🚨 CRITICAL (横領・中抜きリスク極大)</span>';
-        } else if (rep.riskLevel === 'ELEVATED') {
-          riskBadge = '<span class="badge badge-warning">⚠️ ELEVATED (要重点監査)</span>';
+        if (isOwnerMode()) {
+          if (rep.riskLevel === 'CRITICAL') {
+            riskBadge = '<span class="badge badge-danger">🚨 CRITICAL (横領・中抜きリスク極大)</span>';
+          } else if (rep.riskLevel === 'ELEVATED') {
+            riskBadge = '<span class="badge badge-warning">⚠️ ELEVATED (要重点監査)</span>';
+          }
+        } else {
+          riskBadge = '<span class="badge badge-info">集計済</span>';
         }
 
-        var cashRatioColor = rep.cashRatio >= 50 ? 'color:var(--dealer-danger); font-weight:bold;' : '';
-        var holdingDaysColor = rep.avgHoldingDays >= 14 ? 'color:var(--dealer-danger); font-weight:bold;' : '';
-        var balanceColor = rep.stagnantDepositBalance > 0 ? 'color:var(--dealer-danger); font-weight:bold;' : '';
+        var cashRatioColor = (isOwnerMode() && rep.cashRatio >= 50) ? 'color:var(--dealer-danger); font-weight:bold;' : '';
+        var holdingDaysColor = (isOwnerMode() && rep.avgHoldingDays >= 14) ? 'color:var(--dealer-danger); font-weight:bold;' : '';
+        var balanceColor = (isOwnerMode() && rep.stagnantDepositBalance > 0) ? 'color:var(--dealer-danger); font-weight:bold;' : '';
 
         tr.innerHTML = 
           '<td><strong>' + rep.name + '</strong></td>' +
@@ -503,8 +592,8 @@
           '<td class="numeric" style="' + cashRatioColor + '">' + rep.cashRatio + '%</td>' +
           '<td class="numeric" style="' + holdingDaysColor + '">' + rep.avgHoldingDays + ' 日</td>' +
           '<td class="numeric" style="' + balanceColor + '">' + formatYen(rep.stagnantDepositBalance) + '</td>' +
-          '<td class="numeric font-bold" style="font-size:15px;">' + rep.riskScore + ' pt</td>' +
-          '<td>' + riskBadge + '</td>';
+          '<td class="numeric font-bold owner-only-col" style="font-size:15px;">' + rep.riskScore + ' pt</td>' +
+          '<td class="owner-only-col">' + riskBadge + '</td>';
 
         repBody.appendChild(tr);
       });
@@ -696,6 +785,11 @@
       if (tripwires.length > 0) {
         badgeTripwire.style.display = 'inline-block';
         badgeTripwire.textContent = tripwires.length;
+        if (isOwnerMode()) {
+          badgeTripwire.classList.add('alert');
+        } else {
+          badgeTripwire.classList.remove('alert');
+        }
       } else {
         badgeTripwire.style.display = 'none';
       }
@@ -710,54 +804,65 @@
     if (!deal) return;
 
     document.getElementById('gate-deal-id').value = dealId;
-    document.getElementById('delivery-gate-title').textContent = '納車出庫 物理ゲートキー審査: ' + deal.model + ' (' + deal.id + ')';
+    document.getElementById('delivery-gate-title').textContent = isOwnerMode() ? 
+      ('納車出庫 物理ゲートキー審査: ' + deal.model + ' (' + deal.id + ')') :
+      ('納車前チェック（必要書類・入金確認）: ' + deal.model + ' (' + deal.id + ')');
 
     var container = document.getElementById('delivery-gate-checklist');
     var blockers = [];
 
-    // 1. 諸費用預り金残高ゼロ監査
+    // 1. 諸費用預り金残高ゼロ確認
     var exp = expenseManager.getRecordByContractId(dealId);
     var expCheckHtml = '';
     if (exp) {
       var expMatch = expenseManager.verifyThreeWayMatch(exp);
       if (expMatch.isFullyReconciled) {
-        expCheckHtml = '<li style="color:var(--dealer-success); font-weight:600;">✓ 諸費用預り金残高 ¥0（公的レシート番号登録済・三方照合完了）</li>';
+        expCheckHtml = '<li style="color:var(--dealer-success); font-weight:600;">✓ 諸費用預り金残高 ¥0（精算・領収書確認完了）</li>';
       } else {
-        var msg = '諸費用預り金が ' + formatYen(expMatch.balance) + ' 残高滞留（0円精算必須）';
-        if (!expMatch.allReceiptsAttached) msg += ' / 公的領収書番号未済: ' + expMatch.missingReceiptCount + '件';
-        expCheckHtml = '<li style="color:var(--dealer-danger); font-weight:700;">🚨 ' + msg + '</li>';
+        var msg = isOwnerMode() ? 
+          ('諸費用預り金が ' + formatYen(expMatch.balance) + ' 残高滞留（0円精算必須）') :
+          ('諸費用預り金 精算手続き待ち残高: ' + formatYen(expMatch.balance));
+        if (!expMatch.allReceiptsAttached) {
+          msg += isOwnerMode() ? (' / 公的領収書番号未済: ' + expMatch.missingReceiptCount + '件') : (' (領収書確認待ち: ' + expMatch.missingReceiptCount + '件)');
+        }
+        expCheckHtml = '<li style="color:' + (isOwnerMode() ? 'var(--dealer-danger)' : '#b45309') + '; font-weight:700;">' + (isOwnerMode() ? '🚨 ' : '💡 ') + msg + '</li>';
         blockers.push(msg);
       }
     } else {
-      expCheckHtml = '<li style="color:var(--dealer-danger); font-weight:700;">🚨 諸費用預り金台帳レコードが未登録です</li>';
+      var msgRec = isOwnerMode() ? '🚨 諸費用預り金台帳レコードが未登録です' : '💡 諸費用台帳レコードが未作成です';
+      expCheckHtml = '<li style="color:' + (isOwnerMode() ? 'var(--dealer-danger)' : '#b45309') + '; font-weight:700;">' + msgRec + '</li>';
       blockers.push('諸費用レコード未作成');
     }
 
-    // 2. オートローン着金消込監査
+    // 2. オートローン着金確認
     var loanCheckHtml = '';
     if (deal.loanPrincipal > 0) {
       var loan = loanManager.getLoanByContractId(dealId);
       if (loan && loan.status === 'reconciled') {
-        loanCheckHtml = '<li style="color:var(--dealer-success); font-weight:600;">✓ 信販オートローン着金消込完了（口座入金確認済）</li>';
+        loanCheckHtml = '<li style="color:var(--dealer-success); font-weight:600;">✓ 信販オートローン着金確認完了（口座入金消込済）</li>';
       } else {
-        var loanMsg = '信販会社オートローン（' + formatYen(deal.loanPrincipal) + '）の口座着金消込が未完了です';
-        loanCheckHtml = '<li style="color:var(--dealer-danger); font-weight:700;">🚨 ' + loanMsg + '</li>';
+        var loanMsg = isOwnerMode() ? 
+          ('信販会社オートローン（' + formatYen(deal.loanPrincipal) + '）の口座着金消込が未完了です') :
+          ('信販オートローン（' + formatYen(deal.loanPrincipal) + '）の口座着金確認中');
+        loanCheckHtml = '<li style="color:' + (isOwnerMode() ? 'var(--dealer-danger)' : '#b45309') + '; font-weight:700;">' + (isOwnerMode() ? '🚨 ' : '💡 ') + loanMsg + '</li>';
         blockers.push(loanMsg);
       }
     } else {
       loanCheckHtml = '<li style="color:var(--dealer-success); font-weight:600;">✓ 現金全額決済（ローンなし）</li>';
     }
 
-    // 3. 下取車過小査定監査
+    // 3. 下取車確認
     var tradeCheckHtml = '';
     if (deal.tradeIn && deal.tradeIn.hasTradeIn) {
       var tradeCheck = contractManager.verifyTradeInValuation(deal.tradeIn);
       if (tradeCheck.requiresOwnerApproval) {
-        var tradeMsg = '下取車がUSS基準相場から ' + tradeCheck.deviationRate + '% 低く、オーナー承認未取得です';
-        tradeCheckHtml = '<li style="color:var(--dealer-danger); font-weight:700;">🚨 ' + tradeMsg + '</li>';
+        var tradeMsg = isOwnerMode() ? 
+          ('下取車がUSS基準相場から ' + tradeCheck.deviationRate + '% 低く、オーナー承認未取得です') :
+          ('下取車査定の最終承認確認中');
+        tradeCheckHtml = '<li style="color:' + (isOwnerMode() ? 'var(--dealer-danger)' : '#b45309') + '; font-weight:700;">' + (isOwnerMode() ? '🚨 ' : '💡 ') + tradeMsg + '</li>';
         blockers.push(tradeMsg);
       } else {
-        tradeCheckHtml = '<li style="color:var(--dealer-success); font-weight:600;">✓ 下取車USS相場査定チェック合格</li>';
+        tradeCheckHtml = '<li style="color:var(--dealer-success); font-weight:600;">✓ 下取車査定確認完了</li>';
       }
     }
 
@@ -766,16 +871,24 @@
 
     if (blockers.length === 0) {
       resultSummary = '<div style="padding:14px; background:#f0fdf4; border:1px solid #a7f3d0; border-radius:6px; color:#065f46; font-weight:700; margin-bottom:14px;">' +
-        '✓ 全ゲートチェック合格: 車両キーの引き渡しおよび物理出庫が許可されています。' +
+        '✓ 全チェック項目完了: 車両引き渡しおよび納車手続きが許可されています。' +
         '</div>';
       confirmBtn.disabled = false;
-      confirmBtn.textContent = '出庫ロック解除・納車完了を確定';
+      confirmBtn.textContent = '納車完了を確定';
     } else {
-      resultSummary = '<div style="padding:14px; background:#fef2f2; border:1px solid #fca5a5; border-radius:6px; color:#b91c1c; font-weight:700; margin-bottom:14px;">' +
-        '🚨【物理出庫ロック発動中】以下の内部統制条件が未解決のため出庫できません。強制出庫した場合は即座にオーナー直結で違法出庫アラートが発報されます。' +
-        '</div>';
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = '⚠️ 警告を無視して強制出庫（オーナー直結緊急通報）';
+      if (isOwnerMode()) {
+        resultSummary = '<div style="padding:14px; background:#fef2f2; border:1px solid #fca5a5; border-radius:6px; color:#b91c1c; font-weight:700; margin-bottom:14px;">' +
+          '🚨【物理出庫ロック発動中】以下の内部統制条件が未解決のため出庫できません。強制出庫した場合は即座にオーナー直結で違法出庫アラートが発報されます。' +
+          '</div>';
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '⚠️ 警告を無視して強制出庫（オーナー直結緊急通報）';
+      } else {
+        resultSummary = '<div style="padding:14px; background:#fffbeb; border:1px solid #fde68a; border-radius:6px; color:#b45309; font-weight:700; margin-bottom:14px;">' +
+          '💡【確認事項】以下の手続き（諸費用精算・着金確認等）が完了していない項目があります。内容を確認の上、納車手続きを進めてください。' +
+          '</div>';
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '納車完了を確定する';
+      }
     }
 
     container.innerHTML = resultSummary + '<ul style="list-style:none; display:flex; flex-direction:column; gap:8px; font-size:13px;">' +
@@ -1622,7 +1735,333 @@
     });
   }
 
-  // DOMロード時に開始（すでにロード済みの場合は即座に初期化）
+  // ==============================================================================
+  // オーナー専用コックピット ＆ 神の一手（キラーフレーズ）エンジン
+  // ==============================================================================
+
+  var logoTapCounter = 0;
+  var logoTapTimerId = null;
+
+  function bindOwnerEvents() {
+    // 1. DMSブランドロゴ/エンブレムのトリプルタップ判定（PC・スマホ両対応）
+    var brandLogo = document.getElementById('dealer-brand-logo');
+    var emblem = document.getElementById('dealer-emblem');
+    
+    function triggerLogoTap(e) {
+      if (e) e.preventDefault();
+      logoTapCounter++;
+      if (logoTapTimerId) clearTimeout(logoTapTimerId);
+      
+      if (logoTapCounter >= 3) {
+        logoTapCounter = 0;
+        var nextActive = !isOwnerMode();
+        setOwnerMode(nextActive);
+        if (nextActive) {
+          showToast('👑 オーナー専用コックピットを起動しました [STEALTH ACTIVE]');
+          openModal('modal-owner-cockpit');
+        } else {
+          showToast('👁️ 現場通常ビューに切り替えました（完全ステルス）');
+        }
+        renderAll();
+      } else {
+        logoTapTimerId = setTimeout(function() {
+          logoTapCounter = 0;
+        }, 600);
+      }
+    }
+
+    if (brandLogo) brandLogo.addEventListener('click', triggerLogoTap);
+    if (emblem) emblem.addEventListener('click', triggerLogoTap);
+
+    // 2. オーナーバナーおよびヘッダーボタン
+    var btnOpenPhrases = document.getElementById('btn-open-killer-phrases');
+    if (btnOpenPhrases) {
+      btnOpenPhrases.addEventListener('click', function() {
+        openModal('modal-owner-cockpit');
+        renderOwnerCockpit();
+      });
+    }
+
+    var btnHeaderOwner = document.getElementById('btn-owner-header-trigger');
+    if (btnHeaderOwner) {
+      btnHeaderOwner.addEventListener('click', function() {
+        openModal('modal-owner-cockpit');
+        renderOwnerCockpit();
+      });
+    }
+
+    // 3. 現場ビューへ切り替え（現場スタッフに見せる時用）
+    var btnToggleStealth = document.getElementById('btn-toggle-stealth-view');
+    if (btnToggleStealth) {
+      btnToggleStealth.addEventListener('click', function() {
+        setOwnerMode(false);
+        showToast('👁️ 現場通常ビューに切り替えました');
+        renderAll();
+      });
+    }
+
+    // 4. オーナー室 VIP年次取引照合状ボタン
+    var btnOwnerVip = document.getElementById('btn-owner-open-vip');
+    if (btnOwnerVip) {
+      btnOwnerVip.addEventListener('click', function() {
+        closeModal('modal-owner-cockpit');
+        openModal('modal-vip-letter');
+      });
+    }
+
+    // 5. A4公式監査報告書 出力ボタン
+    var btnOwnerPrint = document.getElementById('btn-owner-print-audit');
+    if (btnOwnerPrint) {
+      btnOwnerPrint.addEventListener('click', function() {
+        window.print();
+      });
+    }
+  }
+
+  /**
+   * オーナー専用コックピットの動的描画（神の一手・キラーフレーズ生成）
+   */
+  function renderOwnerCockpit() {
+    var deals = contractManager.getAllDeals();
+    var expenseRecords = expenseManager.getAllRecords();
+    var loans = loanManager.getAllLoans();
+
+    // 1. 諸費用滞留集計
+    var stagnantDeals = [];
+    var totalStagnantAmount = 0;
+    expenseRecords.forEach(function(rec) {
+      var match = expenseManager.verifyThreeWayMatch(rec);
+      if (match.balance > 0) {
+        totalStagnantAmount += match.balance;
+        stagnantDeals.push({
+          contractId: rec.contractId,
+          salesRep: rec.salesRep,
+          balance: match.balance,
+          depositReceived: match.depositReceived,
+          actualPaidTotal: match.actualPaidTotal,
+          dealerFeeRevenue: match.dealerFeeRevenue,
+          depositDate: rec.depositDate,
+          record: rec
+        });
+      }
+    });
+
+    // 2. 信販未着金集計
+    var pendingLoans = [];
+    var totalPendingLoanAmount = 0;
+    loans.forEach(function(l) {
+      if (l.status === 'pending') {
+        totalPendingLoanAmount += (l.contractPrincipal || 0);
+        pendingLoans.push(l);
+      }
+    });
+
+    // 3. 下取り相場乖離＆外注加修異常の集計
+    var tradeinDeviations = [];
+    var totalTradeinDiff = 0;
+    if (forensicManager && forensicManager.deals) {
+      forensicManager.deals.forEach(function(d) {
+        if (d.tradeInAppraised > 0 && d.ussMarketPrice > 0) {
+          var diff = d.ussMarketPrice - d.tradeInAppraised;
+          if (diff >= 300000) {
+            totalTradeinDiff += diff;
+            tradeinDeviations.push({
+              deal: d,
+              diff: diff
+            });
+          }
+        }
+      });
+    }
+
+    // 最上部バナー更新
+    var bannerExpense = document.getElementById('owner-metric-expense');
+    var bannerLoan = document.getElementById('owner-metric-loan');
+    var bannerTradein = document.getElementById('owner-metric-tradein');
+    if (bannerExpense) bannerExpense.textContent = formatYen(totalStagnantAmount);
+    if (bannerLoan) bannerLoan.textContent = formatYen(totalPendingLoanAmount);
+    if (bannerTradein) bannerTradein.textContent = formatYen(totalTradeinDiff);
+
+    // モーダルKPI更新
+    var kpiStagnant = document.getElementById('owner-kpi-stagnant-total');
+    var kpiStagnantCount = document.getElementById('owner-kpi-stagnant-count');
+    var kpiLoan = document.getElementById('owner-kpi-loan-total');
+    var kpiLoanCount = document.getElementById('owner-kpi-loan-count');
+    var kpiTradein = document.getElementById('owner-kpi-tradein-total');
+    var kpiTradeinCount = document.getElementById('owner-kpi-tradein-count');
+
+    if (kpiStagnant) kpiStagnant.textContent = formatYen(totalStagnantAmount);
+    if (kpiStagnantCount) kpiStagnantCount.textContent = stagnantDeals.length + ' 件';
+    if (kpiLoan) kpiLoan.textContent = formatYen(totalPendingLoanAmount);
+    if (kpiLoanCount) kpiLoanCount.textContent = pendingLoans.length + ' 件';
+    if (kpiTradein) kpiTradein.textContent = formatYen(totalTradeinDiff);
+    if (kpiTradeinCount) kpiTradeinCount.textContent = tradeinDeviations.length + ' 件';
+
+    // 4. 【必殺の一言（キラーフレーズ）カンペ一覧】の動的生成
+    var phrasesList = document.getElementById('owner-killer-phrases-list');
+    if (phrasesList) {
+      phrasesList.innerHTML = '';
+      var phrases = [];
+
+      // パターン①: 諸費用の手元残高（ネコババ疑義）
+      stagnantDeals.forEach(function(item) {
+        var deal = contractManager.getDealById(item.contractId);
+        var modelName = deal ? deal.model : '成約車両';
+        var repLastName = item.salesRep.split(' ')[0] || item.salesRep;
+        var phraseText = '「' + repLastName + 'くん、あの' + modelName + 'の諸費用、自動車税や重量税の実費が' + formatYen(item.actualPaidTotal) + 'で預かり' + formatYen(item.depositReceived) + 'だったよね。差額の' + formatYen(item.balance) + '、手元に残ってるはずだけどお客様にお返しした？まだ返金処理してないよね？」';
+        phrases.push({
+          type: 'expense',
+          badgeText: '諸費用ネコババ疑惑（手元プール）',
+          badgeClass: 'badge-expense-anomaly',
+          cardClass: 'expense-card',
+          rep: item.salesRep,
+          car: modelName + ' (' + item.contractId + ')',
+          amount: '手元滞留 ' + formatYen(item.balance),
+          lead: '諸費用の差額をサラッと突く一言（手元の現金を白状させる）:',
+          phrase: phraseText
+        });
+      });
+
+      // パターン②: ローン未着金・直抜き疑義
+      pendingLoans.forEach(function(l) {
+        var deal = contractManager.getDealById(l.contractId);
+        var modelName = deal ? deal.model : '成約車両';
+        var repLastName = l.salesRep.split(' ')[0] || l.salesRep;
+        var phraseText = '「' + repLastName + 'くん、' + modelName + 'の' + l.loanCompany + 'の承認下りてるのに口座まだ着金してないね。まさか客から頭金や代金を現金で預かって手元に持ってないよね？今日中に消込しといて」';
+        phrases.push({
+          type: 'loan',
+          badgeText: 'ローン未着金・現金直抜き疑惑',
+          badgeClass: 'badge-loan-anomaly',
+          cardClass: 'loan-card',
+          rep: l.salesRep,
+          car: modelName + ' (' + l.contractId + ')',
+          amount: '未着金 ' + formatYen(l.contractPrincipal),
+          lead: 'ローンの着金ズレをサラッと突く一言（現金の自転車操業を止める）:',
+          phrase: phraseText
+        });
+      });
+
+      // パターン③: 下取り買叩き・横流し疑義
+      tradeinDeviations.forEach(function(t) {
+        var repLastName = t.deal.salesRep.split(' ')[0] || t.deal.salesRep;
+        var phraseText = '「' + repLastName + 'くん、この' + t.deal.model + 'の下取査定' + formatYen(t.deal.tradeInAppraised) + 'になってるけど、USS直近相場だと' + formatYen(t.deal.ussMarketPrice) + '超えてるよ。なんでこんな安く買いたたいてるの？流し先のブローカーどこ？」';
+        phrases.push({
+          type: 'tradein',
+          badgeText: '下取り買叩き・横流し疑義',
+          badgeClass: 'badge-tradein-anomaly',
+          cardClass: 'tradein-card',
+          rep: t.deal.salesRep,
+          car: t.deal.model + ' (' + t.deal.id + ')',
+          amount: '相場乖離 ' + formatYen(t.diff),
+          lead: '下取りの買叩きをサラッと突く一言（ブローカー横流しを暴く）:',
+          phrase: phraseText
+        });
+      });
+
+      // パターン④: 加修費異常（リベート疑義）
+      deals.forEach(function(d) {
+        if (d.repairCost >= 1000000 && !d.repairInvoiceNo) {
+          var repLastName = d.salesRep.split(' ')[0] || d.salesRep;
+          var phraseText = '「' + repLastName + 'さん、' + d.model + 'の加修整備費' + formatYen(d.repairCost) + '計上されてるけど、工場の正式な納品伝票まだ届いてないね。どこ直したの？明細見せてもらえる？」';
+          phrases.push({
+            type: 'repair',
+            badgeText: '加修費水増し・リベート疑義',
+            badgeClass: 'badge-loan-anomaly',
+            cardClass: 'loan-card',
+            rep: d.salesRep,
+            car: d.model + ' (' + d.id + ')',
+            amount: '加修費 ' + formatYen(d.repairCost) + ' (伝票未着)',
+            lead: '高額加修をサラッと突く一言（外注リベートを牽制する）:',
+            phrase: phraseText
+          });
+        }
+      });
+
+      if (phrases.length === 0) {
+        phrasesList.innerHTML = '<div style="padding:24px; text-align:center; color:#64748b; background:#ffffff; border-radius:8px; border:1px dashed #cbd5e1;">' +
+          '🎉 現在、突っ込むべき数字の矛盾や滞留金は検知されていません（極めて健全に運用されています）。' +
+          '</div>';
+      } else {
+        phrases.forEach(function(p, idx) {
+          var card = document.createElement('div');
+          card.className = 'killer-phrase-card ' + p.cardClass;
+          card.innerHTML = 
+            '<div class="phrase-card-header">' +
+              '<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">' +
+                '<span class="phrase-target-badge ' + p.badgeClass + '">' + p.badgeText + '</span>' +
+                '<span class="phrase-car-info">👤 担当: ' + p.rep + ' | 🏎️ ' + p.car + '</span>' +
+              '</div>' +
+              '<span class="phrase-amount-tag">' + p.amount + '</span>' +
+            '</div>' +
+            '<div class="phrase-body-quote">' +
+              '<span class="quote-lead">' + p.lead + '</span>' +
+              '<span class="quote-text" id="killer-quote-' + idx + '">' + p.phrase + '</span>' +
+            '</div>' +
+            '<div class="phrase-card-footer">' +
+              '<button type="button" class="btn-copy-phrase" data-quote-id="killer-quote-' + idx + '">' +
+                '📋 フレーズをコピー' +
+              '</button>' +
+            '</div>';
+          phrasesList.appendChild(card);
+        });
+
+        // コピーボタンイベント
+        phrasesList.querySelectorAll('.btn-copy-phrase').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var qId = btn.getAttribute('data-quote-id');
+            var textEl = document.getElementById(qId);
+            if (textEl) {
+              var text = textEl.textContent;
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function() {
+                  btn.classList.add('copied');
+                  btn.textContent = '✓ コピー完了！';
+                  showToast('📋 フレーズをコピーしました！現場でサラッと口にしてください');
+                  setTimeout(function() {
+                    btn.classList.remove('copied');
+                    btn.innerHTML = '📋 フレーズをコピー';
+                  }, 2000);
+                });
+              } else {
+                // フォールバック
+                var ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('📋 フレーズをコピーしました！');
+              }
+            }
+          });
+        });
+      }
+    }
+
+    // 5. 営業マン別・疑惑マトリクスの描画
+    var repMatrixBody = document.getElementById('owner-rep-matrix-body');
+    if (repMatrixBody) {
+      repMatrixBody.innerHTML = '';
+      var scorecard = auditManager.getSalesRepForensicScorecard();
+      scorecard.forEach(function(rep) {
+        var tr = document.createElement('tr');
+        var recAction = '正常に稼働中';
+        if (rep.stagnantDepositBalance > 0) {
+          recAction = '⚡ 諸費用の手元差額（' + formatYen(rep.stagnantDepositBalance) + '）の返還を追及';
+        } else if (rep.cashRatio >= 50) {
+          recAction = '⚡ 現金預託の即日口座入金を強く指導';
+        }
+        tr.innerHTML = 
+          '<td><strong>' + rep.name + '</strong></td>' +
+          '<td class="numeric">' + rep.dealCount + ' 台</td>' +
+          '<td class="numeric font-bold" style="' + (rep.stagnantDepositBalance > 0 ? 'color:#b91c1c;' : '') + '">' + formatYen(rep.stagnantDepositBalance) + '</td>' +
+          '<td class="numeric">' + formatYen(rep.pendingLoanAmount || 0) + '</td>' +
+          '<td class="numeric">' + rep.cashRatio + '%</td>' +
+          '<td><span style="font-size:12px; font-weight:700; color:' + (rep.stagnantDepositBalance > 0 ? '#b91c1c;' : 'var(--dealer-navy);') + '">' + recAction + '</span></td>';
+        repMatrixBody.appendChild(tr);
+      });
+    }
+  }
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', init);
