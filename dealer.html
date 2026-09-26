@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>高級車販売 資金統制・不正根絶システム | 麻布ショールーム</title>
+  <title>オートモーティブ・トレジャリー会計システム | 車両・諸費用・信販 総合統合会計</title>
 
   <!-- PWA メタタグ -->
-  <meta name="theme-color" content="#b8934a">
+  <meta name="theme-color" content="#1e293b">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="高級車販売DX">
-  <meta name="description" content="外車・高級車販売特化型 オーナー直結内部統制コックピット — 不正根絶・資金統制・三方照合・出庫ロック・フォレンジック監査">
+  <meta name="apple-mobile-web-app-title" content="車両販売会計">
+  <meta name="description" content="車両販売・預り金・信販 総合統合会計システム">
   <meta name="mobile-web-app-capable" content="yes">
 
   <!-- PWA アイコン・ファビコン -->
@@ -37,47 +37,47 @@
   <span id="fortify-queue-badge" class="fortify-queue-badge" style="display:none;"></span>
 
   <!-- ===================================================
-       ヘッダー（グループ統制・エグゼクティブデザイン）
+       ヘッダー（スマート統合会計システム）
        =================================================== -->
   <header class="dealer-header">
     <div class="header-top-bar">
       <div class="dealer-brand">
-        <div class="dealer-emblem">RS</div>
+        <div class="dealer-emblem">AT</div>
         <div class="brand-text">
-          <h1>高級車販売 資金統制・不正根絶システム</h1>
-          <div class="brand-subtitle" id="showroom-subtitle">高級車ショールーム ｜ オーナー直結内部統制コックピット</div>
+          <h1>オートモーティブ・トレジャリー会計システム</h1>
+          <div class="brand-subtitle" id="showroom-subtitle">車両販売・諸費用預り金・信販 総合統合会計プラットフォーム</div>
         </div>
       </div>
       <div class="header-actions">
         <!-- グループ事業切替ポータルリンク -->
-        <a href="index.html" class="btn-portal-switch" title="多角経営グループ: 調剤薬局DXシステムへ切り替えます">
+        <a href="index.html" class="btn-portal-switch" title="グループ事業: 調剤薬局会計システムへ切り替えます">
           <span>🏛️ 調剤薬局DX</span>
         </a>
-        <a href="index.html#tab-petty" class="btn-portal-switch" style="background: rgba(197, 160, 89, 0.18); border: 1px solid var(--dealer-gold); color: #f8fafc; font-weight: 700;" title="調剤薬局の小口現金管理画面（出金・補充・金庫残高照合）を直接開きます">
-          <span>🪙 小口現金を開く</span>
+        <a href="index.html#tab-petty" class="btn-portal-switch" style="background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.3); color: #f8fafc; font-weight: 600;" title="調剤薬局の小口現金管理画面を開きます">
+          <span>🪙 小口出納</span>
         </a>
-        <div id="dealer-sync-badge" class="sync-badge unconfigured" title="オーナー専用Googleスプレッドシート同期ステータス">
+        <div id="dealer-sync-badge" class="sync-badge unconfigured" title="クラウド自動記帳ステータス">
           <span class="sync-dot"></span>
           <span id="dealer-sync-text">クラウド: 未設定</span>
         </div>
-        <button id="btn-cloud-config" class="btn-header-tool" title="オーナー専用Googleスプレッドシート同期先URLを設定">
+        <button id="btn-cloud-config" class="btn-header-tool" title="クラウド同期先URLを設定">
           ⚙️ クラウド設定
         </button>
-        <button id="btn-demo-data" class="btn-header-tool" title="30年トップ営業マンの不正シミュレーション（ポルシェ・ベンツ・ロールス）を含む検証デモデータを投入して動作確認します">
-          🔄 デモデータ読込
+        <button id="btn-demo-data" class="btn-header-tool" title="動作確認用のサンプル会計データを読み込みます">
+          🔄 サンプル読込
         </button>
-        <button id="btn-clear-production" class="btn-header-tool" title="本番運用開始にあたり、テストデータを全消去してデータベースを完全初期化します">
+        <button id="btn-clear-production" class="btn-header-tool" title="本番運用開始にあたり、テストデータを消去して台帳を初期化します">
           🗑️ 本番データ初期化
         </button>
         <!-- 堅牢性強化: バックアップ＆セキュリティ -->
-        <button id="btn-fortify-export" class="btn-header-tool" title="全データをJSON形式でバックアップ保存します（チェックサム付き暗号化）">
+        <button id="btn-fortify-export" class="btn-header-tool" title="全データをJSON形式でバックアップ保存します">
           💾 バックアップ
         </button>
-        <button id="btn-fortify-import" class="btn-header-tool" title="バックアップファイルからデータを復元します（改竄検知付き）">
+        <button id="btn-fortify-import" class="btn-header-tool" title="バックアップファイルからデータを復元します">
           📥 復元
         </button>
         <input type="file" id="fortify-import-file" accept=".json" style="display:none;">
-        <button id="btn-fortify-set-pin" class="btn-header-tool" title="共有端末向けセッションロックPIN（4桁）を設定/解除します。5分無操作で自動ロック。">
+        <button id="btn-fortify-set-pin" class="btn-header-tool" title="共有端末向けセッションロックPIN（4桁）を設定/解除します">
           🔒 PIN設定
         </button>
       </div>
@@ -85,27 +85,27 @@
   </header>
 
   <!-- ===================================================
-       タブナビゲーション（4大タブ）
+       タブナビゲーション（5大会計タブ）
        =================================================== -->
   <nav class="dealer-nav">
     <div class="nav-container">
       <button class="tab-button active" data-tab="tab-contract">
-        <span>① 車両別成約締め（個別原価・粗利）</span>
+        <span>① 車両成約・原価会計</span>
       </button>
       <button class="tab-button" data-tab="tab-expense">
-        <span>② 諸費用出納・預り金管理（三方照合）</span>
+        <span>② 法定諸費用・預り金出納</span>
         <span id="badge-stagnant-count" class="tab-badge" style="display:none;">0</span>
       </button>
       <button class="tab-button" data-tab="tab-loan">
-        <span>③ オートローン・信販消込（立替金統制）</span>
+        <span>③ 信販・オートローン消込</span>
         <span id="badge-loan-pending-count" class="tab-badge" style="display:none;">0</span>
       </button>
       <button class="tab-button" data-tab="tab-audit">
-        <span>④ 月次粗利監査 ＆ 不正検知コックピット</span>
+        <span>④ 月次決算・財務整合性確認</span>
         <span id="badge-tripwire-count" class="tab-badge alert" style="display:none;">0</span>
       </button>
       <button class="tab-button" data-tab="tab-forensic">
-        <span>⑤ 過去不正フォレンジック分析（銀行・台帳突合）</span>
+        <span>⑤ 過去台帳・通帳照合決算</span>
         <span id="badge-forensic-alert-count" class="tab-badge alert" style="display:none;">0</span>
       </button>
     </div>
@@ -239,7 +239,7 @@
             <span id="badge-stagnant-status" class="badge badge-success">正常 (¥0)</span>
           </div>
           <div id="kpi-exp-stagnant-balance" class="kpi-value">¥0</div>
-          <div class="kpi-sub">納車後残高>0は横領・自転車操業トリップワイヤー</div>
+          <div class="kpi-sub">納車後も手元に精算未了残高が残っている案件</div>
         </div>
       </div>
 
@@ -255,7 +255,7 @@
         <!-- 滞留預り金 警告アラート枠（動的表示） -->
         <div id="expense-stagnant-alert-box" class="tripwire-container" style="display:none;">
           <div class="tripwire-header">
-            <h3>🚨【横領・自転車操業トリップワイヤー】納車済・預り金長期滞留を検知</h3>
+            <h3>⚠️【財務照合アラート】納車済・諸費用預り金の未精算残高を検知</h3>
           </div>
           <ul id="expense-stagnant-alert-list" class="tripwire-list"></ul>
         </div>
@@ -399,17 +399,17 @@
     </section>
 
     <!-- ===================================================
-         タブ④: 月次粗利監査 ＆ 不正検知コックピット
+         タブ④: 月次決算・財務整合性確認
          =================================================== -->
     <section id="tab-audit" class="tab-panel">
-      <!-- オーナー・監査サマリーカード -->
+      <!-- 財務月次決算サマリーカード -->
       <div class="kpi-grid">
         <div class="kpi-card gold">
           <div class="kpi-title">
             <span>月間総販売台数 / 売上高</span>
           </div>
           <div id="kpi-audit-sales" class="kpi-value">0台 / ¥0</div>
-          <div class="kpi-sub">最高級輸入車・特注車両</div>
+          <div class="kpi-sub">乗用車・商用車・輸入車全車種</div>
         </div>
 
         <div class="kpi-card success">
@@ -427,28 +427,28 @@
             <span class="badge badge-danger">要監査</span>
           </div>
           <div id="kpi-audit-stagnant-deposit" class="kpi-value">¥0</div>
-          <div class="kpi-sub">営業マンが手元に抱え込んでいる諸費用</div>
+          <div class="kpi-sub">精算手続き中の諸費用預り金残高</div>
         </div>
 
         <div class="kpi-card">
           <div class="kpi-title">
-            <span>統制トリップワイヤー検知数</span>
+            <span>要確認・照合未了件数</span>
             <span id="badge-audit-tripwire-status" class="badge badge-success">全件正常</span>
           </div>
           <div id="kpi-audit-tripwire-count" class="kpi-value">0 件</div>
-          <div class="kpi-sub">出庫ロック・過小査定・水増し・滞留等</div>
+          <div class="kpi-sub">預り金精算待ち・ローン着金消込確認等</div>
         </div>
       </div>
 
-      <!-- 6大フォレンジック・トリップワイヤー監視パネル -->
+      <!-- 財務整合性 リアルタイム照合ログ -->
       <div class="content-card">
         <div class="card-header-bar">
           <div class="card-title-group">
-            <h2>🚨 6大フォレンジック・トリップワイヤー リアルタイム検知ログ</h2>
-            <div class="card-desc">歴30年トップ営業マンの欺瞞（二重契約・中抜き・滞留・外注水増し）を客観外部データで捕捉</div>
+            <h2>📋 財務整合性 リアルタイム照合ステータス</h2>
+            <div class="card-desc">預り金出納・信販消込・原価証憑の整合性をリアルタイムに照合・可視化</div>
           </div>
           <button id="btn-scan-tripwires" class="btn-outline">
-            🔍 即時ディープスキャン実行
+            🔍 整合性チェック再実行
           </button>
         </div>
 
@@ -457,12 +457,12 @@
         </div>
       </div>
 
-      <!-- 営業マン別フォレンジック行動統計スコアカード -->
+      <!-- 営業担当別 業務・財務処理状況一覧 -->
       <div class="content-card">
         <div class="card-header-bar">
           <div class="card-title-group">
-            <h2>👤 営業マン別 フォレンジック行動統計スコアカード</h2>
-            <div class="card-desc">預り金平均滞留日数・現金決済比率・下取査定乖離・外注先集中度の統計分析</div>
+            <h2>👤 営業担当別 業務・財務処理状況一覧</h2>
+            <div class="card-desc">成約台数・粗利実績・預り金精算サイクル等の透明な業務指標</div>
           </div>
         </div>
 
@@ -525,27 +525,27 @@
     </section>
 
     <!-- ===================================================
-         タブ⑤: 過去不正フォレンジック分析エンジン
+         タブ⑤: 過去台帳・通帳照合決算（財務監査・差異分析）
          =================================================== -->
     <section id="tab-forensic" class="tab-panel">
-      <!-- フォレンジックKPIグリッド -->
+      <!-- 財務照合KPIグリッド -->
       <div class="kpi-grid">
         <div class="kpi-card danger">
           <div class="kpi-title">
-            <span>過去不正 疑義検知総額</span>
-            <span class="info-tooltip" title="過去全取引から自動検出された諸費用流用・下取買叩き・通帳未着金の中抜き推定損害総額">ℹ️</span>
+            <span>未消込・照合要確認 差額総計</span>
+            <span class="info-tooltip" title="過去台帳と銀行通帳、預り金出納および下取相場との間に確認を要する差額の合算">ℹ️</span>
           </div>
           <div class="kpi-value alert" id="kpi-forensic-damage">¥0</div>
           <div class="kpi-sub">
-            <span>疑義取引件数: </span>
+            <span>要確認取引件数: </span>
             <strong id="kpi-forensic-suspicious-count" style="color:var(--dealer-danger);">0 件</strong>
           </div>
         </div>
 
         <div class="kpi-card gold">
           <div class="kpi-title">
-            <span>分析対象 取引データ規模</span>
-            <span class="info-tooltip" title="インポートされた過去成約台帳および銀行通帳の合算分析件数">ℹ️</span>
+            <span>照合対象 取引データ規模</span>
+            <span class="info-tooltip" title="インポートされた過去成約台帳および銀行通帳明細の合算件数">ℹ️</span>
           </div>
           <div class="kpi-value" id="kpi-forensic-total-deals">0 台</div>
           <div class="kpi-sub">
@@ -556,60 +556,60 @@
 
         <div class="kpi-card">
           <div class="kpi-title">
-            <span>最重要 統制警戒対象者</span>
-            <span class="info-tooltip" title="現金受領率・諸費用滞留日数・USS相場乖離が最も異常値を示している営業マン">ℹ️</span>
+            <span>重点確認 担当別ステータス</span>
+            <span class="info-tooltip" title="現金比率や預り金滞留日数等で確認事項の多い担当者">ℹ️</span>
           </div>
           <div class="kpi-value" id="kpi-forensic-worst-rep" style="font-size:18px;">未検出</div>
           <div class="kpi-sub">
-            <span>総合リスク判定: </span>
+            <span>財務整合性判定: </span>
             <span id="badge-forensic-risk-level" class="badge badge-success">正常 (NORMAL)</span>
           </div>
         </div>
 
         <div class="kpi-card navy">
           <div class="kpi-title">
-            <span>銀行通帳 口座突合一致率</span>
-            <span class="info-tooltip" title="成約台帳上の請求額と公式通帳入金額の数学的一致率">ℹ️</span>
+            <span>銀行口座 入金照合一致率</span>
+            <span class="info-tooltip" title="台帳請求額と公式銀行口座着金額の数学的一致率">ℹ️</span>
           </div>
           <div class="kpi-value" id="kpi-forensic-reconcile-rate">100%</div>
           <div class="kpi-sub">
-            <span>未着金・迂回疑義: </span>
+            <span>未消込・照合中: </span>
             <strong id="kpi-forensic-missing-bank-count">0 件</strong>
           </div>
         </div>
       </div>
 
-      <!-- 操作ツールバー（データ取込＆検証） -->
+      <!-- 操作ツールバー（データ取込＆照合） -->
       <div class="forensic-toolbar-card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div>
             <h3 style="font-size:16px; font-weight:800; color:var(--dealer-navy); margin-bottom:4px;">
-              📁 過去データ一括インポート ＆ フォレンジック自動スキャン
+              📁 過去台帳 ＆ 銀行通帳CSV 一括インポート・自動照合
             </h3>
             <p style="font-size:12px; color:var(--dealer-text-subtle);">
-              過去の銀行通帳CSV、過去成約台帳、またはExcelコピーを取り込んで過去数年分の不正を自動逆算・暴きます。
+              過去の銀行通帳CSV、過去成約台帳、またはExcelコピーを取り込んで財務突合・整合性チェックを実行します。
             </p>
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button id="btn-forensic-load-demo" class="btn-gold" style="font-size:12px; padding:8px 14px;">
-              🔄 過去3年間 疑義検証データを一発読込（神田部長 vs 佐藤）
+              🔄 過去3年間 サンプル会計照合データを読込
             </button>
             <button id="btn-forensic-open-import" class="btn-primary" style="font-size:12px; padding:8px 14px;">
               📥 銀行通帳CSV / 成約台帳を取り込む
             </button>
             <button id="btn-forensic-print-report" class="btn-outline" style="font-size:12px; padding:8px 14px; background:#fff;">
-              🖨️ A4 過去不正証拠保全書を出力
+              🖨️ A4 財務監査照合証明書を出力
             </button>
           </div>
         </div>
       </div>
 
-      <!-- 過去不正フォレンジック 4大分析ビュー -->
+      <!-- 過去財務照合 4大分析ビュー -->
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-top:20px;">
-        <!-- ① 営業マン別 過去行動統計＆不正リスク比較 -->
+        <!-- ① 営業担当別 業務統計＆財務処理傾向プロファイル -->
         <div class="dealer-card">
           <div class="card-header">
-            <h3>👤 営業マン別 過去行動統計・不正リスクプロファイル</h3>
+            <h3>👤 営業担当別 業務統計 ＆ 財務処理傾向プロファイル</h3>
           </div>
           <div class="card-body" style="padding:0;">
             <table class="dealer-table">
@@ -618,15 +618,15 @@
                   <th>担当営業</th>
                   <th class="numeric">成約数</th>
                   <th class="numeric">現金受領比率</th>
-                  <th class="numeric">諸費用平均滞留</th>
+                  <th class="numeric">諸費用平均精算日数</th>
                   <th>特定外注集中度</th>
-                  <th>統制判定</th>
+                  <th>照合判定</th>
                 </tr>
               </thead>
               <tbody id="forensic-reps-table-body">
                 <tr>
                   <td colspan="6" style="text-align:center; padding:20px; color:#64748b;">
-                    「過去3年間 疑義検証データを一発読込」またはデータを取り込んでください
+                    「過去3年間 サンプル会計照合データを読込」またはデータを取り込んでください
                   </td>
                 </tr>
               </tbody>
@@ -634,10 +634,10 @@
           </div>
         </div>
 
-        <!-- ② 外注先癒着 ＆ 下取車買叩き（USS乖離）検知 -->
+        <!-- ② 外注先分散状況 ＆ 下取車相場乖離分析 -->
         <div class="dealer-card">
           <div class="card-header">
-            <h3>🚨 下取車USS相場買叩き ＆ 外注特定集中検知</h3>
+            <h3>📊 下取車相場乖離 ＆ 外注先発注分析</h3>
           </div>
           <div class="card-body" style="padding:0;">
             <table class="dealer-table">
@@ -646,9 +646,9 @@
                   <th>契約ID / 車種</th>
                   <th>担当営業</th>
                   <th class="numeric">査定額 vs 相場</th>
-                  <th class="numeric">隠蔽差額</th>
+                  <th class="numeric">相場差額</th>
                   <th>乖離率</th>
-                  <th>検知分類</th>
+                  <th>照合区分</th>
                 </tr>
               </thead>
               <tbody id="forensic-tradein-table-body">
@@ -661,11 +661,11 @@
         </div>
       </div>
 
-      <!-- ③ 銀行通帳 vs 成約台帳 入金突合（中抜き・着服検知台帳） -->
+      <!-- ③ 銀行通帳 vs 成約台帳 入金突合台帳 -->
       <div class="dealer-card" style="margin-top:20px;">
         <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-          <h3>🏦 銀行通帳 vs 契約台帳 着金突合台帳（未入金・裏入金の完全特定）</h3>
-          <span style="font-size:12px; color:var(--dealer-danger); font-weight:700;">※差額発生＝着服または口座迂回疑義</span>
+          <h3>🏦 銀行口座着金 vs 成約台帳 入金照合台帳（未消込・差額の明確化）</h3>
+          <span style="font-size:12px; color:var(--dealer-navy); font-weight:600;">※全件の入金整合性を確認し、透明な財務を証明します</span>
         </div>
         <div class="card-body" style="padding:0;">
           <table class="dealer-table">
@@ -679,7 +679,7 @@
                 <th class="numeric">振込予定額</th>
                 <th class="numeric">現金受取額</th>
                 <th>通帳突合ステータス</th>
-                <th>監査所見</th>
+                <th>会計所見</th>
               </tr>
             </thead>
             <tbody id="forensic-bank-table-body">
@@ -691,10 +691,10 @@
         </div>
       </div>
 
-      <!-- ④ 不正発生時系列タイムライン（フォレンジック・クロノロジー） -->
+      <!-- ④ 取引・財務処理タイムライン -->
       <div class="dealer-card" style="margin-top:20px;">
         <div class="card-header">
-          <h3>⏱️ 過去不正実行時系列タイムライン（立件・証拠保全用クロノロジー）</h3>
+          <h3>⏱️ 過去取引 財務処理タイムライン（確認・監査用クロノロジー）</h3>
         </div>
         <div class="card-body" id="forensic-timeline-container" style="max-height:400px; overflow-y:auto; padding:16px;">
           <div style="text-align:center; color:#64748b; padding:20px;">データなし</div>
@@ -704,16 +704,16 @@
       <!-- 印刷専用 捺印枠 (@media print で表示) -->
       <div class="print-only-signatures">
         <div class="seal-box">
-          <div class="seal-title">グループオーナー 決裁印</div>
+          <div class="seal-title">代表取締役 / オーナー 決裁印</div>
           <div class="seal-date">承認日: 2026年 &nbsp;&nbsp; 月 &nbsp;&nbsp; 日</div>
         </div>
         <div class="seal-box">
-          <div class="seal-title">顧問弁護士 / 監査法人 確認印</div>
+          <div class="seal-title">財務担当役員 / 顧問税理士 確認印</div>
           <div class="seal-date">確認日: 2026年 &nbsp;&nbsp; 月 &nbsp;&nbsp; 日</div>
         </div>
         <div class="seal-box">
-          <div class="seal-title">内部統制監査室長 印</div>
-          <div class="seal-date">立件日: 2026年 &nbsp;&nbsp; 月 &nbsp;&nbsp; 日</div>
+          <div class="seal-title">店舗統括責任者 印</div>
+          <div class="seal-date">提出日: 2026年 &nbsp;&nbsp; 月 &nbsp;&nbsp; 日</div>
         </div>
       </div>
     </section>

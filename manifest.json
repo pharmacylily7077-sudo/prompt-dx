@@ -1,13 +1,13 @@
 {
-  "name": "高級車販売 資金統制・不正根絶システム",
-  "short_name": "高級車販売DX",
-  "description": "外車・高級車販売特化型 オーナー直結内部統制コックピット — 不正根絶・資金統制・三方照合・出庫ロック・フォレンジック監査",
+  "name": "オートモーティブ・トレジャリー会計システム",
+  "short_name": "車両販売会計",
+  "description": "車両成約・法定諸費用預り金・信販オートローン 総合統合会計プラットフォーム",
   "start_url": "./dealer.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#071324",
-  "theme_color": "#b8934a",
+  "background_color": "#0f172a",
+  "theme_color": "#1e293b",
   "lang": "ja",
   "categories": ["business", "finance"],
   "icons": [
@@ -26,15 +26,15 @@
   ],
   "shortcuts": [
     {
-      "name": "新規成約締め登録",
+      "name": "新規成約登録",
       "url": "./dealer.html#new-deal",
-      "description": "車両成約の新規登録を開始",
+      "description": "車両成約・原価会計の新規登録",
       "icons": [{ "src": "img/app-icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "不正検知コックピット",
+      "name": "月次決算・財務照合",
       "url": "./dealer.html#tab-audit",
-      "description": "月次粗利監査・フォレンジックスコアカード",
+      "description": "月次決算・財務整合性確認",
       "icons": [{ "src": "img/app-icon-192.png", "sizes": "192x192" }]
     }
   ]
