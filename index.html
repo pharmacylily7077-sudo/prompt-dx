@@ -97,14 +97,14 @@
           <div class="summary-card-sub">現金売上 ＋ 手数料差引後クレジット</div>
         </div>
 
-        <div class="summary-card danger">
+        <div class="summary-card danger" data-tab="tab-petty" role="button" tabindex="0" style="cursor: pointer;" title="クリックして「② 小口現金」タブを開く">
           <div>
             <div class="summary-card-title">
-              <span>本日小口出金</span>
+              <span>本日小口出金 ➔</span>
             </div>
             <div id="daily-summary-petty-expense" class="summary-card-value numeric">¥0</div>
           </div>
-          <div id="daily-summary-petty-balance-sub" class="summary-card-sub">小口現金残高: ¥0</div>
+          <div id="daily-summary-petty-balance-sub" class="summary-card-sub">小口現金残高: ¥0 (クリックで開く)</div>
         </div>
 
         <div class="summary-card">
@@ -371,8 +371,9 @@
                       <strong id="preview-daily-petty-bal" class="numeric" style="margin-left: 0.25rem;">¥0</strong>
                     </div>
                   </div>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">
-                    ※ 取引登録は「② 小口現金」タブで行えます。本日分の出納が自動連携されます。
+                  <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; margin-top: 0.4rem;">
+                    <span>※ 取引登録は「② 小口現金」タブで行えます。</span>
+                    <button type="button" class="btn-chip" data-tab="tab-petty" style="color: var(--navy-dark); background: #f1f5f9; border: 1px solid #cbd5e1; font-weight: 700; cursor: pointer;">② 小口現金を開く ➔</button>
                   </div>
                 </div>
               </div>

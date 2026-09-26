@@ -40,29 +40,70 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ----------------------------------------------------
-  // タブ切り替え制御
+  // タブ切り替え制御（完全委任＆ハッシュ連動＆直接ジャンプ対応）
   // ----------------------------------------------------
   const tabButtons = document.querySelectorAll('.tab-btn');
   const tabContents = document.querySelectorAll('.tab-content');
 
-  tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const targetId = btn.getAttribute('data-tab');
+  const switchTab = (targetId) => {
+    if (!targetId) return;
+    const targetContent = document.getElementById(targetId);
+    if (!targetContent) return;
 
-      tabButtons.forEach(b => b.classList.remove('active'));
-      tabContents.forEach(c => c.classList.remove('active'));
-
-      btn.classList.add('active');
-      const targetContent = document.getElementById(targetId);
-      if (targetContent) {
-        targetContent.classList.add('active');
-      }
-
-      // 月次レポートタブを開いた際に最新データを集計再描画
-      if (targetId === 'tab-monthly' && typeof window.__renderMonthlyReport === 'function') {
-        window.__renderMonthlyReport();
+    tabButtons.forEach(b => {
+      if (b.getAttribute('data-tab') === targetId) {
+        b.classList.add('active');
+      } else {
+        b.classList.remove('active');
       }
     });
+
+    tabContents.forEach(c => {
+      if (c.id === targetId) {
+        c.classList.add('active');
+      } else {
+        c.classList.remove('active');
+      }
+    });
+
+    // 小口現金タブを開いた際に最新一覧・残高を即座に再描画
+    if (targetId === 'tab-petty' && typeof renderPettyCash === 'function') {
+      renderPettyCash();
+    }
+
+    // 月次レポートタブを開いた際に最新データを集計再描画
+    if (targetId === 'tab-monthly' && typeof window.__renderMonthlyReport === 'function') {
+      window.__renderMonthlyReport();
+    }
+  };
+  window.switchTab = switchTab;
+
+  // 全体クリック委任（タブボタンや各種小口現金へのジャンプリンク対応）
+  document.addEventListener('click', (e) => {
+    const trigger = e.target.closest('[data-tab], .tab-btn, a[href^="#tab-"]');
+    if (trigger) {
+      let targetId = trigger.getAttribute('data-tab');
+      if (!targetId && trigger.getAttribute('href')) {
+        targetId = trigger.getAttribute('href').replace('#', '');
+      }
+      if (targetId && document.getElementById(targetId)) {
+        e.preventDefault();
+        switchTab(targetId);
+        try { history.replaceState(null, '', '#' + targetId); } catch (_) {}
+      }
+    }
+  });
+
+  // URLハッシュ直接アクセス対応（例: index.html#tab-petty）
+  const initialHash = window.location.hash.replace('#', '');
+  if (initialHash && document.getElementById(initialHash)) {
+    setTimeout(() => switchTab(initialHash), 10);
+  }
+  window.addEventListener('hashchange', () => {
+    const currentHash = window.location.hash.replace('#', '');
+    if (currentHash && document.getElementById(currentHash)) {
+      switchTab(currentHash);
+    }
   });
 
   // ----------------------------------------------------
