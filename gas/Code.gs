@@ -15,10 +15,16 @@
  * ==============================================================================
  */
 
-// シート名の定義
+// シート名の定義（調剤薬局DX）
 const SHEET_DAILY_CLOSING = '日計締め台帳';
 const SHEET_PETTY_CASH = '小口出納簿';
 const SHEET_RECONCILIATION = '調剤報酬消込台帳';
+
+// シート名の定義（高級車販売DX・資金統制）
+const SHEET_DEALER_CONTRACT = '高級車成約粗利台帳';
+const SHEET_DEALER_EXPENSE = '諸費用預り金出納簿';
+const SHEET_DEALER_LOAN = '信販ローン消込台帳';
+const SHEET_DEALER_AUDIT = '統制監査アラート台帳';
 
 /**
  * 接続テスト・ステータス確認用 (GET)
@@ -138,6 +144,144 @@ function doPost(e) {
         status: 'success',
         action: action,
         message: `${storeName} の調剤報酬消込データ（${data.billingMonth}）を本部に正常記帳しました。`
+      });
+    }
+
+    // 4. 高級車販売: 成約粗利データの受信
+    if (action === 'sync_deal' || action === 'dealer_contract') {
+      const data = payload.data || {};
+      const showroom = payload.showroom || storeName;
+      const sheet = getOrCreateSheet(ss, SHEET_DEALER_CONTRACT, [
+        '記録日時', 'ショールーム', '契約番号', '車台番号(VIN)', '車種モデル', 
+        '担当営業', '契約日', '納車予定日', 'ステータス', 
+        '車両本体価格', 'オプション売上', '諸費用粗利', 'ローンキックバック', 
+        '売上総額', '仕入原価', '加修整備費', '陸送費', '個別総原価', '確定粗利', '粗利率(%)', '出庫ロック状態'
+      ]);
+
+      sheet.appendRow([
+        timestamp,
+        showroom,
+        data.id || '',
+        data.vin || '',
+        data.model || '',
+        data.salesRep || '',
+        data.contractDate || '',
+        data.deliveryDate || '',
+        data.status || '',
+        Number(data.vehiclePrice || 0),
+        Number(data.optionPrice || 0),
+        Number(data.expenseMargin || 0),
+        Number(data.loanKickback || 0),
+        Number(data.totalSales || 0),
+        Number(data.purchaseCost || 0),
+        Number(data.repairCost || 0),
+        Number(data.transportCost || 0),
+        Number(data.totalCost || 0),
+        Number(data.grossProfit || 0),
+        Number(data.marginRate || 0),
+        data.illegalDelivery ? '🚨出庫ロック突破' : '正常'
+      ]);
+
+      return createJsonResponse({
+        status: 'success',
+        action: action,
+        message: `${showroom} の成約粗利データ（${data.id}: ${data.model}）をオーナー台帳へ直結記帳しました。`
+      });
+    }
+
+    // 5. 高級車販売: 諸費用預り金出納データの受信
+    if (action === 'sync_expense' || action === 'dealer_expense') {
+      const data = payload.data || {};
+      const showroom = payload.showroom || storeName;
+      const sheet = getOrCreateSheet(ss, SHEET_DEALER_EXPENSE, [
+        '記録日時', 'ショールーム', '契約番号', '車台番号(VIN)', '担当営業', 
+        '預り金受託額', '受託日', '受託方法', '保管金庫', 
+        '法定実費納付総額', '店舗代行売上', '顧客返還額', '預り金手元残高', '三方照合判定'
+      ]);
+
+      sheet.appendRow([
+        timestamp,
+        showroom,
+        data.contractId || '',
+        data.vin || '',
+        data.salesRep || '',
+        Number(data.depositReceived || 0),
+        data.depositDate || '',
+        data.depositMethod || '',
+        data.cashVaultLocation || '',
+        Number(data.actualPaidTotal || 0),
+        Number(data.dealerFeeRevenue || 0),
+        Number(data.customerRefund || 0),
+        Number(data.balance || 0),
+        (data.balance === 0) ? '三方一致（精算完了）' : '🚨預り金滞留⚠️'
+      ]);
+
+      return createJsonResponse({
+        status: 'success',
+        action: action,
+        message: `${showroom} の諸費用出納データ（${data.contractId}）をオーナー台帳へ直結記帳しました。`
+      });
+    }
+
+    // 6. 高級車販売: 信販オートローン消込データの受信
+    if (action === 'sync_loan' || action === 'dealer_loan') {
+      const data = payload.data || {};
+      const showroom = payload.showroom || storeName;
+      const sheet = getOrCreateSheet(ss, SHEET_DEALER_LOAN, [
+        '記録日時', 'ショールーム', '契約番号', '車台番号(VIN)', '担当営業', 
+        '信販会社名', '承認番号', '契約ローン元金', '振込予定日', 
+        '実着金日', '実着金総額', 'キックバック手数料', '取扱手数料', '差額判定', 'ステータス'
+      ]);
+
+      sheet.appendRow([
+        timestamp,
+        showroom,
+        data.contractId || '',
+        data.vin || '',
+        data.salesRep || '',
+        data.loanCompany || '',
+        data.loanApprovalNo || '',
+        Number(data.contractPrincipal || 0),
+        data.expectedSettlementDate || '',
+        data.actualSettlementDate || '',
+        Number(data.actualReceivedAmount || 0),
+        Number(data.kickbackAmount || 0),
+        Number(data.handlingFee || 0),
+        Number(data.difference || 0) === 0 ? '消込一致' : '差額発生⚠️',
+        data.status || ''
+      ]);
+
+      return createJsonResponse({
+        status: 'success',
+        action: action,
+        message: `${showroom} のローン消込データ（${data.contractId}）をオーナー台帳へ直結記帳しました。`
+      });
+    }
+
+    // 7. 高級車販売: 統制監査アラート・トリップワイヤーの受信
+    if (action === 'sync_audit_alert' || action === 'dealer_audit_alert') {
+      const data = payload.data || {};
+      const showroom = payload.showroom || storeName;
+      const sheet = getOrCreateSheet(ss, SHEET_DEALER_AUDIT, [
+        '検知日時', 'ショールーム', '警告レベル', 'アラート分類', 
+        '契約番号', '車台番号(VIN)', '担当営業', '警告詳細内容'
+      ]);
+
+      sheet.appendRow([
+        timestamp,
+        showroom,
+        data.level || 'WARNING',
+        data.type || '',
+        data.contractId || '',
+        data.vin || '',
+        data.salesRep || '',
+        data.message || ''
+      ]);
+
+      return createJsonResponse({
+        status: 'success',
+        action: action,
+        message: `${showroom} の統制アラートをオーナー専用シートへ緊急通知記帳しました。`
       });
     }
 

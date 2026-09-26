@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高級車販売 資金統制・不正根絶システム | 麻布ショールーム</title>
+  <link rel="stylesheet" href="css/dealer.css">
+</head>
+<body>
+
+  <!-- ===================================================
+       ヘッダー（グループ統制・エグゼクティブデザイン）
+       =================================================== -->
+  <header class="dealer-header">
+    <div class="header-top-bar">
+      <div class="dealer-brand">
+        <div class="dealer-emblem">RS</div>
+        <div class="brand-text">
+          <h1>高級車販売 資金統制・不正根絶システム</h1>
+          <div class="brand-subtitle">麻布ショールーム（港区麻布十番）｜ オーナー直結内部統制コックピット</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <!-- グループ事業切替ポータルリンク -->
+        <a href="index.html" class="btn-portal-switch" title="多角経営グループ: 調剤薬局DXシステムへ切り替えます">
+          <span>🏛️ 事業切替: 調剤薬局DX</span>
+        </a>
+        <div id="dealer-sync-badge" class="sync-badge unconfigured" title="オーナー専用Googleスプレッドシート同期ステータス">
+          <span class="sync-dot"></span>
+          <span id="dealer-sync-text">クラウド: 未設定</span>
+        </div>
+        <button id="btn-cloud-config" class="btn-header-tool" title="オーナー専用Googleスプレッドシート同期先URLを設定">
+          ⚙️ クラウド設定
+        </button>
+        <button id="btn-demo-data" class="btn-header-tool" title="30年トップ営業マンの不正シミュレーションを含むリアル検証データを投入">
+          🔄 検証デモデータ
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================================================
+       タブナビゲーション（4大タブ）
+       =================================================== -->
+  <nav class="dealer-nav">
+    <div class="nav-container">
+      <button class="tab-button active" data-tab="tab-contract">
+        <span>① 車両別成約締め（個別原価・粗利）</span>
+      </button>
+      <button class="tab-button" data-tab="tab-expense">
+        <span>② 諸費用出納・預り金管理（三方照合）</span>
+        <span id="badge-stagnant-count" class="tab-badge" style="display:none;">0</span>
+      </button>
+      <button class="tab-button" data-tab="tab-loan">
+        <span>③ オートローン・信販消込（立替金統制）</span>
+        <span id="badge-loan-pending-count" class="tab-badge" style="display:none;">0</span>
+      </button>
+      <button class="tab-button" data-tab="tab-audit">
+        <span>④ 月次粗利監査 ＆ 不正検知コックピット</span>
+        <span id="badge-tripwire-count" class="tab-badge alert" style="display:none;">0</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===================================================
+       メインコンテンツエリア
+       =================================================== -->
+  <main class="dealer-main">
+
+    <!-- ===================================================
+         タブ①: 車両別成約締め（個別原価・粗利計算エンジン）
+         =================================================== -->
+    <section id="tab-contract" class="tab-panel active">
+      <!-- KPI グリッド -->
+      <div class="kpi-grid">
+        <div class="kpi-card gold">
+          <div class="kpi-title">
+            <span>成約車両総売上</span>
+            <span class="badge badge-info">今月確定</span>
+          </div>
+          <div id="kpi-total-sales" class="kpi-value">¥0</div>
+          <div class="kpi-sub">車両本体 ＋ オプション ＋ 代行粗利 ＋ ローンキックバック</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-title">
+            <span>個別総原価（COGS）</span>
+          </div>
+          <div id="kpi-total-cost" class="kpi-value">¥0</div>
+          <div class="kpi-sub">仕入原価 ＋ 加修整備費 ＋ 陸送費</div>
+        </div>
+
+        <div class="kpi-card success">
+          <div class="kpi-title">
+            <span>確定粗利総額</span>
+            <span id="kpi-margin-rate" class="badge badge-success">0.0%</span>
+          </div>
+          <div id="kpi-gross-profit" class="kpi-value">¥0</div>
+          <div class="kpi-sub">売上総額 − 個別総原価</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-title">
+            <span>成約台数</span>
+          </div>
+          <div id="kpi-deal-count" class="kpi-value">0 台</div>
+          <div class="kpi-sub">ポルシェ・AMG・ロールスロイス等</div>
+        </div>
+      </div>
+
+      <!-- 成約台帳カード -->
+      <div class="content-card">
+        <div class="card-header-bar">
+          <div class="card-title-group">
+            <h2>車両別成約・個別原価締め台帳</h2>
+            <div class="card-desc">車台番号（VIN 17桁）単位で仕入・加修・成約代金を1円単位で完全ガラス張り化</div>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button id="btn-open-tax-calc" class="btn-outline">
+              📊 法定税額シミュレーター
+            </button>
+            <button id="btn-open-new-deal" class="btn-primary">
+              ＋ 新規成約締め登録
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="dealer-table">
+            <thead>
+              <tr>
+                <th>管理番号</th>
+                <th>車台番号(VIN)</th>
+                <th>車種・モデル</th>
+                <th>担当営業</th>
+                <th>契約日</th>
+                <th class="numeric">契約総額</th>
+                <th class="numeric">個別総原価</th>
+                <th class="numeric">確定粗利</th>
+                <th class="numeric">粗利率</th>
+                <th>決済内訳</th>
+                <th>ステータス</th>
+                <th>出庫ゲート審査</th>
+              </tr>
+            </thead>
+            <tbody id="deal-table-body">
+              <!-- JSで動的描画 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         タブ②: 諸費用出納・預り金管理（三方照合・出庫ロック）
+         =================================================== -->
+    <section id="tab-expense" class="tab-panel">
+      <!-- 諸費用KPI グリッド -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-title">
+            <span>顧客諸費用預り金 受託総額</span>
+          </div>
+          <div id="kpi-exp-deposit-received" class="kpi-value">¥0</div>
+          <div class="kpi-sub">現金受領 ＋ 振込受領</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-title">
+            <span>法定実費納付済 総額</span>
+          </div>
+          <div id="kpi-exp-actual-paid" class="kpi-value">¥0</div>
+          <div class="kpi-sub">公的領収証書番号・レシート紐付済</div>
+        </div>
+
+        <div class="kpi-card success">
+          <div class="kpi-title">
+            <span>店舗諸費用代行 粗利売上</span>
+          </div>
+          <div id="kpi-exp-dealer-fee" class="kpi-value">¥0</div>
+          <div class="kpi-sub">登録代行・納車準備手数料</div>
+        </div>
+
+        <div id="card-stagnant-deposit" class="kpi-card danger">
+          <div class="kpi-title">
+            <span>手元未精算 滞留預り金残高</span>
+            <span id="badge-stagnant-status" class="badge badge-success">正常 (¥0)</span>
+          </div>
+          <div id="kpi-exp-stagnant-balance" class="kpi-value">¥0</div>
+          <div class="kpi-sub">納車後残高>0は横領・自転車操業トリップワイヤー</div>
+        </div>
+      </div>
+
+      <!-- 諸費用台帳カード -->
+      <div class="content-card">
+        <div class="card-header-bar">
+          <div class="card-title-group">
+            <h2>諸費用預り金 出納・三方突合台帳</h2>
+            <div class="card-desc">預託額 ＝ 法定実費レシート納付 ＋ 店舗代行売上 ＋ 顧客返還額（1円単位で残高0円必須）</div>
+          </div>
+        </div>
+
+        <!-- 滞留預り金 警告アラート枠（動的表示） -->
+        <div id="expense-stagnant-alert-box" class="tripwire-container" style="display:none;">
+          <div class="tripwire-header">
+            <h3>🚨【横領・自転車操業トリップワイヤー】納車済・預り金長期滞留を検知</h3>
+          </div>
+          <ul id="expense-stagnant-alert-list" class="tripwire-list"></ul>
+        </div>
+
+        <div class="table-responsive">
+          <table class="dealer-table">
+            <thead>
+              <tr>
+                <th>契約番号</th>
+                <th>車台番号(VIN)</th>
+                <th>担当営業</th>
+                <th>預託日</th>
+                <th class="numeric">預り受託額</th>
+                <th class="numeric">法定納付実費</th>
+                <th class="numeric">代行売上</th>
+                <th class="numeric">顧客返金</th>
+                <th class="numeric">手元預り残高</th>
+                <th>三方照合判定</th>
+                <th>顧客公式受領書</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="expense-table-body">
+              <!-- JSで動的描画 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         タブ③: オートローン・信販会社入金消込（立替金統制）
+         =================================================== -->
+    <section id="tab-loan" class="tab-panel">
+      <!-- ローンKPI グリッド -->
+      <div class="kpi-grid">
+        <div class="kpi-card gold">
+          <div class="kpi-title">
+            <span>オートローン組成総元金</span>
+          </div>
+          <div id="kpi-loan-total-principal" class="kpi-value">¥0</div>
+          <div class="kpi-sub">オリコ・ジャックス・アプラス・残価設定</div>
+        </div>
+
+        <div class="kpi-card success">
+          <div class="kpi-title">
+            <span>信販着金確定額（純受領）</span>
+          </div>
+          <div id="kpi-loan-total-received" class="kpi-value">¥0</div>
+          <div class="kpi-sub">元金 ＋ キックバック − 取扱手数料</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-title">
+            <span>ローンキックバック手数料</span>
+          </div>
+          <div id="kpi-loan-total-kickback" class="kpi-value">¥0</div>
+          <div class="kpi-sub">信販会社からの推進手数料（店舗粗利）</div>
+        </div>
+
+        <div class="kpi-card warning">
+          <div class="kpi-title">
+            <span>未着金ローン債権（回収待機）</span>
+            <span id="badge-overdue-loan" class="badge badge-info">進行中</span>
+          </div>
+          <div id="kpi-loan-pending-total" class="kpi-value">¥0</div>
+          <div class="kpi-sub">30日超未着金または納車後未着金は警戒</div>
+        </div>
+      </div>
+
+      <!-- 信販消込台帳カード -->
+      <div class="content-card">
+        <div class="card-header-bar">
+          <div class="card-title-group">
+            <h2>信販会社オートローン 入金消込台帳</h2>
+            <div class="card-desc">信販会社の振込決定通知書と着金額を1円単位で完全消込（未特定差額ゼロ原則）</div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="dealer-table">
+            <thead>
+              <tr>
+                <th>契約番号</th>
+                <th>車台番号(VIN)</th>
+                <th>担当営業</th>
+                <th>信販会社</th>
+                <th>承認番号</th>
+                <th class="numeric">契約ローン元金</th>
+                <th>振込予定日</th>
+                <th>着金日</th>
+                <th class="numeric">実着金額</th>
+                <th class="numeric">キックバック</th>
+                <th>差額照合</th>
+                <th>ステータス</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="loan-table-body">
+              <!-- JSで動的描画 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 立替金管理カード -->
+      <div class="content-card">
+        <div class="card-header-bar">
+          <div class="card-title-group">
+            <h2>下取車残債一括立替・頭金立替金 追跡管理</h2>
+            <div class="card-desc">他社信販会社への一括返済立替金および顧客頭金立替の回収・焦げ付き防止</div>
+          </div>
+          <button id="btn-open-new-advance" class="btn-outline">
+            ＋ 新規立替金登録
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="dealer-table">
+            <thead>
+              <tr>
+                <th>立替ID</th>
+                <th>契約番号</th>
+                <th>担当営業</th>
+                <th>立替種別</th>
+                <th>立替先</th>
+                <th class="numeric">立替金額</th>
+                <th>支払日</th>
+                <th>回収日</th>
+                <th class="numeric">回収額</th>
+                <th>ステータス</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="advance-table-body">
+              <!-- JSで動的描画 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         タブ④: 月次粗利監査 ＆ 不正検知コックピット
+         =================================================== -->
+    <section id="tab-audit" class="tab-panel">
+      <!-- オーナー・監査サマリーカード -->
+      <div class="kpi-grid">
+        <div class="kpi-card gold">
+          <div class="kpi-title">
+            <span>月間総販売台数 / 売上高</span>
+          </div>
+          <div id="kpi-audit-sales" class="kpi-value">0台 / ¥0</div>
+          <div class="kpi-sub">最高級輸入車・特注車両</div>
+        </div>
+
+        <div class="kpi-card success">
+          <div class="kpi-title">
+            <span>月間確定粗利総計</span>
+            <span id="kpi-audit-margin-rate" class="badge badge-success">0.0%</span>
+          </div>
+          <div id="kpi-audit-profit" class="kpi-value">¥0</div>
+          <div class="kpi-sub">車両粗利 ＋ 代行手数料 ＋ ローンバック</div>
+        </div>
+
+        <div class="kpi-card danger">
+          <div class="kpi-title">
+            <span>未精算・滞留預り金総額</span>
+            <span class="badge badge-danger">要監査</span>
+          </div>
+          <div id="kpi-audit-stagnant-deposit" class="kpi-value">¥0</div>
+          <div class="kpi-sub">営業マンが手元に抱え込んでいる諸費用</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-title">
+            <span>統制トリップワイヤー検知数</span>
+            <span id="badge-audit-tripwire-status" class="badge badge-success">全件正常</span>
+          </div>
+          <div id="kpi-audit-tripwire-count" class="kpi-value">0 件</div>
+          <div class="kpi-sub">出庫ロック・過小査定・水増し・滞留等</div>
+        </div>
+      </div>
+
+      <!-- 6大フォレンジック・トリップワイヤー監視パネル -->
+      <div class="content-card">
+        <div class="card-header-bar">
+          <div class="card-title-group">
+            <h2>🚨 6大フォレンジック・トリップワイヤー リアルタイム検知ログ</h2>
+            <div class="card-desc">歴30年トップ営業マンの欺瞞（二重契約・中抜き・滞留・外注水増し）を客観外部データで捕捉</div>
+          </div>
+          <button id="btn-scan-tripwires" class="btn-outline">
+            🔍 即時ディープスキャン実行
+          </button>
+        </div>
+
+        <div id="audit-tripwire-container">
+          <!-- JSで動的警告リストを描画 -->
+        </div>
+      </div>
+
+      <!-- 営業マン別フォレンジック行動統計スコアカード -->
+      <div class="content-card">
+        <div class="card-header-bar">
+          <div class="card-title-group">
+            <h2>👤 営業マン別 フォレンジック行動統計スコアカード</h2>
+            <div class="card-desc">預り金平均滞留日数・現金決済比率・下取査定乖離・外注先集中度の統計分析</div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="dealer-table">
+            <thead>
+              <tr>
+                <th>営業担当者名</th>
+                <th>成約台数</th>
+                <th class="numeric">総売上高</th>
+                <th class="numeric">粗利総額</th>
+                <th class="numeric">平均粗利率</th>
+                <th class="numeric">現金決済比率</th>
+                <th class="numeric">平均預り金滞留日数</th>
+                <th class="numeric">手元預り残高</th>
+                <th class="numeric">フォレンジックスコア</th>
+                <th>統制リスク判定</th>
+              </tr>
+            </thead>
+            <tbody id="salesrep-scorecard-body">
+              <!-- JSで動的描画 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- A4横印刷 帳票プレビュー & アクション -->
+      <div class="content-card no-print">
+        <div class="card-header-bar">
+          <div class="card-title-group">
+            <h2>月次粗利監査報告書（A4横印刷帳票・オーナー捺印完備）</h2>
+            <div class="card-desc">月次経営会議および顧問弁護士・税理士への内部統制エビデンスとして公式印刷・PDF出力</div>
+          </div>
+          <button id="btn-print-audit-report" class="btn-gold">
+            🖨️ A4公式監査報告書を印刷 / PDF出力
+          </button>
+        </div>
+      </div>
+
+      <!-- 印刷専用 捺印枠 (@media print で表示) -->
+      <div class="print-only-signatures">
+        <div class="seal-box">
+          <div class="seal-title">グループオーナー 決裁印</div>
+          <div class="seal-date">承認日: 2026年 &nbsp;&nbsp; 月 &nbsp;&nbsp; 日</div>
+        </div>
+        <div class="seal-box">
+          <div class="seal-title">内部統制監査室長 印</div>
+          <div class="seal-date">監査日: 2026年 &nbsp;&nbsp; 月 &nbsp;&nbsp; 日</div>
+        </div>
+        <div class="seal-box">
+          <div class="seal-title">麻布ショールーム 支店長印</div>
+          <div class="seal-date">提出日: 2026年 &nbsp;&nbsp; 月 &nbsp;&nbsp; 日</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===================================================
+       モーダルダイアログ群
+       =================================================== -->
+
+  <!-- 1. 新規成約締め登録モーダル -->
+  <div id="modal-deal" class="dealer-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-deal-title">新規成約締め 登録（個別原価・代金三方突合）</h3>
+        <button class="modal-close" data-close="modal-deal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="form-deal">
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label>管理番号 (契約ID)</label>
+              <input type="text" id="deal-id" class="form-control" placeholder="CT-2026-001" required>
+            </div>
+            <div class="form-group">
+              <label>車台番号 (VIN 17桁)</label>
+              <input type="text" id="deal-vin" class="form-control" placeholder="WP0ZZZ99ZTS..." required>
+            </div>
+            <div class="form-group">
+              <label>車種・モデル名</label>
+              <input type="text" id="deal-model" class="form-control" placeholder="Porsche 911 GT3" required>
+            </div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label>年式 (初度登録年)</label>
+              <input type="number" id="deal-year" class="form-control" value="2024">
+            </div>
+            <div class="form-group">
+              <label>担当営業</label>
+              <input type="text" id="deal-salesrep" class="form-control" placeholder="神田 敏幸" required>
+            </div>
+            <div class="form-group">
+              <label>契約日</label>
+              <input type="date" id="deal-contract-date" class="form-control" required>
+            </div>
+          </div>
+
+          <hr style="margin:16px 0; border:0; border-top:1px solid #e2e8f0;">
+          <h4 style="font-size:13px; color:var(--dealer-gold-text); margin-bottom:12px;">【売上・契約総額の設定】</h4>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label>車両本体販売価格 (円)</label>
+              <input type="number" id="deal-vehicle-price" class="form-control numeric" value="0">
+            </div>
+            <div class="form-group">
+              <label>販売オプション売上 (円)</label>
+              <input type="number" id="deal-option-price" class="form-control numeric" value="0">
+            </div>
+            <div class="form-group">
+              <label>諸費用代行粗利 (円)</label>
+              <input type="number" id="deal-expense-margin" class="form-control numeric" value="0">
+            </div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label>ローンキックバック推進手数料 (円)</label>
+              <input type="number" id="deal-loan-kickback" class="form-control numeric" value="0">
+            </div>
+            <div class="form-group">
+              <label>契約総額 (顧客請求総額) (円)</label>
+              <input type="number" id="deal-contract-total" class="form-control numeric" value="0" required>
+            </div>
+            <div class="form-group">
+              <label>納車予定日</label>
+              <input type="date" id="deal-delivery-date" class="form-control">
+            </div>
+          </div>
+
+          <hr style="margin:16px 0; border:0; border-top:1px solid #e2e8f0;">
+          <h4 style="font-size:13px; color:var(--dealer-gold-text); margin-bottom:12px;">【成約代金三方突合（頭金＋ローン＋下取＝契約総額）】</h4>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label>頭金受領額 (円)</label>
+              <input type="number" id="deal-down-payment" class="form-control numeric" value="0">
+            </div>
+            <div class="form-group">
+              <label>頭金受取方法</label>
+              <select id="deal-down-method" class="form-control">
+                <option value="wire">銀行振込 (推奨・透明)</option>
+                <option value="cash">現金手渡し (要金庫即日入庫)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>オートローン元金 (円)</label>
+              <input type="number" id="deal-loan-principal" class="form-control numeric" value="0">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>下取車 査定相殺額 (円)</label>
+              <input type="number" id="deal-tradein-allowance" class="form-control numeric" value="0">
+            </div>
+            <div class="form-group" style="justify-content:flex-end;">
+              <div id="deal-settlement-check-badge" class="badge badge-info" style="padding:8px 12px; font-size:12px;">
+                三方突合: 未判定
+              </div>
+            </div>
+          </div>
+
+          <hr style="margin:16px 0; border:0; border-top:1px solid #e2e8f0;">
+          <h4 style="font-size:13px; color:var(--dealer-gold-text); margin-bottom:12px;">【個別原価ブレークダウン（ガラス張り化）】</h4>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label>車両仕入原価 (円)</label>
+              <input type="number" id="deal-purchase-cost" class="form-control numeric" value="0">
+            </div>
+            <div class="form-group">
+              <label>加修整備・板金原価 (円)</label>
+              <input type="number" id="deal-repair-cost" class="form-control numeric" value="0">
+            </div>
+            <div class="form-group">
+              <label>整備外注伝票番号</label>
+              <input type="text" id="deal-repair-invoice" class="form-control" placeholder="INV-RP-001">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>陸送費用 (円)</label>
+              <input type="number" id="deal-transport-cost" class="form-control numeric" value="0">
+            </div>
+            <div class="form-group">
+              <label>陸送伝票番号</label>
+              <input type="text" id="deal-transport-invoice" class="form-control" placeholder="TP-001">
+            </div>
+          </div>
+
+          <hr style="margin:16px 0; border:0; border-top:1px solid #e2e8f0;">
+          <h4 style="font-size:13px; color:var(--dealer-gold-text); margin-bottom:12px;">【下取車 USSオークション基準相場突合】</h4>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label>下取車の有無</label>
+              <select id="deal-has-tradein" class="form-control">
+                <option value="false">なし</option>
+                <option value="true">あり</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>下取車種モデル</label>
+              <input type="text" id="deal-tradein-model" class="form-control" placeholder="Mercedes-AMG G63">
+            </div>
+            <div class="form-group">
+              <label>USSオークション基準相場 (円)</label>
+              <input type="number" id="deal-tradein-uss" class="form-control numeric" value="0">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>実際の査定買取額 (円)</label>
+              <input type="number" id="deal-tradein-appraisal" class="form-control numeric" value="0">
+            </div>
+            <div class="form-group" style="display:flex; align-items:center; gap:8px; margin-top:20px;">
+              <input type="checkbox" id="deal-tradein-owner-approved">
+              <label for="deal-tradein-owner-approved" style="font-weight:600; color:var(--dealer-danger);">
+                相場乖離15%超時のオーナー個別承認を取得済
+              </label>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-outline" data-close="modal-deal">キャンセル</button>
+            <button type="submit" class="btn-primary">成約締め台帳に確定保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 法定税額シミュレーター モーダル -->
+  <div id="modal-tax-calc" class="dealer-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>法定税額 自動逆算シミュレーター（改ざん防止公的マスタ）</h3>
+        <button class="modal-close" data-close="modal-tax-calc">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label>排気量 (cc)</label>
+            <input type="number" id="calc-displacement" class="form-control" value="3996">
+          </div>
+          <div class="form-group">
+            <label>車両重量 (kg)</label>
+            <input type="number" id="calc-weight" class="form-control" value="1435">
+          </div>
+          <div class="form-group">
+            <label>登録月 (1〜12月)</label>
+            <input type="number" id="calc-month" class="form-control" min="1" max="12" value="9">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>車検有効期間</label>
+            <select id="calc-term" class="form-control">
+              <option value="36">36ヶ月（新車登録）</option>
+              <option value="24">24ヶ月（中古車検継続）</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>車両本体価格 (円)</label>
+            <input type="number" id="calc-price" class="form-control numeric" value="28000000">
+          </div>
+        </div>
+
+        <div style="margin-top:20px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:16px;">
+          <h4 style="font-size:14px; font-weight:700; color:var(--dealer-navy); margin-bottom:12px;">【法定実費 逆算結果】</h4>
+          <table class="dealer-table" style="font-size:12px;">
+            <tr><td>自動車税 (種別割・月割計算)</td><td id="res-auto-tax" class="numeric font-bold">¥0</td></tr>
+            <tr><td>自動車重量税</td><td id="res-weight-tax" class="numeric font-bold">¥0</td></tr>
+            <tr><td>環境性能割 (旧自動車取得税)</td><td id="res-env-tax" class="numeric font-bold">¥0</td></tr>
+            <tr><td>自賠責保険料</td><td id="res-comp-ins" class="numeric font-bold">¥0</td></tr>
+            <tr><td>登録印紙・希望ナンバー・車庫証明証紙</td><td id="res-fees" class="numeric font-bold">¥10,000</td></tr>
+            <tr style="background:#edf2f7; font-weight:700;">
+              <td>法定実費 合計額</td><td id="res-statutory-total" class="numeric font-bold" style="font-size:15px; color:var(--dealer-navy);">¥0</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-primary" data-close="modal-tax-calc">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 顧客直結バイパス公式受領書プレビュー モーダル -->
+  <div id="modal-customer-notice" class="dealer-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>顧客直結バイパス 公式預り金受領証（二重契約・中抜き防止）</h3>
+        <button class="modal-close" data-close="modal-customer-notice">&times;</button>
+      </div>
+      <div class="modal-body" id="customer-notice-preview-content">
+        <!-- JSで受領証明書を描画 -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-outline" data-close="modal-customer-notice">閉じる</button>
+        <button type="button" id="btn-send-customer-notice" class="btn-gold">
+          📱 オーナー名義で顧客へ公式受領通知を即時送信
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 諸費用支払・領収書登録 モーダル -->
+  <div id="modal-expense-pay" class="dealer-modal">
+    <div class="modal-dialog" style="max-width:600px;">
+      <div class="modal-header">
+        <h3 id="modal-expense-title">法定費用納付・領収証書番号登録</h3>
+        <button class="modal-close" data-close="modal-expense-pay">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="exp-record-id">
+        <input type="hidden" id="exp-item-index">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>費用項目名</label>
+          <input type="text" id="exp-item-name" class="form-control" readonly>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>実際の納付金額 (円)</label>
+          <input type="number" id="exp-pay-amount" class="form-control numeric" required>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>公的領収証書番号 / 納税証明レシート番号 (必須)</label>
+          <input type="text" id="exp-receipt-no" class="form-control" placeholder="TAX-REC-2026-991" required>
+        </div>
+        <div class="form-group">
+          <label>納付日</label>
+          <input type="date" id="exp-receipt-date" class="form-control" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-outline" data-close="modal-expense-pay">キャンセル</button>
+        <button type="button" id="btn-save-expense-pay" class="btn-primary">納付実績・領収書番号を保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 諸費用余剰金精算 モーダル -->
+  <div id="modal-expense-finalize" class="dealer-modal">
+    <div class="modal-dialog" style="max-width:600px;">
+      <div class="modal-header">
+        <h3>諸費用預り金 余剰金最終精算</h3>
+        <button class="modal-close" data-close="modal-expense-finalize">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="finalize-record-id">
+        <p style="font-size:13px; color:var(--dealer-text-muted); margin-bottom:16px;">
+          法定実費納付後の余剰金を「店舗代行手数料売上（粗利）」および「顧客返還金」に振り分け、手元残高を1円単位で0円にします。
+        </p>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>店舗代行手数料売上（店舗粗利振替額）(円)</label>
+          <input type="number" id="finalize-dealer-fee" class="form-control numeric" value="0">
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>顧客への返還金（銀行振込額）(円)</label>
+          <input type="number" id="finalize-customer-refund" class="form-control numeric" value="0">
+        </div>
+        <div class="form-group">
+          <label>顧客返還 銀行振込照会番号 / 伝票番号</label>
+          <input type="text" id="finalize-refund-ref" class="form-control" placeholder="TR-2026-0926-001">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-outline" data-close="modal-expense-finalize">キャンセル</button>
+        <button type="button" id="btn-save-finalize-expense" class="btn-primary">余剰金精算を確定（残高0円完了）</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. 納車出庫 物理ゲート審査モーダル -->
+  <div id="modal-delivery-gate" class="dealer-modal">
+    <div class="modal-dialog" style="max-width:650px;">
+      <div class="modal-header">
+        <h3 id="delivery-gate-title">納車出庫 物理ゲートキー審査</h3>
+        <button class="modal-close" data-close="modal-delivery-gate">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="gate-deal-id">
+        <div id="delivery-gate-checklist">
+          <!-- JSで動的チェックリストを描画 -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-outline" data-close="modal-delivery-gate">閉じる</button>
+        <button type="button" id="btn-confirm-delivery" class="btn-primary">出庫ロック解除・納車完了確定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. オートローン信販着金消込 モーダル -->
+  <div id="modal-loan-reconcile" class="dealer-modal">
+    <div class="modal-dialog" style="max-width:600px;">
+      <div class="modal-header">
+        <h3>信販会社オートローン 入金消込実行</h3>
+        <button class="modal-close" data-close="modal-loan-reconcile">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="rec-loan-id">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>信販会社 / 契約元金</label>
+          <input type="text" id="rec-loan-info" class="form-control" readonly>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>実際の銀行口座 着金金額 (円)</label>
+          <input type="number" id="rec-actual-received" class="form-control numeric" required>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>キックバック推進手数料 (円)</label>
+          <input type="number" id="rec-kickback" class="form-control numeric" value="0">
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>信販会社取扱手数料 (円)</label>
+          <input type="number" id="rec-handling-fee" class="form-control numeric" value="0">
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>着金日</label>
+          <input type="date" id="rec-settlement-date" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>銀行入金明細照会番号</label>
+          <input type="text" id="rec-bank-ref" class="form-control" placeholder="BNK-2026-0926-004">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-outline" data-close="modal-loan-reconcile">キャンセル</button>
+        <button type="button" id="btn-save-loan-reconcile" class="btn-primary">完全消込実行（差額0円判定）</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. クラウド設定 モーダル -->
+  <div id="modal-cloud-settings" class="dealer-modal">
+    <div class="modal-dialog" style="max-width:600px;">
+      <div class="modal-header">
+        <h3>オーナー専用Googleスプレッドシート 同期設定</h3>
+        <button class="modal-close" data-close="modal-cloud-settings">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px; color:var(--dealer-text-muted); margin-bottom:16px;">
+          店舗・営業マンが数値を保存した瞬間、中間フィルターを通さずオーナーのGoogleスプレッドシート（gas/Code.gs）へリアルタイム直接記帳されます。
+        </p>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>ショールーム名</label>
+          <input type="text" id="cfg-showroom-name" class="form-control" value="麻布ショールーム">
+        </div>
+        <div class="form-group">
+          <label>本部Google Apps Script ウェブアプリURL</label>
+          <input type="url" id="cfg-endpoint-url" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-outline" data-close="modal-cloud-settings">キャンセル</button>
+        <button type="button" id="btn-save-cloud-settings" class="btn-primary">クラウド設定を保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- スクリプト群 -->
+  <script src="js/dealer-contract.js"></script>
+  <script src="js/dealer-expense.js"></script>
+  <script src="js/dealer-loan.js"></script>
+  <script src="js/dealer-audit.js"></script>
+  <script src="js/dealer-sync.js"></script>
+  <script src="js/dealer-app.js"></script>
+</body>
+</html>
