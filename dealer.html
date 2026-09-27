@@ -85,24 +85,24 @@
           <span class="sync-dot"></span>
           <span id="dealer-sync-text">クラウド: 未設定</span>
         </div>
-        <button id="btn-cloud-config" class="btn-header-tool" title="クラウド同期先を設定">
+        <button id="btn-cloud-config" class="btn-header-tool owner-only-btn" title="クラウド同期先を設定">
           ⚙️ クラウド設定
         </button>
-        <button id="btn-demo-data" class="btn-header-tool" title="動作確認用のサンプルデータを読み込みます">
+        <button id="btn-demo-data" class="btn-header-tool owner-only-btn" title="動作確認用のサンプルデータを読み込みます">
           🔄 サンプル読込
         </button>
-        <button id="btn-clear-production" class="btn-header-tool" title="テストデータを消去して台帳を新しく開始します">
+        <button id="btn-clear-production" class="btn-header-tool owner-only-btn" title="テストデータを消去して台帳を新しく開始します">
           🗑️ 本番データ初期化
         </button>
         <!-- バックアップ＆セキュリティ -->
-        <button id="btn-fortify-export" class="btn-header-tool" title="全データをバックアップ保存します">
+        <button id="btn-fortify-export" class="btn-header-tool owner-only-btn" title="全データをバックアップ保存します">
           💾 バックアップ
         </button>
-        <button id="btn-fortify-import" class="btn-header-tool" title="バックアップファイルからデータを復元します">
+        <button id="btn-fortify-import" class="btn-header-tool owner-only-btn" title="バックアップファイルからデータを復元します">
           📥 復元
         </button>
         <input type="file" id="fortify-import-file" accept=".json" style="display:none;">
-        <button id="btn-fortify-set-pin" class="btn-header-tool" title="端末画面ロックPIN（4桁）を設定/解除します">
+        <button id="btn-fortify-set-pin" class="btn-header-tool owner-only-btn" title="端末画面ロックPIN（4桁）を設定/解除します">
           🔒 PIN設定
         </button>
         <!-- オーナー専用クイック起動ボタン（オーナーモード時に表示） -->
@@ -119,22 +119,22 @@
   <nav class="dealer-nav">
     <div class="nav-container">
       <button class="tab-button active" data-tab="tab-contract">
-        <span>① VSS (Vehicle Sales Support)</span>
+        <span>① 車両販売・見積管理 (VSS)</span>
       </button>
       <button class="tab-button" data-tab="tab-expense">
-        <span>② FAR (Fee & Tax Assist)</span>
+        <span>② 諸費用・預り金精算 (FAR)</span>
         <span id="badge-stagnant-count" class="tab-badge" style="display:none;">0</span>
       </button>
       <button class="tab-button" data-tab="tab-loan">
-        <span>③ LCS (Loan & Credit Settlement)</span>
+        <span>③ 信販・ローン決済管理 (LCS)</span>
         <span id="badge-loan-pending-count" class="tab-badge" style="display:none;">0</span>
       </button>
-      <button class="tab-button" data-tab="tab-audit">
-        <span>④ PMR (Performance & KPI)</span>
+      <button class="tab-button owner-only-tab" data-tab="tab-audit">
+        <span>④ 実績・KPI分析 (PMR)</span>
         <span id="badge-tripwire-count" class="tab-badge alert" style="display:none;">0</span>
       </button>
-      <button class="tab-button" data-tab="tab-forensic">
-        <span>⑤ TRA (Transaction Archive)</span>
+      <button class="tab-button owner-only-tab" data-tab="tab-forensic">
+        <span>⑤ 過去取引照合台帳 (TRA)</span>
         <span id="badge-forensic-alert-count" class="tab-badge alert" style="display:none;">0</span>
       </button>
     </div>
@@ -757,7 +757,7 @@
   <div id="modal-deal" class="dealer-modal">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3 id="modal-deal-title">新規成約締め 登録（個別原価・代金三方突合）</h3>
+        <h3 id="modal-deal-title">新規成約・見積確定 登録</h3>
         <button class="modal-close" data-close="modal-deal">&times;</button>
       </div>
       <div class="modal-body">
@@ -805,14 +805,14 @@
               <input type="number" id="deal-option-price" class="form-control numeric" value="0">
             </div>
             <div class="form-group">
-              <label>諸費用代行粗利 (円)</label>
+              <label>諸費用代行料 (円)</label>
               <input type="number" id="deal-expense-margin" class="form-control numeric" value="0">
             </div>
           </div>
 
           <div class="form-grid-3">
             <div class="form-group">
-              <label>ローンキックバック推進手数料 (円)</label>
+              <label>信販推進手数料 (円)</label>
               <input type="number" id="deal-loan-kickback" class="form-control numeric" value="0">
             </div>
             <div class="form-group">
@@ -826,7 +826,7 @@
           </div>
 
           <hr style="margin:16px 0; border:0; border-top:1px solid #e2e8f0;">
-          <h4 style="font-size:13px; color:var(--dealer-gold-text); margin-bottom:12px;">【成約代金三方突合（頭金＋ローン＋下取＝契約総額）】</h4>
+          <h4 style="font-size:13px; color:var(--dealer-gold-text); margin-bottom:12px;">【決済内訳（頭金・ローン・下取相殺）】</h4>
 
           <div class="form-grid-3">
             <div class="form-group">
@@ -836,8 +836,8 @@
             <div class="form-group">
               <label>頭金受取方法</label>
               <select id="deal-down-method" class="form-control">
-                <option value="wire">銀行振込 (推奨・透明)</option>
-                <option value="cash">現金手渡し (要金庫即日入庫)</option>
+                <option value="wire">銀行振込</option>
+                <option value="cash">現金受取</option>
               </select>
             </div>
             <div class="form-group">
@@ -853,13 +853,13 @@
             </div>
             <div class="form-group" style="justify-content:flex-end;">
               <div id="deal-settlement-check-badge" class="badge badge-info" style="padding:8px 12px; font-size:12px;">
-                三方突合: 未判定
+                決済内訳照合: 確認中
               </div>
             </div>
           </div>
 
           <hr style="margin:16px 0; border:0; border-top:1px solid #e2e8f0;">
-          <h4 style="font-size:13px; color:var(--dealer-gold-text); margin-bottom:12px;">【個別原価ブレークダウン（ガラス張り化）】</h4>
+          <h4 style="font-size:13px; color:var(--dealer-gold-text); margin-bottom:12px;">【車両仕入・加修整備メモ】</h4>
 
           <div class="form-grid-3">
             <div class="form-group">
@@ -888,7 +888,7 @@
           </div>
 
           <hr style="margin:16px 0; border:0; border-top:1px solid #e2e8f0;">
-          <h4 style="font-size:13px; color:var(--dealer-gold-text); margin-bottom:12px;">【下取車 USSオークション基準相場突合】</h4>
+          <h4 style="font-size:13px; color:var(--dealer-gold-text); margin-bottom:12px;">【下取車・査定情報】</h4>
 
           <div class="form-grid-3">
             <div class="form-group">
@@ -903,7 +903,7 @@
               <input type="text" id="deal-tradein-model" class="form-control" placeholder="Mercedes-AMG G63">
             </div>
             <div class="form-group">
-              <label>USSオークション基準相場 (円)</label>
+              <label>参考市場相場 (円)</label>
               <input type="number" id="deal-tradein-uss" class="form-control numeric" value="0">
             </div>
           </div>
@@ -915,8 +915,8 @@
             </div>
             <div class="form-group" style="display:flex; align-items:center; gap:8px; margin-top:20px;">
               <input type="checkbox" id="deal-tradein-owner-approved">
-              <label for="deal-tradein-owner-approved" style="font-weight:600; color:var(--dealer-danger);">
-                相場乖離15%超時のオーナー個別承認を取得済
+              <label for="deal-tradein-owner-approved" style="font-weight:600; color:var(--dealer-navy);">
+                特別査定承認（店長・役員承認済）
               </label>
             </div>
           </div>
@@ -987,11 +987,11 @@
     </div>
   </div>
 
-  <!-- 3. 顧客直結バイパス公式受領書プレビュー モーダル -->
+  <!-- 3. 公式預り金受領証プレビュー モーダル -->
   <div id="modal-customer-notice" class="dealer-modal">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3>顧客直結バイパス 公式預り金受領証（二重契約・中抜き防止）</h3>
+        <h3>公式 諸費用預り金 受託証兼明細書（お客様控）</h3>
         <button class="modal-close" data-close="modal-customer-notice">&times;</button>
       </div>
       <div class="modal-body" id="customer-notice-preview-content">
@@ -1000,7 +1000,7 @@
       <div class="modal-footer">
         <button type="button" class="btn-outline" data-close="modal-customer-notice">閉じる</button>
         <button type="button" id="btn-send-customer-notice" class="btn-gold">
-          📱 オーナー名義で顧客へ公式受領通知を即時送信
+          📱 公式受領通知を発行・送信
         </button>
       </div>
     </div>
@@ -1072,11 +1072,11 @@
     </div>
   </div>
 
-  <!-- 6. 納車出庫 物理ゲート審査モーダル -->
+  <!-- 6. 納車前チェック モーダル -->
   <div id="modal-delivery-gate" class="dealer-modal">
     <div class="modal-dialog" style="max-width:650px;">
       <div class="modal-header">
-        <h3 id="delivery-gate-title">納車出庫 物理ゲートキー審査</h3>
+        <h3 id="delivery-gate-title">納車前チェック（必要書類・入金確認）</h3>
         <button class="modal-close" data-close="modal-delivery-gate">&times;</button>
       </div>
       <div class="modal-body">
@@ -1087,7 +1087,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-outline" data-close="modal-delivery-gate">閉じる</button>
-        <button type="button" id="btn-confirm-delivery" class="btn-primary">出庫ロック解除・納車完了確定</button>
+        <button type="button" id="btn-confirm-delivery" class="btn-primary">納車完了を確定</button>
       </div>
     </div>
   </div>

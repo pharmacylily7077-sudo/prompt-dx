@@ -151,14 +151,13 @@
 
     var settlementCheck = this.verifyContractSettlement(data);
     if (!settlementCheck.isValid) {
-      throw new Error('成約代金三方突合エラー: 契約総額と決済合計（頭金+ローン+下取）に ' + 
-        settlementCheck.difference + '円 の不整合があります');
+      throw new Error('お支払内訳エラー: 契約総額とお支払内訳（頭金+ローン+下取）の合計が一致していません（差額: ' + 
+        settlementCheck.difference.toLocaleString() + '円）');
     }
 
     var tradeInCheck = this.verifyTradeInValuation(data.tradeIn);
     if (tradeInCheck.requiresOwnerApproval) {
-      throw new Error('下取車過小査定ロック: USS基準相場から ' + 
-        tradeInCheck.deviationRate + '% 低い査定額です。オーナーの個別承認が必要です');
+      throw new Error('特別査定確認: 参考相場との差異が大きいため、店長または役員の承認チェックを有効にしてください');
     }
 
     var profit = this.calculateProfit(data);
@@ -244,7 +243,7 @@
 
     var settlementCheck = this.verifyContractSettlement(merged);
     if (!settlementCheck.isValid) {
-      throw new Error('成約代金三方突合エラー: 契約総額と決済合計に不整合があります');
+      throw new Error('お支払内訳エラー: 契約総額とお支払内訳（頭金+ローン+下取）の合計が一致していません');
     }
 
     var profit = this.calculateProfit(merged);

@@ -1119,7 +1119,8 @@ body {
 
 /* 通常（現場）画面ではオーナー専用要素を完全非表示 */
 .owner-only-col,
-.owner-only-btn {
+.owner-only-btn,
+.owner-only-tab {
   display: none !important;
 }
 
@@ -1129,6 +1130,10 @@ body.owner-mode-active .owner-only-col {
 }
 
 body.owner-mode-active .owner-only-btn {
+  display: inline-flex !important;
+}
+
+body.owner-mode-active .owner-only-tab {
   display: inline-flex !important;
 }
 

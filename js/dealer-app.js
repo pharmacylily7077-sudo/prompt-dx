@@ -1035,7 +1035,7 @@
         '</div>';
       openModal('modal-scrivener-pass');
     } catch (err) {
-      alert('【行政書士パス 発行拒否】\n' + err.message);
+      alert('【登録手続確認】\n' + err.message);
     }
   }
 
@@ -1183,7 +1183,7 @@
           renderAll();
           alert('成約レコード（' + dealData.id + ': ' + dealData.model + '）を確定保存しました。');
         } catch (err) {
-          alert('【保存ブロック】' + err.message);
+          alert('【入力内容のご確認】' + err.message);
         }
       });
     }
@@ -1199,7 +1199,7 @@
         var receiptDate = document.getElementById('exp-receipt-date').value;
 
         if (!receiptNo) {
-          alert('公的領収証書番号・納税証明レシート番号の入力は必須です（改ざん防止規約）');
+          alert('公的領収証書番号・納税証明レシート番号の入力は必須です（インボイス・経理規約）');
           return;
         }
 
@@ -1292,9 +1292,9 @@
           });
 
           closeModal('modal-parts-audit');
-          alert('第三者パーツ検収レコード（50枚高精細アーカイブ紐付）を確定保存しました。');
+          alert('パーツ検収記録（画像アーカイブ紐付）を保存しました。');
         } catch (err) {
-          alert('【パーツ検収ブロック】\n' + err.message);
+          alert('【パーツ検収入力確認】\n' + err.message);
         }
       });
     }
