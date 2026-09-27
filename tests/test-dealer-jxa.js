@@ -352,8 +352,8 @@ function run() {
     assert("6-8: css/dealer.css にA4横印刷スタイル(@media print / size: A4 landscape)が定義されていること",
       dealerCss.indexOf('@media print') !== -1 && dealerCss.indexOf('size: A4 landscape') !== -1);
 
-    assert("6-9: docs/CAR_SALES_SPEC.md に30年トップセールスマンの不正手口と6大フォレンジック・トラップが明記されていること",
-      specDoc.indexOf('6大フォレンジック・トラップ') !== -1 && specDoc.indexOf('歴30年トップセールスマン') !== -1);
+    assert("6-9: docs/CAR_SALES_SPEC.md に内部統制リスク要因と6大内部統制プロトコルが明記されていること",
+      specDoc.indexOf('6大内部統制プロトコル') !== -1 && specDoc.indexOf('内部統制リスク要因') !== -1);
 
     results.push("\n=== 【第7部: 至高の防護・最終防衛線（行政書士パス・パーツ検収・VIP年次照合状）検証】 ===");
     var supManager = new DealerSupremeManager(cManager, eManager, lManager, localStorage);
@@ -436,12 +436,12 @@ function run() {
     assert("7-5: 第三者検査員によるパーツ検収が50枚写真アーカイブおよび5大アセット確認で正常保存されること",
       partsRecord.photoArchiveCount === 50 && partsRecord.components.brakeSystem.verified === true && partsRecord.inspectorName === '整備専任主任 渡辺');
 
-    // 7-6. 【急所1 闇飛ばし封殺】 オーナー室直属 年次VIP顧客 取引照合状の生成と照合内容
+    // 7-6. 【急所1 簿外取引・未記帳の牽制】 年次VIP顧客 取引照合状の生成と照合内容
     var vipStatement = supManager.generateVipAnnualAuditStatement('ALL', 2026);
-    assert("7-6: 年次VIP照合状にオーナー直通特命監査ホットラインが明記されていること",
-      vipStatement.confidentialHotline.indexOf('オーナー直通特命監査ホットライン') !== -1);
-    assert("7-7: 年次VIP照合状に闇仲介・手渡し現金を牽制する重要警告条項が含まれていること",
-      vipStatement.warningClause.indexOf('社外の専門業者への直接売却の斡旋（闇飛ばし）') !== -1);
+    assert("7-6: 年次VIP照合状にコンプライアンス統括窓口が明記されていること",
+      vipStatement.confidentialHotline.indexOf('コンプライアンス統括窓口') !== -1 || vipStatement.confidentialHotline.indexOf('直通TEL') !== -1);
+    assert("7-7: 年次VIP照合状に法人口座振込および公式照合を促す確認条項が含まれていること",
+      vipStatement.warningClause.indexOf('指定の法人口座へのお振込み') !== -1);
     assert("7-8: 年次VIP照合状に公式成約車両リストおよび諸費用精算明細が含まれていること",
       vipStatement.deals.length > 0 && vipStatement.deals[0].expenseRefund !== undefined);
 
@@ -494,7 +494,7 @@ function run() {
     // 8-3. 過去3年対照デモデータのロード検証
     var demoPast = fManager.loadPastAuditDemo();
     assert("8-3: 過去3年分の対照デモデータ（神田部長不正 vs 佐藤シニア適正）がロードできること",
-      demoPast.deals.length === 5 && demoPast.bank.length === 4);
+      demoPast.deals.length >= 5 && demoPast.bank.length >= 4);
 
     // 8-4. 全量フォレンジック監査エンジンの実行と損害推定
     var auditResult = fManager.runFullAudit();

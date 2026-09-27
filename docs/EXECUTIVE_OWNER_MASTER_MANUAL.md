@@ -143,5 +143,6 @@
   - 【様式4】取引差額および財務記録不整合に関する事実確認報告書（照会回答書）
   - 【様式5】精算未了金・預り金差額に関する確認書兼弁済誓約書（公正証書嘱託認諾条項付）
 - [内部統制・財務監査 エグゼクティブ・リファレンス](file:///Users/pha.ai/Documents/antigravity%20optimize/prompt-pha/prompt-dx/docs/OWNER_MANUAL.md)
+- [年次VIP顧客 取引照合状（残高確認書）運用実務マニュアル](file:///Users/pha.ai/Documents/antigravity%20optimize/prompt-pha/prompt-dx/docs/VIP_AUDIT_LETTER_GUIDE.md)
 - [6大内部統制プロトコル仕様書](file:///Users/pha.ai/Documents/antigravity%20optimize/prompt-pha/prompt-dx/docs/CAR_SALES_SPEC.md)
 
