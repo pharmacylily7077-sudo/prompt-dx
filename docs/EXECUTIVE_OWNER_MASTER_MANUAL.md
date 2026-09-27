@@ -133,3 +133,15 @@
 
 本マニュアルに定めた手順に則り、感情を排して淡々と外堀を埋め、公的証拠をもって組織の健全化と資産保全を遂行してください。
 
+---
+
+## 関連規定・実務様式集
+- [内部統制・事実確認 書類テンプレート集（社員作成・自認用）](file:///Users/pha.ai/Documents/antigravity%20optimize/prompt-pha/prompt-dx/docs/EMPLOYEE_AUDIT_TEMPLATES.md)
+  - 【様式1】車両別 諸費用預り金・法定実費精算完了報告書
+  - 【様式2】外注加修・整備施工前検収照会兼発注稟議書
+  - 【様式3】下取車両査定・客観相場乖離申告書
+  - 【様式4】取引差額および財務記録不整合に関する事実確認報告書（照会回答書）
+  - 【様式5】精算未了金・預り金差額に関する確認書兼弁済誓約書（公正証書嘱託認諾条項付）
+- [内部統制・財務監査 エグゼクティブ・リファレンス](file:///Users/pha.ai/Documents/antigravity%20optimize/prompt-pha/prompt-dx/docs/OWNER_MANUAL.md)
+- [6大内部統制プロトコル仕様書](file:///Users/pha.ai/Documents/antigravity%20optimize/prompt-pha/prompt-dx/docs/CAR_SALES_SPEC.md)
+
