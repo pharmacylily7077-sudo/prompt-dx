@@ -270,7 +270,7 @@
         if (envelope._checksum) {
           var dataChecksum = crc32(JSON.stringify(envelope.data));
           if (dataChecksum !== envelope._checksum) {
-            showToast('🚨 バックアップファイルの整合性チェックに失敗しました（改竄の可能性）', 'error');
+            showToast('バックアップファイルの整合性チェックに失敗しました（データ不整合）', 'error');
             if (callback) callback(false);
             return;
           }
@@ -283,10 +283,10 @@
         });
 
         saveIntegrityHash();
-        showToast('✅ バックアップデータを復元しました（' + envelope._exportedAt + ' 時点）');
+        showToast('バックアップデータを復元しました（' + envelope._exportedAt + ' 時点）');
         if (callback) callback(true);
       } catch (err) {
-        showToast('🚨 バックアップファイルの読込に失敗しました: ' + err.message, 'error');
+        showToast('バックアップファイルの読込に失敗しました: ' + err.message, 'error');
         if (callback) callback(false);
       }
     };
@@ -401,8 +401,8 @@
     // データ改竄検知
     var integrity = verifyIntegrity();
     if (!integrity.valid) {
-      console.error('[Fortify] 🚨 データ改竄検知! saved=' + integrity.savedHash + ' current=' + integrity.currentHash);
-      showToast('🚨 警告: ローカルデータの整合性に異常を検知しました。外部改竄の可能性があります。', 'error');
+      console.error('[Fortify] データ整合性異常! saved=' + integrity.savedHash + ' current=' + integrity.currentHash);
+      showToast('警告: ローカルデータの整合性に異常を検知しました。', 'error');
     }
 
     // セッションロック初期化
@@ -453,16 +453,16 @@
         if (newPin === '') {
           // PIN削除
           localStorage.removeItem(PIN_STORAGE_KEY);
-          showToast('🔓 セッションロックPINを解除しました');
+          showToast('セッションロックPINを解除しました');
           return;
         }
         if (!/^\d{4}$/.test(newPin)) {
-          showToast('🚨 PINは4桁の数字で入力してください', 'error');
+          showToast('PINは4桁の数字で入力してください', 'error');
           return;
         }
         setSessionPin(newPin);
         resetSessionTimer();
-        showToast('🔒 セッションロックPINを設定しました（5分無操作でロック）');
+        showToast('セッションロックPINを設定しました（5分無操作でロック）');
       });
     }
 
@@ -473,7 +473,7 @@
         var pinInput = document.getElementById('fortify-pin-input');
         var pin = pinInput ? pinInput.value : '';
         if (!unlockSession(pin)) {
-          showToast('🚨 PINが一致しません', 'error');
+          showToast('PINが一致しません', 'error');
           if (pinInput) {
             pinInput.value = '';
             pinInput.focus();

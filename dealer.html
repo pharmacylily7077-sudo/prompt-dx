@@ -34,31 +34,30 @@
   <span id="fortify-queue-badge" class="fortify-queue-badge" style="display:none;"></span>
 
   <!-- ===================================================
-       オーナー専用ステルスバナー（オーナーモード時のみ表示）
+       統制監査エグゼクティブ・コンソール（経営者モード時のみ表示）
        =================================================== -->
   <div id="owner-stealth-banner" class="owner-stealth-banner" style="display:none;">
     <div class="owner-banner-inner">
       <div class="owner-banner-status">
-        <span class="owner-crown">👑</span>
-        <span class="owner-title">PRESIDENT PRIVATE COCKPIT</span>
-        <span class="badge-stealth">現場ステルス中</span>
+        <span class="owner-title" style="font-family:monospace; letter-spacing:1px; font-weight:800;">EXECUTIVE AUDIT CONSOLE</span>
+        <span class="badge-stealth">現場表示抑止中</span>
       </div>
       <div class="owner-banner-metrics" id="owner-quick-metrics">
-        <span>諸費用滞留: <strong id="owner-metric-expense">¥0</strong></span>
+        <span>諸費用差額滞留: <strong id="owner-metric-expense">¥0</strong></span>
         <span class="sep">|</span>
-        <span>信販未着金: <strong id="owner-metric-loan">¥0</strong></span>
+        <span>信販未消込債権: <strong id="owner-metric-loan">¥0</strong></span>
         <span class="sep">|</span>
-        <span>下取相場ズレ: <strong id="owner-metric-tradein">¥0</strong></span>
+        <span>査定相場乖離額: <strong id="owner-metric-tradein">¥0</strong></span>
       </div>
       <div class="owner-banner-actions">
-        <button id="btn-open-reverse-forensic" class="btn-owner-gold" style="background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%); border-color: #ef4444;" title="車台番号から説明不能な差額と癒着を逆引き透視します">
-          🔍 差額逆引き透視
+        <button id="btn-open-reverse-forensic" class="btn-owner-gold" style="background: #1e293b; border-color: #475569;" title="車台番号を起点に財務差額と相関関係を逆引き分析します">
+          車台番号 逆引き監査
         </button>
         <button id="btn-open-killer-phrases" class="btn-owner-gold">
-          ⚡ 必殺の一言（カンペ）
+          事実確認・照会要領
         </button>
-        <button id="btn-toggle-stealth-view" class="btn-owner-stealth" title="現場スタッフに見せる時はここをタップ">
-          👁️ 現場ビューへ
+        <button id="btn-toggle-stealth-view" class="btn-owner-stealth" title="現場端末表示モードへ切り替えます">
+          通常業務画面へ
         </button>
       </div>
     </div>
@@ -108,9 +107,9 @@
         <button id="btn-fortify-set-pin" class="btn-header-tool owner-only-btn" title="端末画面ロックPIN（4桁）を設定/解除します">
           🔒 PIN設定
         </button>
-        <!-- オーナー専用クイック起動ボタン（オーナーモード時に表示） -->
-        <button id="btn-owner-header-trigger" class="btn-header-tool btn-owner-accent" style="display:none;" title="オーナー専用コックピット">
-          👑 必殺カンペ
+        <!-- 統制監査クイック起動ボタン（オーナーモード時に表示） -->
+        <button id="btn-owner-header-trigger" class="btn-header-tool btn-owner-accent" style="display:none;" title="統制監査コンソール">
+          事実確認・照会要領
         </button>
       </div>
     </div>
@@ -637,115 +636,110 @@
       </div>
 
       <!-- ===================================================
-           【最重要】VIN起点 逆引きフォレンジック・ビジュアライザー
-           「説明できない差額から逆引きする」神の一手
+           車台番号(VIN)起点 逆引きフォレンジック分析
+           会計上の限界利益乖離を起点とする科目別・支払先別逆引き監査
            =================================================== -->
-      <div class="dealer-card reverse-forensic-card" style="margin-top:20px; border: 2px solid var(--dealer-gold); background: #ffffff;">
-        <div class="card-header" style="background: linear-gradient(135deg, var(--dealer-navy-dark) 0%, var(--dealer-navy) 100%); color: #ffffff; padding: 14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-          <div style="display:flex; align-items:center; gap:10px;">
-            <span style="font-size:22px;">🔍</span>
-            <div>
-              <h3 style="font-size:16px; font-weight:800; color:#f8fafc; margin:0;">
-                車台番号(VIN)起点 逆引きフォレンジック ＆ 関係性透視グラフィックス
-              </h3>
-              <p style="font-size:11px; color:#cbd5e1; margin:2px 0 0 0;">
-                「人から疑うのではなく、説明できない差額から逆引きする」。客観的異常値・流出経路・癒着ホットスポットを完全可視化。
-              </p>
-            </div>
+      <div class="dealer-card reverse-forensic-card" style="margin-top:20px; border: 1px solid var(--dealer-silver-border); background: #ffffff;">
+        <div class="card-header" style="background: var(--dealer-navy); color: #ffffff; padding: 14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h3 style="font-size:15px; font-weight:800; color:#f8fafc; margin:0;">
+              車台番号(VIN)起点 逆引きフォレンジック分析 ＆ 取引相関関係分析
+            </h3>
+            <p style="font-size:11px; color:#cbd5e1; margin:2px 0 0 0;">
+              客観的算定粗利と帳簿実績の差額を起点とし、科目別配賦・支払先・発注承認者を順次照合・分析。
+            </p>
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
-            <label for="forensic-vin-select" style="font-size:12px; color:#f8fafc; font-weight:700;">対象車両選択:</label>
-            <select id="forensic-vin-select" class="form-select" style="background:#fff; font-weight:700; font-size:13px; padding:6px 12px; border-radius:6px; min-width:260px; color:#0f172a;">
-              <option value="">-- 分析対象の車両を選択してください --</option>
+            <label for="forensic-vin-select" style="font-size:12px; color:#f8fafc; font-weight:700;">監査対象車両:</label>
+            <select id="forensic-vin-select" class="form-select" style="background:#fff; font-weight:700; font-size:13px; padding:6px 12px; border-radius:6px; min-width:280px; color:#0f172a;">
+              <option value="">-- 対象車両を選択してください --</option>
             </select>
           </div>
         </div>
 
         <div class="card-body" style="padding: 20px;">
-          <!-- 監査対象サマリーカード（弁護士・労務交渉用カンペ） -->
-          <div id="reverse-forensic-summary-box" class="forensic-summary-banner" style="display:none; background: #fffbeb; border: 1px solid #f59e0b; border-left: 6px solid #d97706; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+          <!-- 監査対象サマリーカード（公的照会基準文） -->
+          <div id="reverse-forensic-summary-box" class="forensic-summary-banner" style="display:none; background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid var(--dealer-navy); border-radius: 6px; padding: 16px; margin-bottom: 24px;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
               <div>
                 <div style="display:flex; align-items:center; gap:8px;">
-                  <span class="badge badge-danger" style="font-size:12px;">🚨 重点客観調査案件</span>
-                  <span id="rf-summary-vin" style="font-family:monospace; font-weight:800; font-size:15px; color:#1e293b;">VIN: -</span>
+                  <span class="badge badge-warning" style="font-size:11px;">要説明差額 検出案件</span>
+                  <span id="rf-summary-vin" style="font-family:monospace; font-weight:800; font-size:14px; color:#1e293b;">VIN: -</span>
                   <span id="rf-summary-model" style="font-weight:700; color:#475569;">-</span>
                 </div>
-                <div style="margin-top:8px; font-size:14px; color:#0f172a; line-height:1.6;">
-                  本来残るべき想定粗利との間に <strong id="rf-summary-discrepancy" style="color:#b91c1c; font-size:18px;">¥0</strong> の<strong>「説明を要する差額」</strong>を検出。<br>
-                  最大流出要因は <strong>【<span id="rf-summary-cause" style="color:#b91c1c;">-</span>: <span id="rf-summary-cause-amt">¥0</span>】</strong>（支払先: <strong id="rf-summary-vendor">-</strong> / 担当社員: <strong id="rf-summary-rep">-</strong>）。
+                <div style="margin-top:8px; font-size:13px; color:#0f172a; line-height:1.6;">
+                  算定粗利との間に <strong id="rf-summary-discrepancy" style="color:#b91c1c; font-size:16px;">¥0</strong> の<strong>「説明を要する差額」</strong>を計上。<br>
+                  最大影響科目: <strong>【<span id="rf-summary-cause" style="color:#b91c1c;">-</span>: <span id="rf-summary-cause-amt">¥0</span>】</strong>（取引先: <strong id="rf-summary-vendor">-</strong> / 担当社員: <strong id="rf-summary-rep">-</strong>）。
                 </div>
               </div>
-              <div style="background:rgba(255,255,255,0.8); border:1px solid #e2e8f0; border-radius:6px; padding:10px 14px; text-align:right;">
-                <div style="font-size:11px; color:#64748b; font-weight:700;">同一社員 × 同一業者の過去取引</div>
-                <div style="font-size:15px; font-weight:800; color:#0f172a; margin-top:2px;">
+              <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:10px 14px; text-align:right;">
+                <div style="font-size:11px; color:#64748b; font-weight:700;">同一担当者 × 同一業者の過去取引</div>
+                <div style="font-size:14px; font-weight:800; color:#0f172a; margin-top:2px;">
                   過去 <span id="rf-summary-pair-count" style="color:#b91c1c;">0</span> 件中 <span id="rf-summary-pair-excess-count" style="color:#b91c1c;">0</span> 件が平均超過
                 </div>
                 <div style="font-size:12px; color:#b91c1c; font-weight:800; margin-top:4px;">
-                  推定過大支出総額: <span id="rf-summary-pair-overpayment">¥0</span>
+                  他社平均超過累計額: <span id="rf-summary-pair-overpayment">¥0</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 2大ビジュアルエリア（サンキー資金流向図 ＆ 癒着ネットワークグラフ） -->
+          <!-- 2大ビジュアルエリア（資金流向図 ＆ 取引相関図） -->
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
             
-            <!-- ① 車両1台の資金流向サンキー図（Sankey Visualizer） -->
-            <div class="visual-panel" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:16px;">
+            <!-- ① 車両別 資金流向分岐図 (Sankey Visualizer) -->
+            <div class="visual-panel" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:16px;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <h4 style="font-size:14px; font-weight:800; color:var(--dealer-navy); display:flex; align-items:center; gap:6px;">
-                  <span>🌊</span> ① 車両1台の資金流向サンキー（顧客支払額の行方）
+                <h4 style="font-size:13px; font-weight:800; color:var(--dealer-navy);">
+                  1. 車両別 資金配賦流向図（成約総額の費目別配賦）
                 </h4>
-                <span style="font-size:11px; color:#64748b;">※赤色の流出帯＝異常乖離</span>
+                <span style="font-size:11px; color:#64748b;">※赤色帯＝基準値超過</span>
               </div>
               <div id="sankey-container" style="position:relative; width:100%; min-height:280px; background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:12px; overflow:hidden;">
-                <!-- SVG サンキー描画エリア -->
                 <svg id="sankey-svg" style="width:100%; height:260px;" viewBox="0 0 540 260"></svg>
               </div>
               <div style="margin-top:10px; font-size:11px; color:#64748b; line-height:1.5;">
-                💡 顧客からの成約代金がどこで吸い取られたかを可視化。正常な原価・税金は青/緑、<strong>不自然に肥大化した支出（過大加修・紹介料等）は赤色</strong>で表示され、右下の「会社に残る粗利」の激減が一目瞭然になります。
+                成約代金から各原価・法定費用・会社残余利益への資金フローを可視化。統計的許容範囲を超過する支出項目は強調表示されます。
               </div>
             </div>
 
-            <!-- ② 関係性ネットワークグラフ（Network Graph） -->
-            <div class="visual-panel" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:16px;">
+            <!-- ② 担当社員 × 車両 × 支払先 相関ネットワーク図 (Network Graph) -->
+            <div class="visual-panel" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:16px;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <h4 style="font-size:14px; font-weight:800; color:var(--dealer-navy); display:flex; align-items:center; gap:6px;">
-                  <span>🕸️</span> ② 社員 × 車両 × 業者 関係性ネットワーク（癒着の集中）
+                <h4 style="font-size:13px; font-weight:800; color:var(--dealer-navy);">
+                  2. 担当社員 × 車両 × 取引先 相関関係図（発注集中の検知）
                 </h4>
-                <span style="font-size:11px; color:#64748b;">※線の太さ＝金額規模・集中度</span>
+                <span style="font-size:11px; color:#64748b;">※線の太さ＝発注金額規模</span>
               </div>
               <div id="network-container" style="position:relative; width:100%; min-height:280px; background:#0b1329; border:1px solid #1e293b; border-radius:6px; padding:12px; overflow:hidden;">
-                <!-- SVG ネットワークグラフ描画エリア -->
                 <svg id="network-svg" style="width:100%; height:260px;" viewBox="0 0 540 260"></svg>
               </div>
               <div style="margin-top:10px; font-size:11px; color:#64748b; line-height:1.5;">
-                💡 担当社員（左）から車両（中央）を経由し、外注業者（右）へ流れる関係線を描画。正常な取引は全体に分散しますが、<strong>特定の社員と特定業者の間にだけ極太の赤いラインが集中</strong>し、談合・キックバックのホットスポットが浮き彫りになります。
+                担当社員（左）から車両案件（中央）を経由した取引先（右）への発注経路。特定先への不自然な発注集中の有無を客観的に検証します。
               </div>
             </div>
 
           </div>
 
-          <!-- ③ 社員×業者 癒着マトリクス（ヒートマップ） -->
-          <div style="margin-top:20px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:16px;">
+          <!-- ③ 担当社員 × 外注先 発注平均額マトリクス -->
+          <div style="margin-top:20px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:16px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-              <h4 style="font-size:14px; font-weight:800; color:var(--dealer-navy); display:flex; align-items:center; gap:6px;">
-                <span>🔥</span> ③ 社員 × 外注業者 発注平均額ヒートマップ（全過去取引マトリクス）
+              <h4 style="font-size:13px; font-weight:800; color:var(--dealer-navy);">
+                3. 担当社員別 × 外注先別 平均発注額マトリクス（統計的乖離分析）
               </h4>
-              <span style="font-size:11px; color:#64748b;">※濃い赤色＝他社員平均の2倍以上突出</span>
+              <span style="font-size:11px; color:#64748b;">※赤色表示＝社内・業界基準平均に対する統計的外れ値</span>
             </div>
             <div style="overflow-x:auto;">
               <table class="dealer-table" style="font-size:12px; background:#fff;">
                 <thead>
                   <tr style="background:#f1f5f9;">
                     <th>担当社員</th>
-                    <th>神田オート鈑金（特定個人工場）</th>
+                    <th>神田オート鈑金（特定個人指定）</th>
                     <th>東京オート板金B</th>
                     <th>港南電装C</th>
-                    <th>正規ヤナセ / コーンズ</th>
-                    <th>全担当平均修理費</th>
-                    <th>判定所見</th>
+                    <th>正規ディーラー指定工場</th>
+                    <th>全案件平均加修費</th>
+                    <th>監査所見</th>
                   </tr>
                 </thead>
                 <tbody id="rf-matrix-body">
@@ -755,18 +749,18 @@
             </div>
           </div>
 
-          <!-- ④ 客観的フォレンジック監査レポート（反論封殺カンペ） -->
-          <div id="rf-lawyer-report-box" style="margin-top:20px; background:#ffffff; border:1px solid #cbd5e1; border-radius:8px; padding:16px;">
+          <!-- ④ 事実調査・照会要領（監査照会基準文） -->
+          <div id="rf-lawyer-report-box" style="margin-top:20px; background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:16px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <h4 style="font-size:13px; font-weight:800; color:var(--dealer-navy); display:flex; align-items:center; gap:6px;">
-                <span>📋</span> 弁護士・労務監査用 客観的質問票カンペ（ワンクリックコピー対応）
+              <h4 style="font-size:13px; font-weight:800; color:var(--dealer-navy);">
+                4. 業務監査質問要領（事実確認照会書 基準文）
               </h4>
               <button id="btn-copy-rf-speech" class="btn-outline" style="font-size:11px; padding:4px 10px; background:#fff;">
-                📋 質問カンペをコピー
+                照会文面をコピー
               </button>
             </div>
-            <div id="rf-lawyer-speech-content" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:12px; font-size:13px; color:#1e293b; line-height:1.7; font-family:monospace;">
-              「○○さん、感情論でお話しするつもりは一切ありません。客観的な数字の事実として、あなたの担当車両だけ特定の業者への外注費が平均の○倍に達しており、説明を要する差額が過去○件で計○万円発生しています。この客観的乖離の合理的理由について、伝票と写真原本をもとにご説明いただけますでしょうか？」
+            <div id="rf-lawyer-speech-content" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:12px; font-size:12px; color:#1e293b; line-height:1.7; font-family:monospace;">
+              <!-- JSで動的生成 -->
             </div>
           </div>
 
@@ -1445,27 +1439,26 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-outline" data-close="modal-forensic-import">閉じる</button>
-        <button type="button" id="btn-forensic-execute-import" class="btn-gold">⚡ インポート実行 ＆ 台帳整理開始</button>
+        <button type="button" id="btn-forensic-execute-import" class="btn-primary">インポート実行 ＆ 台帳整理開始</button>
       </div>
     </div>
   </div>
 
   <!-- ===================================================
-       13. オーナー専用 必殺透視コックピット モーダル
+       13. 内部統制監査・事実確認照会コンソール モーダル
        =================================================== -->
   <div id="modal-owner-cockpit" class="dealer-modal">
     <div class="modal-dialog owner-cockpit-dialog" style="max-width:980px; width:95vw;">
-      <div class="modal-header owner-modal-header">
+      <div class="modal-header owner-modal-header" style="background:var(--dealer-navy); color:#fff;">
         <div class="owner-header-branding">
-          <span class="crown-icon">👑</span>
           <div>
-            <h3>PRESIDENT STEALTH CONSOLE</h3>
-            <div class="owner-header-subtitle">オーナー専用 必殺の一言 ＆ リアルタイム透視コックピット</div>
+            <h3 style="font-family:monospace; letter-spacing:1px; margin:0;">EXECUTIVE AUDIT CONSOLE</h3>
+            <div class="owner-header-subtitle" style="color:#cbd5e1; font-size:12px;">内部統制監査・客観的事実確認照会コンソール</div>
           </div>
         </div>
         <div style="display:flex; align-items:center; gap:10px;">
           <button type="button" class="btn-stealth-hide" data-close="modal-owner-cockpit">
-            👁️ 現場ビューへ隠す
+            通常業務画面へ
           </button>
           <button class="modal-close" data-close="modal-owner-cockpit">&times;</button>
         </div>
@@ -1473,54 +1466,53 @@
       <div class="modal-body owner-modal-body">
         
         <!-- コンセプトガイド -->
-        <div class="owner-concept-banner">
-          <div class="concept-icon">💡</div>
-          <div class="concept-text">
-            <strong>【絶対的ステルス運用の極意】</strong><br>
-            現場の社員・営業マンには「計算が楽になるスマートな見積メモ」として無警戒に使わせています。<br>
-            集計された矛盾や差額を、<strong>「あ、そういえばあの件さ...」と現場でサラッと一言突くだけ</strong>で、社内に「うちの社長は計算が異常に早い。小細工は絶対に通じない」という本物の畏敬と抑止力が生まれます。
+        <div class="owner-concept-banner" style="background:#f8fafc; border:1px solid #cbd5e1; border-left:4px solid var(--dealer-navy); padding:14px 18px; border-radius:6px; margin-bottom:18px;">
+          <div class="concept-text" style="font-size:12px; color:#1e293b; line-height:1.7;">
+            <strong>【統制運用の原則】</strong><br>
+            現場業務では、自動車税・重量税・自賠責等の税法実費および手数料を自動算定する通常業務システムとして運用されます。<br>
+            経営陣・監査担当者は、算定された税法実費との差額、通帳実着金との不一致、およびオークション相場との乖離を客観的数値として把握し、感情論を排した事実確認照会を実施します。
           </div>
         </div>
 
-        <!-- 3大透視KPI -->
+        <!-- 3大統制KPI -->
         <div class="kpi-grid owner-kpi-grid" style="margin-bottom:20px;">
           <div class="kpi-card gold">
             <div class="kpi-title">
-              <span>① 諸費用ネコババ（手元滞留金）</span>
+              <span>1. 諸費用預り金 差額滞留額</span>
               <span class="badge badge-warning" id="owner-kpi-stagnant-count">0 件</span>
             </div>
             <div class="kpi-value font-mono" id="owner-kpi-stagnant-total">¥0</div>
-            <div class="kpi-sub">法定実費納付済後の未返還・手元プール金</div>
+            <div class="kpi-sub">法定実費納付済後の未精算・顧客未返金残高</div>
           </div>
 
           <div class="kpi-card warning">
             <div class="kpi-title">
-              <span>② 信販未着金・直抜きリスク</span>
+              <span>2. 信販承認済 口座未着金債権</span>
               <span class="badge badge-danger" id="owner-kpi-loan-count">0 件</span>
             </div>
             <div class="kpi-value font-mono" id="owner-kpi-loan-total">¥0</div>
-            <div class="kpi-sub">承認済未着金・現金回収フラグ</div>
+            <div class="kpi-sub">信販承認済・未消込残高（現金決済フラグ含む）</div>
           </div>
 
           <div class="kpi-card navy">
             <div class="kpi-title">
-              <span>③ 下取買叩き・USS相場乖離</span>
+              <span>3. 下取査定額 USS基準相場乖離</span>
               <span class="badge badge-info" id="owner-kpi-tradein-count">0 件</span>
             </div>
             <div class="kpi-value font-mono" id="owner-kpi-tradein-total">¥0</div>
-            <div class="kpi-sub">業者横流し・裏キックバック疑義差額</div>
+            <div class="kpi-sub">USS落札相場比15%以上の過小査定乖離額</div>
           </div>
         </div>
 
-        <!-- 必殺の一言（キラーフレーズ）カンペ集 -->
+        <!-- 事実確認照会要領（質問プロトコル） -->
         <div class="content-card owner-phrases-card">
           <div class="card-header-bar">
             <div class="card-title-group">
-              <h2 style="color:var(--dealer-gold-dark, #b45309); font-size:16px;">
-                ⚡ 現場でサラッと放つ「必殺の一言」カンペ一覧（神の一手）
+              <h2 style="color:var(--dealer-navy); font-size:15px; font-weight:800;">
+                事実確認照会プロトコル（監査質問要領）
               </h2>
               <div class="card-desc">
-                数字の暗算など不要。このフレーズをそのまま口にするだけで、営業マンは顔面蒼白になり白状します。
+                客観的な台帳数値・銀行記録・税法マスタの数値を基に、合理的理由と証憑原本の提示を求める照会要領です。
               </div>
             </div>
           </div>
@@ -1530,12 +1522,12 @@
           </div>
         </div>
 
-        <!-- 営業マン別・不整合集計表 -->
+        <!-- 担当者別・財務指標乖離一覧 -->
         <div class="content-card" style="margin-top:16px;">
           <div class="card-header-bar">
             <div class="card-title-group">
-              <h2 style="font-size:15px; color:var(--dealer-navy);">👤 営業マン別 資金滞留・疑惑マトリクス</h2>
-              <div class="card-desc">誰の手元にいくら残高があるかをリアルタイムで一覧化</div>
+              <h2 style="font-size:15px; color:var(--dealer-navy);">担当者別 資金滞留・未着金集計一覧</h2>
+              <div class="card-desc">担当者別の諸費用滞留額および信販未着金債権の現在高</div>
             </div>
           </div>
           <div class="table-responsive">

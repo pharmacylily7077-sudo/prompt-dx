@@ -259,7 +259,7 @@
             contractPrincipal: loan.contractPrincipal,
             elapsedDays: elapsedDays,
             isDelivered: isDelivered,
-            message: (isDelivered ? '【🚨未着金納車・債権未回収】' : '【⚠️信販着金長期遅延】') + 
+            message: (isDelivered ? '【統制違反:未着金納車】' : '【要確認:信販着金遅延】') + 
                      loan.loanCompany + 'のローン元金 ' + loan.contractPrincipal + '円 が契約後 ' + 
                      elapsedDays + '日経過しても未着金です。'
           });

@@ -362,7 +362,7 @@
               depositReceived: record.depositReceived,
               depositDate: record.depositDate,
               deliveryDate: deal.deliveryDate || deal.actualDeliveryDate,
-              message: '【🚨横領・自転車操業トリップワイヤー】納車完了済（' + (deal.deliveryDate || '納車済') + 
+              message: '【要精算:預り金残高滞留】納車完了済（' + (deal.deliveryDate || '納車済') + 
                        '）であるにもかかわらず、諸費用預り金残高 ' + balance + '円 が手元に滞留しています。'
             });
           }

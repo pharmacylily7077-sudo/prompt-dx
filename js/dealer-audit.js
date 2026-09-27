@@ -73,13 +73,13 @@
             ussBenchmark: tradeCheck.ussBenchmark,
             appraisalValue: tradeCheck.appraisalValue,
             deviationRate: tradeCheck.deviationRate,
-            message: '【🚨下取車 異常過小査定・中抜き疑惑】下取車（' + deal.tradeIn.model + '）の査定額が' +
-                     'USS基準相場より ' + tradeCheck.deviationRate + '%（差額 ' + tradeCheck.diffAmount + '円）低く設定されています（オーナー承認未取得）。'
+            message: '【下取車 異常過小査定・要相場照会】下取車（' + deal.tradeIn.model + '）の査定額が' +
+                     'USS基準相場より ' + tradeCheck.deviationRate + '%（差額 ' + tradeCheck.diffAmount + '円）低く設定されています（承認未取得）。'
           });
         }
       }
 
-      // トリップワイヤー4: 加修整備費の水増し疑惑（外注キックバック疑い）
+      // トリップワイヤー4: 加修整備費の伝票照合
       // 車両価格に対して加修費が15%超、または150万円以上の高額整備で外注伝票不備
       if (deal.repairCost >= 1500000 || (deal.vehiclePrice > 0 && (deal.repairCost / deal.vehiclePrice) >= 0.15)) {
         if (!deal.repairInvoiceNo || deal.repairInvoiceNo.trim() === '') {
@@ -91,13 +91,13 @@
             salesRep: deal.salesRep,
             repairCost: deal.repairCost,
             repairVendor: deal.repairVendor || '指定外注先',
-            message: '【⚠️加修整備費 水増し・外注リベート疑惑】加修整備費 ' + deal.repairCost + 
-                     '円 が計上されていますが、正規外注工場の納品伝票番号が未登録です。'
+            message: '【加修整備費 要伝票照会】加修整備費 ' + deal.repairCost + 
+                     '円 が計上されていますが、正規工場の納品伝票番号が未登録です。'
           });
         }
       }
 
-      // トリップワイヤー5: 違法出庫ゲート突破（未精算・ロック中の納車）
+      // トリップワイヤー5: 出庫統制違反（未精算・未承認での出庫）
       if (deal.illegalDelivery) {
         alerts.push({
           level: 'CRITICAL',
@@ -105,7 +105,7 @@
           contractId: deal.id,
           vin: deal.vin,
           salesRep: deal.salesRep,
-          message: '【🚨出庫ロック突破・重大統制違反】諸費用預り金残高またはローン未消込の状態で、出庫操作が行われました。'
+          message: '【出庫統制違反】諸費用預り金残高またはローン未消込の状態で、出庫操作が行われました。'
         });
       }
     }

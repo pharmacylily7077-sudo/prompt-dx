@@ -204,7 +204,7 @@
       if (deal.status === 'contracted') statusBadge = '<span class="badge badge-warning">成約済・準備中</span>';
       if (deal.illegalDelivery) {
         statusBadge = isOwnerMode() ? 
-          '<span class="badge badge-lock">🚨違法出庫(未着金納車)</span>' : 
+          '<span class="badge badge-lock">【統制違反】未着金出庫</span>' : 
           '<span class="badge badge-warning">書類・着金確認中</span>';
       }
 
@@ -306,7 +306,7 @@
 
       var matchBadge = match.isFullyReconciled ? 
         '<span class="badge badge-success">✓ 精算完了 (残高¥0)</span>' : 
-        (isOwnerMode() ? '<span class="badge badge-danger">🚨手元残高滞留</span>' : '<span class="badge badge-warning">精算手続中</span>');
+        (isOwnerMode() ? '<span class="badge badge-danger">【要精算】預り金手元滞留</span>' : '<span class="badge badge-warning">精算手続中</span>');
 
       var receiptBadge = match.allReceiptsAttached ?
         '<span style="color:var(--dealer-success); font-size:11px;">領収書登録済</span>' :
@@ -474,7 +474,7 @@
       var typeLabel = adv.type === 'tradein_residual_debt' ? '下取残債一括返済' : '顧客頭金一時立替';
       var statusBadge = adv.status === 'recovered' ? 
         '<span class="badge badge-success">✓ 回収精算完了</span>' : 
-        '<span class="badge badge-danger">🚨未回収・立替中</span>';
+        '<span class="badge badge-danger">【未精算】立替金滞留</span>';
 
       var action = adv.status === 'recovered' ? 
         '<span style="font-size:11px; color:#64748b;">精算済</span>' :
@@ -524,7 +524,7 @@
     if (isOwnerMode()) {
       if (summary.criticalAlertsCount > 0) {
         statusBadge.className = 'badge badge-danger';
-        statusBadge.textContent = '🚨重大統制警告 ' + summary.criticalAlertsCount + '件';
+        statusBadge.textContent = '要監査警告 ' + summary.criticalAlertsCount + '件';
       } else if (summary.tripwireAlertCount > 0) {
         statusBadge.className = 'badge badge-warning';
         statusBadge.textContent = '要確認 ' + summary.tripwireAlertCount + '件';
@@ -550,7 +550,7 @@
         container.innerHTML = '<div style="padding:16px; background:#f0fdf4; border:1px solid #a7f3d0; border-radius:6px; color:#065f46; font-size:13px; font-weight:600;">✓ 現在、保留中または手続き待ちの案件はありません。</div>';
       } else {
         if (isOwnerMode()) {
-          var html = '<div class="tripwire-container"><div class="tripwire-header"><h3>🚨 統制トリップワイヤー検知案件 (' + tripwires.length + '件)</h3></div><ul class="tripwire-list">';
+          var html = '<div class="tripwire-container"><div class="tripwire-header"><h3>内部統制乖離検知案件 (' + tripwires.length + '件)</h3></div><ul class="tripwire-list">';
           tripwires.forEach(function(tw) {
             var levelClass = tw.level === 'CRITICAL' ? 'style="border-color:#b91c1c; background:#fff1f2;"' : '';
             html += '<li class="tripwire-item" ' + levelClass + '><strong>[' + tw.level + ' | ' + tw.contractId + ' | 担当: ' + tw.salesRep + ']</strong> ' + tw.message + '</li>';
@@ -558,7 +558,7 @@
           html += '</ul></div>';
           container.innerHTML = html;
         } else {
-          var html = '<div class="tripwire-container"><div class="tripwire-header"><h3>💡 進行中・確認待ち案件一覧 (' + tripwires.length + '件)</h3></div><ul class="tripwire-list">';
+          var html = '<div class="tripwire-container"><div class="tripwire-header"><h3>進行中・確認待ち案件一覧 (' + tripwires.length + '件)</h3></div><ul class="tripwire-list">';
           tripwires.forEach(function(tw) {
             html += '<li class="tripwire-item"><strong>[手続確認 | ' + tw.contractId + ' | 担当: ' + tw.salesRep + ']</strong> 諸費用精算・信販着金等の確認を進めてください</li>';
           });
@@ -579,9 +579,9 @@
         var riskBadge = '<span class="badge badge-success">NORMAL (正常)</span>';
         if (isOwnerMode()) {
           if (rep.riskLevel === 'CRITICAL') {
-            riskBadge = '<span class="badge badge-danger">🚨 CRITICAL (横領・中抜きリスク極大)</span>';
+            riskBadge = '<span class="badge badge-danger">CRITICAL (利益乖離重大・要監査)</span>';
           } else if (rep.riskLevel === 'ELEVATED') {
-            riskBadge = '<span class="badge badge-warning">⚠️ ELEVATED (要重点監査)</span>';
+            riskBadge = '<span class="badge badge-warning">ELEVATED (要重点監査)</span>';
           }
         } else {
           riskBadge = '<span class="badge badge-info">集計済</span>';
@@ -635,10 +635,10 @@
     if (badgeRisk) {
       if (audit.summary.overallRiskLevel === 'CRITICAL') {
         badgeRisk.className = 'badge badge-danger';
-        badgeRisk.textContent = '🚨 CRITICAL (横領・中抜き疑義)';
+        badgeRisk.textContent = 'CRITICAL (利益乖離重大・要監査)';
       } else if (audit.summary.overallRiskLevel === 'ELEVATED') {
         badgeRisk.className = 'badge badge-warning';
-        badgeRisk.textContent = '⚠️ ELEVATED (要精密監査)';
+        badgeRisk.textContent = 'ELEVATED (要精密監査)';
       } else {
         badgeRisk.className = 'badge badge-success';
         badgeRisk.textContent = '正常 (NORMAL)';
@@ -697,7 +697,7 @@
             '<td class="numeric">' + formatYen(item.tradeInAppraised) + '<br><span style="font-size:10px; color:#64748b;">相場: ' + formatYen(item.ussMarketPrice) + '</span></td>' +
             '<td class="numeric font-bold" style="color:var(--dealer-danger);">' + formatYen(item.gapAmount) + '</td>' +
             '<td><span class="badge badge-danger">-' + item.gapRate + '%</span></td>' +
-            '<td><span style="font-size:11px; color:var(--dealer-danger); font-weight:700;">🚨 買叩き闇転売疑義</span></td>';
+            '<td><span style="font-size:11px; color:var(--dealer-danger); font-weight:700;">要査定照会 (USS相場乖離)</span></td>';
           tradeinTbody.appendChild(tr);
         });
       }
@@ -720,7 +720,7 @@
             '<td>' + b.contractDate + '</td>' +
             '<td class="numeric font-bold">' + formatYen(b.expectedAmount) + '</td>' +
             '<td class="numeric">' + formatYen(b.cashReceived) + '</td>' +
-            '<td><span class="badge badge-danger">🚨 通帳着金なし</span></td>' +
+            '<td><span class="badge badge-danger">未着金 (法人口座未確認)</span></td>' +
             '<td><span style="font-size:11px; color:var(--dealer-danger);">' + b.note + '</span></td>';
           bankTbody.appendChild(tr);
         });
@@ -779,7 +779,7 @@
     deals.forEach(function(d) {
       var opt = document.createElement('option');
       opt.value = d.vin;
-      opt.textContent = (d.salesRep === '神田 敏幸' ? '🚨 [異常差額検出] ' : '✅ [正常照合] ') + (d.model || '') + ' (' + d.vin + ') - ' + d.salesRep;
+      opt.textContent = (d.salesRep === '神田 敏幸' ? '[要監査:差額過大] ' : '[照合済:正常] ') + (d.model || '') + ' (' + d.vin + ') - ' + d.salesRep;
       vinSelect.appendChild(opt);
     });
 
@@ -830,7 +830,7 @@
     // ② 関係性ネットワークグラフの描画 (SVG)
     drawNetworkGraph(analysis);
 
-    // ④ カンペ文言の更新
+    // ④ 事実確認照会文言の更新
     updateLawyerSpeech(analysis);
   }
 
@@ -908,7 +908,7 @@
     var repBorder = isAnomalous ? 'stroke="#b91c1c" stroke-width="2"' : '';
     svgContent += 
       '<rect x="420" y="116" width="110" height="46" rx="6" fill="' + (isAnomalous ? '#7f1d1d' : '#1e3a8a') + '" ' + repBorder + ' />' +
-      '<text x="475" y="132" fill="' + (isAnomalous ? '#fca5a5' : '#93c5fd') + '" font-size="9" font-weight="bold" text-anchor="middle">' + (isAnomalous ? '⚠️ 修理費 (過大流出)' : '修理加修費') + '</text>' +
+      '<text x="475" y="132" fill="' + (isAnomalous ? '#fca5a5' : '#93c5fd') + '" font-size="9" font-weight="bold" text-anchor="middle">' + (isAnomalous ? '加修費 (平均超過)' : '加修整備費') + '</text>' +
       '<text x="475" y="147" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">' + formatYen(a.repairCost) + '</text>' +
       '<text x="475" y="158" fill="' + (isAnomalous ? '#fecaca' : '#bfdbfe') + '" font-size="8" text-anchor="middle">' + (a.rawDeal.repairVendor || '指定外注') + '</text>';
 
@@ -918,7 +918,7 @@
       '<text x="475" y="190" fill="' + (a.brokerFee > 0 ? '#fdba74' : '#94a3b8') + '" font-size="9" text-anchor="middle">紹介料・陸送等</text>' +
       '<text x="475" y="203" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">' + formatYen(a.brokerFee + a.transportCost + a.otherLegitCost) + '</text>';
 
-    // 5. 会社残余粗利（哀れに細い）
+    // 5. 会社残余粗利
     svgContent += 
       '<rect x="420" y="220" width="110" height="34" rx="6" fill="' + (isAnomalous ? '#b45309' : '#047857') + '" />' +
       '<text x="475" y="235" fill="#fef3c7" font-size="9" font-weight="bold" text-anchor="middle">会社残余粗利</text>' +
@@ -935,16 +935,11 @@
     if (!svg) return;
     svg.innerHTML = '';
 
-    // 左ノード群: 社員 (田中/神田, 佐藤, 鈴木)
-    // 中央ノード群: 車両 (車①〜車⑤)
-    // 右ノード群: 業者 (神田オート鈑金, 板金B, 電装C, ヤナセ/コーンズ)
-
     var isKanda = a.salesRep === '神田 敏幸';
 
     var svgContent = '';
 
     // ネットワーク接続ラインの描画
-    // 神田 -> 車①〜⑤ -> 神田オート鈑金への集中束
     var lines = [
       // 正常系ライン（佐藤 -> 車 -> ヤナセ・コーンズ）
       { x1: 70, y1: 170, x2: 260, y2: 180, x3: 450, y3: 200, stroke: 'rgba(56, 189, 248, 0.4)', w: 2 },
@@ -952,7 +947,7 @@
       // 正常系ライン（鈴木 -> 車 -> 板金B・電装C）
       { x1: 70, y1: 220, x2: 260, y2: 240, x3: 450, y3: 130, stroke: 'rgba(16, 185, 129, 0.4)', w: 2 },
       
-      // 異常系集中ライン（神田 -> 車①〜⑤ -> 神田オート鈑金）
+      // 神田 -> 車①〜⑤ -> 神田オート鈑金
       { x1: 70, y1: 70, x2: 260, y2: 30, x3: 450, y3: 65, stroke: isKanda ? '#ef4444' : 'rgba(239,68,68,0.3)', w: isKanda ? 4 : 2 },
       { x1: 70, y1: 70, x2: 260, y2: 60, x3: 450, y3: 65, stroke: isKanda ? '#ef4444' : 'rgba(239,68,68,0.3)', w: isKanda ? 5 : 2 },
       { x1: 70, y1: 70, x2: 260, y2: 90, x3: 450, y3: 65, stroke: isKanda ? '#ef4444' : 'rgba(239,68,68,0.3)', w: isKanda ? 4 : 2 },
@@ -965,12 +960,12 @@
     });
 
     // 左ノード群: 担当社員
-    // 神田 (異常集中)
+    // 神田 (集中)
     svgContent += 
       '<circle cx="70" cy="70" r="28" fill="#7f1d1d" stroke="#ef4444" stroke-width="2" />' +
       '<text x="70" y="66" fill="#fca5a5" font-size="9" font-weight="bold" text-anchor="middle">担当営業</text>' +
       '<text x="70" y="80" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">神田 敏幸</text>' +
-      '<text x="70" y="93" fill="#f87171" font-size="8" text-anchor="middle">🚨 集中率82%</text>';
+      '<text x="70" y="93" fill="#f87171" font-size="8" text-anchor="middle">発注集中率 82%</text>';
 
     // 佐藤 (正常)
     svgContent += 
@@ -1003,12 +998,12 @@
     });
 
     // 右ノード群: 外注先
-    // 神田オート鈑金 (特定個人・癒着ホットスポット)
+    // 神田オート鈑金
     svgContent += 
       '<rect x="400" y="38" width="130" height="54" rx="8" fill="#7f1d1d" stroke="#ef4444" stroke-width="2" />' +
-      '<text x="465" y="55" fill="#fca5a5" font-size="9" font-weight="bold" text-anchor="middle">⚠️ 特定個人提携先</text>' +
+      '<text x="465" y="55" fill="#fca5a5" font-size="9" font-weight="bold" text-anchor="middle">特定個人指定工場</text>' +
       '<text x="465" y="70" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">神田オート鈑金</text>' +
-      '<text x="465" y="83" fill="#fecaca" font-size="8" text-anchor="middle">平均修理費 ¥3,040,000</text>';
+      '<text x="465" y="83" fill="#fecaca" font-size="8" text-anchor="middle">平均発注額 ¥3,040,000</text>';
 
     // 板金B
     svgContent += 
@@ -1035,21 +1030,21 @@
     var rows = [
       {
         rep: '神田 敏幸',
-        kanda: { amt: '¥3,040,000', alert: true, count: 5, note: '5台全件集中・他社平均の6.3倍' },
+        kanda: { amt: '¥3,040,000', alert: true, count: 5, note: '5台全件集中・基準比 6.3倍' },
         b: { amt: '-', alert: false },
         c: { amt: '-', alert: false },
         dealer: { amt: '-', alert: false },
         avg: '¥3,040,000',
-        verdict: '<span class="badge badge-danger">🚨 異常癒着 (要精密調査)</span>'
+        verdict: '<span class="badge badge-danger">要精密監査 (統計的乖離)</span>'
       },
       {
         rep: '佐藤 健一',
         kanda: { amt: '-', alert: false },
         b: { amt: '-', alert: false },
         c: { amt: '-', alert: false },
-        dealer: { amt: '¥460,000', alert: false, count: 3, note: '適正正規発注' },
+        dealer: { amt: '¥460,000', alert: false, count: 3, note: '正規認定発注' },
         avg: '¥460,000',
-        verdict: '<span class="badge badge-success">正常 (分散・適正)</span>'
+        verdict: '<span class="badge badge-success">正常 (分散基準内)</span>'
       },
       {
         rep: '鈴木 一郎',
@@ -1061,23 +1056,23 @@
         verdict: '<span class="badge badge-success">正常 (相場内)</span>'
       },
       {
-        rep: '業界・社内平均基準',
+        rep: '社内・業界基準平均',
         kanda: { amt: '¥480,000 (一般相場)', alert: false },
         b: { amt: '¥280,000', alert: false },
         c: { amt: '¥200,000', alert: false },
         dealer: { amt: '¥500,000', alert: false },
         avg: '¥360,000',
-        verdict: '<strong>-- 基準ライン --</strong>'
+        verdict: '<strong>基準指標</strong>'
       }
     ];
 
     rows.forEach(function(r) {
       var tr = document.createElement('tr');
       if (r.rep === '神田 敏幸') tr.style.background = '#fef2f2';
-      else if (r.rep.indexOf('平均基準') !== -1) tr.style.background = '#f1f5f9';
+      else if (r.rep.indexOf('基準平均') !== -1) tr.style.background = '#f1f5f9';
 
       var kandaTd = r.kanda.alert ? 
-        '<td style="background:#fee2e2; color:#b91c1c; font-weight:800; border-left:3px solid #ef4444;">' + r.kanda.amt + '<br><span style="font-size:10px; font-weight:bold;">🔥 ' + r.kanda.note + '</span></td>' :
+        '<td style="background:#fee2e2; color:#b91c1c; font-weight:800; border-left:3px solid #ef4444;">' + r.kanda.amt + '<br><span style="font-size:10px; font-weight:bold;">' + r.kanda.note + '</span></td>' :
         '<td>' + r.kanda.amt + '</td>';
 
       tr.innerHTML = 
@@ -1094,20 +1089,26 @@
   }
 
   /**
-   * ④ 弁護士・労務監査用 客観的質問票カンペの更新
+   * ④ 内部統制監査・事実確認照会プロトコルの更新
    */
   function updateLawyerSpeech(a) {
     var contentEl = document.getElementById('rf-lawyer-speech-content');
     if (!contentEl) return;
 
     var speech = 
-      '「' + a.salesRep + 'さん、感情論でお話しするつもりは一切ありません。客観的な台帳と財務数値の事実として、' +
-      'あなたが担当された【' + a.model + ' (VIN: ' + a.vin + ')】において、本来残るべき想定粗利との間に【' + formatYen(a.discrepancy) + '】の「説明を要する差額」が発生しています。\n\n' +
-      'さらに過去の取引データを串刺しで分析したところ、あなたと【' + a.primaryVendor + '】の組み合わせにおいて、' +
-      '過去' + a.peerStats.totalDealsCount + '件中' + a.peerStats.excessDealsCount + '件で平均修理費が他社員平均（' + formatYen(a.peerStats.peerAvgRepairCost) + '）の' + a.peerStats.costRatioVsPeer + '倍に突出しており、' +
-      '累計で【' + formatYen(a.peerStats.estimatedOverpaymentTotal) + '】の過大支出が記録されています。\n\n' +
-      '私どもとしては、業務上正当な理由があってこの費用がかかったのであれば、その旨を速やかに証明していただきたいと考えております。' +
-      'つきましては、当該修理にかかる発注前の状態写真原本、交換済み部品の写真、および作業完了報告書の原本を速やかにご提示いただけますでしょうか？」';
+      '【内部統制監査・事実確認照会書（提示文面案）】\n' +
+      '対象者: ' + a.salesRep + ' 殿\n' +
+      '対象車両: ' + a.model + ' (車台番号: ' + a.vin + ')\n' +
+      '契約金額: ' + formatYen(a.salePrice) + ' / 登録・成約日: ' + (a.rawDeal.contractDate || '直近') + '\n\n' +
+      '本件成約案件について、税法上の法定費用マスタおよび過去取引実績に基づく標準原価算定を実施した結果、' +
+      '本来計上されるべき限界利益との間に【' + formatYen(a.discrepancy) + '】の合理的説明を要する差額が確認されております。\n\n' +
+      'また、支払先【' + a.primaryVendor + '】に対する発注履歴を過去案件全量と突合したところ、' +
+      '同取引先に対する平均発注額は他社平均（' + formatYen(a.peerStats.peerAvgRepairCost) + '）の約' + a.peerStats.costRatioVsPeer + '倍に達し、' +
+      '過去' + a.peerStats.totalDealsCount + '件中' + a.peerStats.excessDealsCount + '件において基準値を統計的に大幅に超過、' +
+      '超過累計額は【' + formatYen(a.peerStats.estimatedOverpaymentTotal) + '】と算定されております。\n\n' +
+      'つきましては、税務コンプライアンスおよび内部統制手続に基づき、' +
+      '当該外注作業にかかる(1)発注前の現況写真原本、(2)交換部品写真および作業完了報告書、' +
+      '(3)工場発行の正規請求明細書原本の提出を求めます。';
 
     contentEl.textContent = speech;
 
@@ -1116,8 +1117,8 @@
       copyBtn.onclick = function() {
         if (navigator.clipboard) {
           navigator.clipboard.writeText(speech).then(function() {
-            copyBtn.textContent = '✅ カンペをコピーしました！';
-            setTimeout(function() { copyBtn.textContent = '📋 質問カンペをコピー'; }, 2500);
+            copyBtn.textContent = '照会文面をコピーしました';
+            setTimeout(function() { copyBtn.textContent = '照会文面をコピー'; }, 2500);
           });
         }
       };
@@ -1196,11 +1197,11 @@
         if (!expMatch.allReceiptsAttached) {
           msg += isOwnerMode() ? (' / 公的領収書番号未済: ' + expMatch.missingReceiptCount + '件') : (' (領収書確認待ち: ' + expMatch.missingReceiptCount + '件)');
         }
-        expCheckHtml = '<li style="color:' + (isOwnerMode() ? 'var(--dealer-danger)' : '#b45309') + '; font-weight:700;">' + (isOwnerMode() ? '🚨 ' : '💡 ') + msg + '</li>';
+        expCheckHtml = '<li style="color:' + (isOwnerMode() ? 'var(--dealer-danger)' : '#b45309') + '; font-weight:700;">' + (isOwnerMode() ? '【未充足】' : '【要確認】') + msg + '</li>';
         blockers.push(msg);
       }
     } else {
-      var msgRec = isOwnerMode() ? '🚨 諸費用預り金台帳レコードが未登録です' : '💡 諸費用台帳レコードが未作成です';
+      var msgRec = isOwnerMode() ? '【未登録】諸費用預り金台帳レコードが未登録です' : '【確認中】諸費用台帳レコードが未作成です';
       expCheckHtml = '<li style="color:' + (isOwnerMode() ? 'var(--dealer-danger)' : '#b45309') + '; font-weight:700;">' + msgRec + '</li>';
       blockers.push('諸費用レコード未作成');
     }
@@ -1215,7 +1216,7 @@
         var loanMsg = isOwnerMode() ? 
           ('信販会社オートローン（' + formatYen(deal.loanPrincipal) + '）の口座着金消込が未完了です') :
           ('信販オートローン（' + formatYen(deal.loanPrincipal) + '）の口座着金確認中');
-        loanCheckHtml = '<li style="color:' + (isOwnerMode() ? 'var(--dealer-danger)' : '#b45309') + '; font-weight:700;">' + (isOwnerMode() ? '🚨 ' : '💡 ') + loanMsg + '</li>';
+        loanCheckHtml = '<li style="color:' + (isOwnerMode() ? 'var(--dealer-danger)' : '#b45309') + '; font-weight:700;">' + (isOwnerMode() ? '【未着金】' : '【要確認】') + loanMsg + '</li>';
         blockers.push(loanMsg);
       }
     } else {
@@ -1228,9 +1229,9 @@
       var tradeCheck = contractManager.verifyTradeInValuation(deal.tradeIn);
       if (tradeCheck.requiresOwnerApproval) {
         var tradeMsg = isOwnerMode() ? 
-          ('下取車がUSS基準相場から ' + tradeCheck.deviationRate + '% 低く、オーナー承認未取得です') :
+          ('下取車がUSS基準相場から ' + tradeCheck.deviationRate + '% 低く、承認未取得です') :
           ('下取車査定の最終承認確認中');
-        tradeCheckHtml = '<li style="color:' + (isOwnerMode() ? 'var(--dealer-danger)' : '#b45309') + '; font-weight:700;">' + (isOwnerMode() ? '🚨 ' : '💡 ') + tradeMsg + '</li>';
+        tradeCheckHtml = '<li style="color:' + (isOwnerMode() ? 'var(--dealer-danger)' : '#b45309') + '; font-weight:700;">' + (isOwnerMode() ? '【未承認】' : '【要確認】') + tradeMsg + '</li>';
         blockers.push(tradeMsg);
       } else {
         tradeCheckHtml = '<li style="color:var(--dealer-success); font-weight:600;">✓ 下取車査定確認完了</li>';
@@ -1249,13 +1250,13 @@
     } else {
       if (isOwnerMode()) {
         resultSummary = '<div style="padding:14px; background:#fef2f2; border:1px solid #fca5a5; border-radius:6px; color:#b91c1c; font-weight:700; margin-bottom:14px;">' +
-          '🚨【物理出庫ロック発動中】以下の内部統制条件が未解決のため出庫できません。強制出庫した場合は即座にオーナー直結で違法出庫アラートが発報されます。' +
+          '【出庫統制ロック発動中】以下の内部統制要件が未解決のため出庫手続は承認されません。統制基準未達での強制出庫は監査ログに記録されます。' +
           '</div>';
         confirmBtn.disabled = false;
-        confirmBtn.textContent = '⚠️ 警告を無視して強制出庫（オーナー直結緊急通報）';
+        confirmBtn.textContent = '統制要件未充足での強制出庫（監査ログ記録）';
       } else {
         resultSummary = '<div style="padding:14px; background:#fffbeb; border:1px solid #fde68a; border-radius:6px; color:#b45309; font-weight:700; margin-bottom:14px;">' +
-          '💡【確認事項】以下の手続き（諸費用精算・着金確認等）が完了していない項目があります。内容を確認の上、納車手続きを進めてください。' +
+          '【確認事項】以下の手続き（諸費用精算・着金確認等）が完了していない項目があります。内容を確認の上、納車手続きを進めてください。' +
           '</div>';
         confirmBtn.disabled = false;
         confirmBtn.textContent = '納車完了を確定する';
@@ -2128,10 +2129,10 @@
         var nextActive = !isOwnerMode();
         setOwnerMode(nextActive);
         if (nextActive) {
-          showToast('👑 オーナー専用コックピットを起動しました [STEALTH ACTIVE]');
+          showToast('統制監査コンソールを起動しました [AUDIT MODE]');
           openModal('modal-owner-cockpit');
         } else {
-          showToast('👁️ 現場通常ビューに切り替えました（完全ステルス）');
+          showToast('通常業務ビューに切り替えました');
         }
         renderAll();
       } else {
@@ -2184,7 +2185,7 @@
     if (btnToggleStealth) {
       btnToggleStealth.addEventListener('click', function() {
         setOwnerMode(false);
-        showToast('👁️ 現場通常ビューに切り替えました');
+        showToast('通常業務ビューに切り替えました');
         renderAll();
       });
     }
@@ -2286,81 +2287,81 @@
     if (kpiTradein) kpiTradein.textContent = formatYen(totalTradeinDiff);
     if (kpiTradeinCount) kpiTradeinCount.textContent = tradeinDeviations.length + ' 件';
 
-    // 4. 【必殺の一言（キラーフレーズ）カンペ一覧】の動的生成
+    // 4. 事実確認照会プロトコルの動的生成
     var phrasesList = document.getElementById('owner-killer-phrases-list');
     if (phrasesList) {
       phrasesList.innerHTML = '';
       var phrases = [];
 
-      // パターン①: 諸費用の手元残高（ネコババ疑義）
+      // パターン①: 諸費用の手元残高（未返還・差額滞留）
       stagnantDeals.forEach(function(item) {
         var deal = contractManager.getDealById(item.contractId);
         var modelName = deal ? deal.model : '成約車両';
         var repLastName = item.salesRep.split(' ')[0] || item.salesRep;
-        var phraseText = '「' + repLastName + 'くん、あの' + modelName + 'の諸費用、自動車税や重量税の実費が' + formatYen(item.actualPaidTotal) + 'で預かり' + formatYen(item.depositReceived) + 'だったよね。差額の' + formatYen(item.balance) + '、手元に残ってるはずだけどお客様にお返しした？まだ返金処理してないよね？」';
+        var phraseText = '「' + repLastName + 'さん、' + modelName + '（契約ID: ' + item.contractId + '）について、税法上の公的実費納付額が' + formatYen(item.actualPaidTotal) + '、預り金総額が' + formatYen(item.depositReceived) + 'となっており、差額' + formatYen(item.balance) + 'の精算が未了です。顧客口座への返金振込明細書、または追加実費の領収原本の提出をお願いします」';
         phrases.push({
           type: 'expense',
-          badgeText: '諸費用ネコババ疑惑（手元プール）',
+          badgeText: '諸費用預り金 差額滞留',
           badgeClass: 'badge-expense-anomaly',
           cardClass: 'expense-card',
           rep: item.salesRep,
           car: modelName + ' (' + item.contractId + ')',
-          amount: '手元滞留 ' + formatYen(item.balance),
-          lead: '諸費用の差額をサラッと突く一言（手元の現金を白状させる）:',
+          amount: '精算未了額 ' + formatYen(item.balance),
+          lead: '法定費用差額照会（公的領収証原本および返金明細の確認）:',
           phrase: phraseText
         });
       });
 
-      // パターン②: ローン未着金・直抜き疑義
+      // パターン②: ローン未着金・口座未消込
       pendingLoans.forEach(function(l) {
         var deal = contractManager.getDealById(l.contractId);
         var modelName = deal ? deal.model : '成約車両';
         var repLastName = l.salesRep.split(' ')[0] || l.salesRep;
-        var phraseText = '「' + repLastName + 'くん、' + modelName + 'の' + l.loanCompany + 'の承認下りてるのに口座まだ着金してないね。まさか客から頭金や代金を現金で預かって手元に持ってないよね？今日中に消込しといて」';
+        var phraseText = '「' + repLastName + 'さん、' + modelName + '（契約ID: ' + l.contractId + '）の' + l.loanCompany + 'の決定通知額' + formatYen(l.contractPrincipal) + 'について、会社法人口座への着金消込が確認できておりません。信販原本の進捗状況および顧客からの頭金預託状況の報告をお願いします」';
         phrases.push({
           type: 'loan',
-          badgeText: 'ローン未着金・現金直抜き疑惑',
+          badgeText: '信販承認済 口座未着金',
           badgeClass: 'badge-loan-anomaly',
           cardClass: 'loan-card',
           rep: l.salesRep,
           car: modelName + ' (' + l.contractId + ')',
-          amount: '未着金 ' + formatYen(l.contractPrincipal),
-          lead: 'ローンの着金ズレをサラッと突く一言（現金の自転車操業を止める）:',
+          amount: '未着金債権 ' + formatYen(l.contractPrincipal),
+          lead: '信販着金照会（法人口座消込および決定通知原本の確認）:',
           phrase: phraseText
         });
       });
 
-      // パターン③: 下取り買叩き・横流し疑義
+      // パターン③: 下取り買叩き・USS落札相場乖離
       tradeinDeviations.forEach(function(t) {
         var repLastName = t.deal.salesRep.split(' ')[0] || t.deal.salesRep;
-        var phraseText = '「' + repLastName + 'くん、この' + t.deal.model + 'の下取査定' + formatYen(t.deal.tradeInAppraised) + 'になってるけど、USS直近相場だと' + formatYen(t.deal.ussMarketPrice) + '超えてるよ。なんでこんな安く買いたたいてるの？流し先のブローカーどこ？」';
+        var phraseText = '「' + repLastName + 'さん、' + t.deal.model + 'の下取査定額（' + formatYen(t.deal.tradeInAppraised) + '）と直近USSオークション基準相場（' + formatYen(t.deal.ussMarketPrice) + '）との間に' + formatYen(t.diff) + 'の乖離が記録されています。査定根拠となった車両状態票および第三者検査記録の提出をお願いします」';
         phrases.push({
           type: 'tradein',
-          badgeText: '下取り買叩き・横流し疑義',
+          badgeText: '下取査定額 USS基準相場乖離',
           badgeClass: 'badge-tradein-anomaly',
           cardClass: 'tradein-card',
           rep: t.deal.salesRep,
           car: t.deal.model + ' (' + t.deal.id + ')',
           amount: '相場乖離 ' + formatYen(t.diff),
-          lead: '下取りの買叩きをサラッと突く一言（ブローカー横流しを暴く）:',
+          lead: '下取査定客観性照会（状態票およびオークション相場対比の確認）:',
           phrase: phraseText
         });
       });
 
-      // パターン④: 加修費異常（リベート疑義）
+      // パターン④: 加修費異常（伝票未着）
       deals.forEach(function(d) {
         if (d.repairCost >= 1000000 && !d.repairInvoiceNo) {
           var repLastName = d.salesRep.split(' ')[0] || d.salesRep;
-          var phraseText = '「' + repLastName + 'さん、' + d.model + 'の加修整備費' + formatYen(d.repairCost) + '計上されてるけど、工場の正式な納品伝票まだ届いてないね。どこ直したの？明細見せてもらえる？」';
+          var phraseText = '「' + repLastName + 'さん、' + d.model + 'の加修費用' + formatYen(d.repairCost) + 'について、提携工場の正式な作業完了伝票および作業前後の写真が経理へ未着です。インボイス照合のため納品伝票原本の提出をお願いします」';
           phrases.push({
             type: 'repair',
-            badgeText: '加修費水増し・リベート疑義',
+            badgeText: '高額外注費 証憑未着',
             badgeClass: 'badge-loan-anomaly',
             cardClass: 'loan-card',
             rep: d.salesRep,
             car: d.model + ' (' + d.id + ')',
             amount: '加修費 ' + formatYen(d.repairCost) + ' (伝票未着)',
-            lead: '高額加修をサラッと突く一言（外注リベートを牽制する）:',
+            lead: '外注加修費証憑照会（正規納品伝票および写真原本の確認）:',
             phrase: phraseText
           });
         }
@@ -2368,7 +2369,7 @@
 
       if (phrases.length === 0) {
         phrasesList.innerHTML = '<div style="padding:24px; text-align:center; color:#64748b; background:#ffffff; border-radius:8px; border:1px dashed #cbd5e1;">' +
-          '🎉 現在、突っ込むべき数字の矛盾や滞留金は検知されていません（極めて健全に運用されています）。' +
+          '現在、照会を要する財務数値の不整合または未精算差額は検知されていません（財務整合性が保たれています）。' +
           '</div>';
       } else {
         phrases.forEach(function(p, idx) {
@@ -2436,9 +2437,9 @@
         var tr = document.createElement('tr');
         var recAction = '正常に稼働中';
         if (rep.stagnantDepositBalance > 0) {
-          recAction = '⚡ 諸費用の手元差額（' + formatYen(rep.stagnantDepositBalance) + '）の返還を追及';
+          recAction = '諸費用差額の公的領収証照合及び返還精算要請';
         } else if (rep.cashRatio >= 50) {
-          recAction = '⚡ 現金預託の即日口座入金を強く指導';
+          recAction = '現金受領分の法人口座即時入金履行';
         }
         tr.innerHTML = 
           '<td><strong>' + rep.name + '</strong></td>' +
