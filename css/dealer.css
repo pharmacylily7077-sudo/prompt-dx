@@ -1503,18 +1503,46 @@ body.owner-mode-active #btn-owner-header-trigger {
   to { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 768px) {
-  .owner-banner-inner {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .owner-banner-metrics {
-    flex-wrap: wrap;
-    font-size: 11px;
-  }
-  .owner-banner-actions {
-    width: 100%;
-    justify-content: flex-end;
+/* ===================================================
+   車台番号(VIN)起点 逆引きフォレンジック・ビジュアライザー
+   =================================================== */
+.reverse-forensic-card {
+  box-shadow: 0 8px 30px rgba(184, 147, 74, 0.18);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.reverse-forensic-card .visual-panel {
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.reverse-forensic-card .visual-panel:hover {
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+#sankey-svg path, #network-svg path {
+  transition: stroke 0.3s ease, stroke-width 0.3s ease;
+}
+
+#sankey-svg rect:hover, #network-svg rect:hover, #network-svg circle:hover {
+  filter: brightness(1.2);
+  cursor: pointer;
+}
+
+.forensic-summary-banner {
+  animation: bannerSlideIn 0.3s ease-out;
+}
+
+@keyframes bannerSlideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 992px) {
+  .reverse-forensic-card .card-body > div[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
   }
 }
+
 

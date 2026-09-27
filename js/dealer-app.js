@@ -92,6 +92,14 @@
       }
     }
 
+    if (forensicManager && (!forensicManager.deals || forensicManager.deals.length === 0)) {
+      try {
+        forensicManager.loadPastAuditDemo();
+      } catch (err) {
+        console.warn('Initial forensic demo load exception caught:', err);
+      }
+    }
+
     try {
       bindTabs();
       bindModals();
@@ -750,6 +758,369 @@
       } else {
         badgeForensicAlert.style.display = 'none';
       }
+    }
+
+    // ⑤ 車台番号(VIN)起点 逆引きフォレンジック・ビジュアライザー描画
+    renderReverseForensicVisualizer();
+  }
+
+  // ==========================================
+  // 逆引きフォレンジック・グラフィックス描画エンジン
+  // ==========================================
+  function renderReverseForensicVisualizer() {
+    if (!forensicManager) return;
+    var deals = forensicManager.deals || [];
+    var vinSelect = document.getElementById('forensic-vin-select');
+    if (!vinSelect) return;
+
+    var currentSelectedVin = vinSelect.value;
+    vinSelect.innerHTML = '<option value="">-- 分析対象の車両を選択してください --</option>';
+
+    deals.forEach(function(d) {
+      var opt = document.createElement('option');
+      opt.value = d.vin;
+      opt.textContent = (d.salesRep === '神田 敏幸' ? '🚨 [異常差額検出] ' : '✅ [正常照合] ') + (d.model || '') + ' (' + d.vin + ') - ' + d.salesRep;
+      vinSelect.appendChild(opt);
+    });
+
+    // 選択値の復元またはデフォルト選択（神田のGT3を初期表示）
+    if (currentSelectedVin && forensicManager.getDealByVin(currentSelectedVin)) {
+      vinSelect.value = currentSelectedVin;
+    } else if (deals.length > 0) {
+      // 最初の神田の案件を初期選択
+      var kandaDeal = deals.find(function(d) { return d.salesRep === '神田 敏幸'; }) || deals[0];
+      vinSelect.value = kandaDeal.vin;
+    }
+
+    // 変更時イベント
+    vinSelect.onchange = function() {
+      updateReverseForensicViews(vinSelect.value);
+    };
+
+    updateReverseForensicViews(vinSelect.value);
+    renderForensicMatrix(deals);
+  }
+
+  function updateReverseForensicViews(vin) {
+    if (!forensicManager || !vin) return;
+    var analysis = forensicManager.analyzeDealReverseForensic(vin);
+    if (!analysis) return;
+
+    // サマリーバナーの更新
+    var summaryBox = document.getElementById('reverse-forensic-summary-box');
+    if (summaryBox) {
+      summaryBox.style.display = 'block';
+      document.getElementById('rf-summary-vin').textContent = 'VIN: ' + analysis.vin;
+      document.getElementById('rf-summary-model').textContent = analysis.model + ' (契約額: ' + formatYen(analysis.salePrice) + ')';
+      document.getElementById('rf-summary-discrepancy').textContent = formatYen(analysis.discrepancy);
+      document.getElementById('rf-summary-cause').textContent = analysis.primaryCause;
+      document.getElementById('rf-summary-cause-amt').textContent = formatYen(analysis.repairCost) + ' (基準+ ' + formatYen(analysis.primaryExcess) + ')';
+      document.getElementById('rf-summary-vendor').textContent = analysis.primaryVendor;
+      document.getElementById('rf-summary-rep').textContent = analysis.salesRep;
+
+      var pStats = analysis.peerStats;
+      document.getElementById('rf-summary-pair-count').textContent = pStats.totalDealsCount;
+      document.getElementById('rf-summary-pair-excess-count').textContent = pStats.excessDealsCount;
+      document.getElementById('rf-summary-pair-overpayment').textContent = formatYen(pStats.estimatedOverpaymentTotal);
+    }
+
+    // ① サンキー資金流向図の描画 (SVG)
+    drawSankeyDiagram(analysis);
+
+    // ② 関係性ネットワークグラフの描画 (SVG)
+    drawNetworkGraph(analysis);
+
+    // ④ カンペ文言の更新
+    updateLawyerSpeech(analysis);
+  }
+
+  /**
+   * ① 資金流向サンキーダイアグラム (SVG描画)
+   */
+  function drawSankeyDiagram(a) {
+    var svg = document.getElementById('sankey-svg');
+    if (!svg) return;
+    svg.innerHTML = '';
+
+    // 左ノード: 顧客入金 (0, 80, 110, 80)
+    // 中央ノード: 車両 (160, 80, 100, 80)
+    // 右ノード群:
+    //  1. 仕入 (420, 20, 100, 36) - 青
+    //  2. 法定税金・実費 (420, 70, 100, 34) - 緑
+    //  3. 修理加修 (420, 120, 100, 42) - ⚠️ 赤
+    //  4. 紹介・その他 (420, 175, 100, 34) - ⚠️ 赤/橙
+    //  5. 残余粗利 (420, 220, 100, 30) - 激細
+
+    var isAnomalous = a.discrepancy > 500000;
+    var repairColor = isAnomalous ? '#ef4444' : '#3b82f6';
+    var repairStroke = isAnomalous ? 'rgba(239, 68, 68, 0.45)' : 'rgba(59, 130, 246, 0.25)';
+    var profitColor = isAnomalous ? '#f59e0b' : '#10b981';
+
+    var paths = [
+      // 顧客 -> 車両
+      { d: 'M 110 120 C 135 120, 135 120, 160 120', stroke: 'rgba(59, 130, 246, 0.5)', w: 32 },
+      // 車両 -> 仕入
+      { d: 'M 260 100 C 340 100, 340 38, 420 38', stroke: 'rgba(100, 116, 139, 0.35)', w: 18 },
+      // 車両 -> 税金
+      { d: 'M 260 110 C 340 110, 340 87, 420 87', stroke: 'rgba(16, 185, 129, 0.35)', w: 8 },
+      // 車両 -> 修理（異常時は極太・警告色）
+      { d: 'M 260 125 C 340 125, 340 141, 420 141', stroke: repairStroke, w: isAnomalous ? 22 : 10 },
+      // 車両 -> 紹介料/その他
+      { d: 'M 260 135 C 340 135, 340 192, 420 192', stroke: (a.brokerFee > 0 ? 'rgba(249, 115, 22, 0.45)' : 'rgba(148, 163, 184, 0.2)'), w: a.brokerFee > 0 ? 12 : 6 },
+      // 車両 -> 粗利（会社残余）
+      { d: 'M 260 145 C 340 145, 340 235, 420 235', stroke: 'rgba(16, 185, 129, 0.45)', w: isAnomalous ? 6 : 16 }
+    ];
+
+    var svgContent = '';
+    // フロー曲線
+    paths.forEach(function(p) {
+      svgContent += '<path d="' + p.d + '" fill="none" stroke="' + p.stroke + '" stroke-width="' + p.w + '" stroke-linecap="round" />';
+    });
+
+    // 左ノード: 顧客成約額
+    svgContent += 
+      '<rect x="10" y="85" width="100" height="70" rx="8" fill="#1e293b" />' +
+      '<text x="60" y="112" fill="#94a3b8" font-size="10" font-weight="bold" text-anchor="middle">成約総額</text>' +
+      '<text x="60" y="132" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">' + formatYen(a.salePrice) + '</text>' +
+      '<text x="60" y="146" fill="#38bdf8" font-size="9" text-anchor="middle">顧客支払額</text>';
+
+    // 中央ノード: 車両(VIN)
+    svgContent += 
+      '<rect x="160" y="85" width="100" height="70" rx="8" fill="#0f172a" stroke="#d97706" stroke-width="2" />' +
+      '<text x="210" y="110" fill="#f59e0b" font-size="10" font-weight="bold" text-anchor="middle">個別車両(VIN)</text>' +
+      '<text x="210" y="128" fill="#ffffff" font-size="10" font-family="monospace" text-anchor="middle">' + a.vin.substring(0, 10) + '..' + '</text>' +
+      '<text x="210" y="145" fill="#cbd5e1" font-size="9" text-anchor="middle">' + a.salesRep + '</text>';
+
+    // 右ノード群
+    // 1. 車両仕入
+    svgContent += 
+      '<rect x="420" y="20" width="110" height="34" rx="6" fill="#334155" />' +
+      '<text x="475" y="36" fill="#94a3b8" font-size="9" text-anchor="middle">車両仕入</text>' +
+      '<text x="475" y="49" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">' + formatYen(a.purchaseCost) + '</text>';
+
+    // 2. 税金・法定実費
+    svgContent += 
+      '<rect x="420" y="68" width="110" height="34" rx="6" fill="#065f46" />' +
+      '<text x="475" y="84" fill="#a7f3d0" font-size="9" text-anchor="middle">税金・法定実費</text>' +
+      '<text x="475" y="97" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">' + formatYen(a.taxAndFees) + '</text>';
+
+    // 3. 修理・加修費（ここが急所）
+    var repBorder = isAnomalous ? 'stroke="#b91c1c" stroke-width="2"' : '';
+    svgContent += 
+      '<rect x="420" y="116" width="110" height="46" rx="6" fill="' + (isAnomalous ? '#7f1d1d' : '#1e3a8a') + '" ' + repBorder + ' />' +
+      '<text x="475" y="132" fill="' + (isAnomalous ? '#fca5a5' : '#93c5fd') + '" font-size="9" font-weight="bold" text-anchor="middle">' + (isAnomalous ? '⚠️ 修理費 (過大流出)' : '修理加修費') + '</text>' +
+      '<text x="475" y="147" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">' + formatYen(a.repairCost) + '</text>' +
+      '<text x="475" y="158" fill="' + (isAnomalous ? '#fecaca' : '#bfdbfe') + '" font-size="8" text-anchor="middle">' + (a.rawDeal.repairVendor || '指定外注') + '</text>';
+
+    // 4. 紹介料・その他経費
+    svgContent += 
+      '<rect x="420" y="174" width="110" height="34" rx="6" fill="' + (a.brokerFee > 0 ? '#7c2d12' : '#334155') + '" />' +
+      '<text x="475" y="190" fill="' + (a.brokerFee > 0 ? '#fdba74' : '#94a3b8') + '" font-size="9" text-anchor="middle">紹介料・陸送等</text>' +
+      '<text x="475" y="203" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">' + formatYen(a.brokerFee + a.transportCost + a.otherLegitCost) + '</text>';
+
+    // 5. 会社残余粗利（哀れに細い）
+    svgContent += 
+      '<rect x="420" y="220" width="110" height="34" rx="6" fill="' + (isAnomalous ? '#b45309' : '#047857') + '" />' +
+      '<text x="475" y="235" fill="#fef3c7" font-size="9" font-weight="bold" text-anchor="middle">会社残余粗利</text>' +
+      '<text x="475" y="248" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">' + formatYen(a.actualProfit) + '</text>';
+
+    svg.innerHTML = svgContent;
+  }
+
+  /**
+   * ② 社員 × 車両 × 業者 関係性ネットワークグラフ (SVG描画)
+   */
+  function drawNetworkGraph(a) {
+    var svg = document.getElementById('network-svg');
+    if (!svg) return;
+    svg.innerHTML = '';
+
+    // 左ノード群: 社員 (田中/神田, 佐藤, 鈴木)
+    // 中央ノード群: 車両 (車①〜車⑤)
+    // 右ノード群: 業者 (神田オート鈑金, 板金B, 電装C, ヤナセ/コーンズ)
+
+    var isKanda = a.salesRep === '神田 敏幸';
+
+    var svgContent = '';
+
+    // ネットワーク接続ラインの描画
+    // 神田 -> 車①〜⑤ -> 神田オート鈑金への集中束
+    var lines = [
+      // 正常系ライン（佐藤 -> 車 -> ヤナセ・コーンズ）
+      { x1: 70, y1: 170, x2: 260, y2: 180, x3: 450, y3: 200, stroke: 'rgba(56, 189, 248, 0.4)', w: 2 },
+      { x1: 70, y1: 170, x2: 260, y2: 220, x3: 450, y3: 200, stroke: 'rgba(56, 189, 248, 0.4)', w: 2 },
+      // 正常系ライン（鈴木 -> 車 -> 板金B・電装C）
+      { x1: 70, y1: 220, x2: 260, y2: 240, x3: 450, y3: 130, stroke: 'rgba(16, 185, 129, 0.4)', w: 2 },
+      
+      // 異常系集中ライン（神田 -> 車①〜⑤ -> 神田オート鈑金）
+      { x1: 70, y1: 70, x2: 260, y2: 30, x3: 450, y3: 65, stroke: isKanda ? '#ef4444' : 'rgba(239,68,68,0.3)', w: isKanda ? 4 : 2 },
+      { x1: 70, y1: 70, x2: 260, y2: 60, x3: 450, y3: 65, stroke: isKanda ? '#ef4444' : 'rgba(239,68,68,0.3)', w: isKanda ? 5 : 2 },
+      { x1: 70, y1: 70, x2: 260, y2: 90, x3: 450, y3: 65, stroke: isKanda ? '#ef4444' : 'rgba(239,68,68,0.3)', w: isKanda ? 4 : 2 },
+      { x1: 70, y1: 70, x2: 260, y2: 120, x3: 450, y3: 65, stroke: isKanda ? '#ef4444' : 'rgba(239,68,68,0.3)', w: isKanda ? 6 : 2 },
+      { x1: 70, y1: 70, x2: 260, y2: 150, x3: 450, y3: 65, stroke: isKanda ? '#ef4444' : 'rgba(239,68,68,0.3)', w: isKanda ? 5 : 2 }
+    ];
+
+    lines.forEach(function(l) {
+      svgContent += '<path d="M ' + l.x1 + ' ' + l.y1 + ' L ' + l.x2 + ' ' + l.y2 + ' L ' + l.x3 + ' ' + l.y3 + '" fill="none" stroke="' + l.stroke + '" stroke-width="' + l.w + '" stroke-linecap="round" />';
+    });
+
+    // 左ノード群: 担当社員
+    // 神田 (異常集中)
+    svgContent += 
+      '<circle cx="70" cy="70" r="28" fill="#7f1d1d" stroke="#ef4444" stroke-width="2" />' +
+      '<text x="70" y="66" fill="#fca5a5" font-size="9" font-weight="bold" text-anchor="middle">担当営業</text>' +
+      '<text x="70" y="80" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">神田 敏幸</text>' +
+      '<text x="70" y="93" fill="#f87171" font-size="8" text-anchor="middle">🚨 集中率82%</text>';
+
+    // 佐藤 (正常)
+    svgContent += 
+      '<circle cx="70" cy="170" r="20" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5" />' +
+      '<text x="70" y="174" fill="#ffffff" font-size="10" text-anchor="middle">佐藤 健一</text>';
+
+    // 鈴木 (正常)
+    svgContent += 
+      '<circle cx="70" cy="225" r="18" fill="#1e293b" stroke="#10b981" stroke-width="1.5" />' +
+      '<text x="70" y="229" fill="#ffffff" font-size="10" text-anchor="middle">鈴木 一郎</text>';
+
+    // 中央ノード群: 車両案件
+    var cars = [
+      { y: 30, text: '911 GT3', alert: true },
+      { y: 60, text: 'G63 AMG', alert: true },
+      { y: 90, text: 'BMW M4', alert: true },
+      { y: 120, text: 'Huracan', alert: true },
+      { y: 150, text: 'Ghost V12', alert: true },
+      { y: 180, text: 'BMW M8', alert: false },
+      { y: 220, text: 'Urus S', alert: false },
+      { y: 245, text: 'RS6 Avant', alert: false }
+    ];
+
+    cars.forEach(function(c) {
+      var color = c.alert ? '#ef4444' : '#64748b';
+      var bg = c.alert ? '#450a0a' : '#1e293b';
+      svgContent += 
+        '<rect x="220" y="' + (c.y - 10) + '" width="80" height="20" rx="4" fill="' + bg + '" stroke="' + color + '" stroke-width="1.5" />' +
+        '<text x="260" y="' + (c.y + 4) + '" fill="#ffffff" font-size="9" text-anchor="middle">' + c.text + '</text>';
+    });
+
+    // 右ノード群: 外注先
+    // 神田オート鈑金 (特定個人・癒着ホットスポット)
+    svgContent += 
+      '<rect x="400" y="38" width="130" height="54" rx="8" fill="#7f1d1d" stroke="#ef4444" stroke-width="2" />' +
+      '<text x="465" y="55" fill="#fca5a5" font-size="9" font-weight="bold" text-anchor="middle">⚠️ 特定個人提携先</text>' +
+      '<text x="465" y="70" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">神田オート鈑金</text>' +
+      '<text x="465" y="83" fill="#fecaca" font-size="8" text-anchor="middle">平均修理費 ¥3,040,000</text>';
+
+    // 板金B
+    svgContent += 
+      '<rect x="410" y="115" width="110" height="30" rx="6" fill="#1e293b" stroke="#64748b" stroke-width="1" />' +
+      '<text x="465" y="133" fill="#cbd5e1" font-size="9" text-anchor="middle">東京オート板金B (¥28万)</text>';
+
+    // 正規ヤナセ・コーンズ
+    svgContent += 
+      '<rect x="400" y="180" width="130" height="40" rx="6" fill="#064e3b" stroke="#10b981" stroke-width="1.5" />' +
+      '<text x="465" y="196" fill="#a7f3d0" font-size="9" text-anchor="middle">正規ディーラー指定工場</text>' +
+      '<text x="465" y="211" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">ヤナセ / コーンズ (¥48万)</text>';
+
+    svg.innerHTML = svgContent;
+  }
+
+  /**
+   * ③ 社員×業者 癒着マトリクス（ヒートマップ）のテーブル描画
+   */
+  function renderForensicMatrix(deals) {
+    var tbody = document.getElementById('rf-matrix-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    var rows = [
+      {
+        rep: '神田 敏幸',
+        kanda: { amt: '¥3,040,000', alert: true, count: 5, note: '5台全件集中・他社平均の6.3倍' },
+        b: { amt: '-', alert: false },
+        c: { amt: '-', alert: false },
+        dealer: { amt: '-', alert: false },
+        avg: '¥3,040,000',
+        verdict: '<span class="badge badge-danger">🚨 異常癒着 (要精密調査)</span>'
+      },
+      {
+        rep: '佐藤 健一',
+        kanda: { amt: '-', alert: false },
+        b: { amt: '-', alert: false },
+        c: { amt: '-', alert: false },
+        dealer: { amt: '¥460,000', alert: false, count: 3, note: '適正正規発注' },
+        avg: '¥460,000',
+        verdict: '<span class="badge badge-success">正常 (分散・適正)</span>'
+      },
+      {
+        rep: '鈴木 一郎',
+        kanda: { amt: '-', alert: false },
+        b: { amt: '¥280,000', alert: false, count: 1 },
+        c: { amt: '¥190,000', alert: false, count: 1 },
+        dealer: { amt: '-', alert: false },
+        avg: '¥235,000',
+        verdict: '<span class="badge badge-success">正常 (相場内)</span>'
+      },
+      {
+        rep: '業界・社内平均基準',
+        kanda: { amt: '¥480,000 (一般相場)', alert: false },
+        b: { amt: '¥280,000', alert: false },
+        c: { amt: '¥200,000', alert: false },
+        dealer: { amt: '¥500,000', alert: false },
+        avg: '¥360,000',
+        verdict: '<strong>-- 基準ライン --</strong>'
+      }
+    ];
+
+    rows.forEach(function(r) {
+      var tr = document.createElement('tr');
+      if (r.rep === '神田 敏幸') tr.style.background = '#fef2f2';
+      else if (r.rep.indexOf('平均基準') !== -1) tr.style.background = '#f1f5f9';
+
+      var kandaTd = r.kanda.alert ? 
+        '<td style="background:#fee2e2; color:#b91c1c; font-weight:800; border-left:3px solid #ef4444;">' + r.kanda.amt + '<br><span style="font-size:10px; font-weight:bold;">🔥 ' + r.kanda.note + '</span></td>' :
+        '<td>' + r.kanda.amt + '</td>';
+
+      tr.innerHTML = 
+        '<td><strong>' + r.rep + '</strong></td>' +
+        kandaTd +
+        '<td>' + r.b.amt + '</td>' +
+        '<td>' + r.c.amt + '</td>' +
+        '<td>' + r.dealer.amt + '</td>' +
+        '<td style="font-weight:bold;' + (r.rep === '神田 敏幸' ? 'color:#b91c1c;' : '') + '">' + r.avg + '</td>' +
+        '<td>' + r.verdict + '</td>';
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  /**
+   * ④ 弁護士・労務監査用 客観的質問票カンペの更新
+   */
+  function updateLawyerSpeech(a) {
+    var contentEl = document.getElementById('rf-lawyer-speech-content');
+    if (!contentEl) return;
+
+    var speech = 
+      '「' + a.salesRep + 'さん、感情論でお話しするつもりは一切ありません。客観的な台帳と財務数値の事実として、' +
+      'あなたが担当された【' + a.model + ' (VIN: ' + a.vin + ')】において、本来残るべき想定粗利との間に【' + formatYen(a.discrepancy) + '】の「説明を要する差額」が発生しています。\n\n' +
+      'さらに過去の取引データを串刺しで分析したところ、あなたと【' + a.primaryVendor + '】の組み合わせにおいて、' +
+      '過去' + a.peerStats.totalDealsCount + '件中' + a.peerStats.excessDealsCount + '件で平均修理費が他社員平均（' + formatYen(a.peerStats.peerAvgRepairCost) + '）の' + a.peerStats.costRatioVsPeer + '倍に突出しており、' +
+      '累計で【' + formatYen(a.peerStats.estimatedOverpaymentTotal) + '】の過大支出が記録されています。\n\n' +
+      '私どもとしては、業務上正当な理由があってこの費用がかかったのであれば、その旨を速やかに証明していただきたいと考えております。' +
+      'つきましては、当該修理にかかる発注前の状態写真原本、交換済み部品の写真、および作業完了報告書の原本を速やかにご提示いただけますでしょうか？」';
+
+    contentEl.textContent = speech;
+
+    var copyBtn = document.getElementById('btn-copy-rf-speech');
+    if (copyBtn) {
+      copyBtn.onclick = function() {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(speech).then(function() {
+            copyBtn.textContent = '✅ カンペをコピーしました！';
+            setTimeout(function() { copyBtn.textContent = '📋 質問カンペをコピー'; }, 2500);
+          });
+        }
+      };
     }
   }
 
@@ -1774,6 +2145,24 @@
     if (emblem) emblem.addEventListener('click', triggerLogoTap);
 
     // 2. オーナーバナーおよびヘッダーボタン
+    var btnOpenReverseForensic = document.getElementById('btn-open-reverse-forensic');
+    if (btnOpenReverseForensic) {
+      btnOpenReverseForensic.addEventListener('click', function() {
+        var tabBtns = document.querySelectorAll('.tab-button');
+        tabBtns.forEach(function(b) {
+          if (b.getAttribute('data-tab') === 'tab-forensic') {
+            b.click();
+          }
+        });
+        setTimeout(function() {
+          var card = document.querySelector('.reverse-forensic-card');
+          if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 150);
+      });
+    }
+
     var btnOpenPhrases = document.getElementById('btn-open-killer-phrases');
     if (btnOpenPhrases) {
       btnOpenPhrases.addEventListener('click', function() {

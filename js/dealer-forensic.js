@@ -391,6 +391,147 @@
   };
 
   // =====================================================
+  // 2.5 車台番号(VIN)起点 逆引きフォレンジック分析エンジン
+  // =====================================================
+
+  /**
+   * 単一車両の逆引きフォレンジック分析
+   * 売価、仕入、修理、税金、陸送、正当経費から「想定粗利」を算出し、
+   * 会計上の「実績粗利」との差額（説明不能な不足額）を起点に原因を逆引き解明
+   */
+  DealerForensicManager.prototype.analyzeDealReverseForensic = function(dealOrVin) {
+    var deal = typeof dealOrVin === 'string' ? this.getDealByVin(dealOrVin) : dealOrVin;
+    if (!deal) return null;
+
+    var salePrice = Number(deal.contractTotal || deal.vehiclePrice || 0);
+    var purchaseCost = Number(deal.purchaseCost || 0);
+    var taxAndFees = Number(deal.expenseActualPaid || deal.expenseDeposit || 400000);
+    var transportCost = Number(deal.transportCost || 100000);
+    var otherLegitCost = Number(deal.otherLegitCost || 200000);
+    var repairCost = Number(deal.repairCost || 0);
+    var brokerFee = Number(deal.brokerFee || 0);
+    var discountAmount = Number(deal.discountAmount || 0);
+
+    // 業界標準・通常想定される加修整備費（他社平均ベース: 約30万円）
+    var benchmarkRepair = Number(deal.benchmarkRepair || 300000);
+    var expectedProfit = salePrice - (purchaseCost + benchmarkRepair + taxAndFees + transportCost + otherLegitCost);
+    if (expectedProfit < 0) expectedProfit = 0;
+
+    // 実際の粗利（帳簿上の残余）
+    var totalActualCosts = purchaseCost + repairCost + taxAndFees + transportCost + otherLegitCost + brokerFee + discountAmount;
+    var actualProfit = Number(deal.actualProfit != null ? deal.actualProfit : (salePrice - totalActualCosts));
+
+    // 不足額（説明を要する差額）
+    var discrepancy = Math.max(0, expectedProfit - actualProfit);
+
+    // 最大乖離科目の特定
+    var costBreakdown = [
+      { name: '過大修理費', amount: repairCost, excess: Math.max(0, repairCost - benchmarkRepair), vendor: deal.repairVendor || '指定なし' },
+      { name: '紹介料・謝礼金', amount: brokerFee, excess: brokerFee, vendor: deal.brokerVendor || '紹介業者B' },
+      { name: '不自然値引', amount: discountAmount, excess: discountAmount, vendor: '顧客・営業裁量' },
+      { name: '諸費用長期滞留差額', amount: Math.max(0, (deal.expenseDeposit || 0) - (deal.expenseActualPaid || 0)), excess: Math.max(0, (deal.expenseDeposit || 0) - (deal.expenseActualPaid || 0)), vendor: deal.salesRep }
+    ];
+
+    costBreakdown.sort(function(a, b) { return b.excess - a.excess; });
+    var topLeak = costBreakdown[0];
+
+    // 同一社員 × 同一業者の過去案件全量串刺し集計
+    var pairRep = deal.salesRep;
+    var pairVendor = topLeak.name === '過大修理費' ? (deal.repairVendor || '') : (deal.brokerVendor || '');
+    var peerStats = this.analyzeRepVendorPair(pairRep, pairVendor);
+
+    return {
+      vin: deal.vin,
+      model: deal.model,
+      salesRep: deal.salesRep,
+      salePrice: salePrice,
+      purchaseCost: purchaseCost,
+      repairCost: repairCost,
+      taxAndFees: taxAndFees,
+      transportCost: transportCost,
+      otherLegitCost: otherLegitCost,
+      brokerFee: brokerFee,
+      discountAmount: discountAmount,
+      benchmarkRepair: benchmarkRepair,
+      expectedProfit: expectedProfit,
+      actualProfit: actualProfit,
+      discrepancy: discrepancy,
+      primaryCause: topLeak.name,
+      primaryVendor: topLeak.vendor,
+      primaryExcess: topLeak.excess,
+      costBreakdown: costBreakdown,
+      peerStats: peerStats,
+      rawDeal: deal
+    };
+  };
+
+  /**
+   * 同一社員 × 同一業者の全案件串刺し分析
+   */
+  DealerForensicManager.prototype.analyzeRepVendorPair = function(repName, vendorName) {
+    var matchingDeals = [];
+    var otherRepDealsForVendor = [];
+    var otherRepAllRepairs = [];
+
+    this.deals.forEach(function(d) {
+      var dRepair = Number(d.repairCost || 0);
+      if (d.repairVendor === vendorName) {
+        if (d.salesRep === repName) {
+          matchingDeals.push(d);
+        } else {
+          otherRepDealsForVendor.push(d);
+        }
+      }
+      if (d.salesRep !== repName && dRepair > 0) {
+        otherRepAllRepairs.push(dRepair);
+      }
+    });
+
+    var count = matchingDeals.length;
+    var totalRepair = 0;
+    var excessCount = 0;
+    var benchmark = 300000; // 基準30万
+
+    matchingDeals.forEach(function(d) {
+      var r = Number(d.repairCost || 0);
+      totalRepair += r;
+      if (r > benchmark * 1.5) {
+        excessCount++;
+      }
+    });
+
+    var avgRepair = count > 0 ? Math.round(totalRepair / count) : 0;
+
+    // 他社員の平均
+    var otherTotal = 0;
+    var otherList = otherRepDealsForVendor.length > 0 ? otherRepDealsForVendor.map(function(d){ return d.repairCost; }) : otherRepAllRepairs;
+    otherList.forEach(function(amt) { otherTotal += amt; });
+    var otherAvg = otherList.length > 0 ? Math.round(otherTotal / otherList.length) : 320000;
+
+    var ratio = otherAvg > 0 ? Math.round((avgRepair / otherAvg) * 10) / 10 : 1;
+    var totalExcessAmount = Math.max(0, totalRepair - (count * otherAvg));
+
+    return {
+      repName: repName,
+      vendorName: vendorName || '提携業者',
+      totalDealsCount: count,
+      excessDealsCount: excessCount,
+      avgRepairCost: avgRepair,
+      peerAvgRepairCost: otherAvg,
+      costRatioVsPeer: ratio,
+      estimatedOverpaymentTotal: totalExcessAmount,
+      deals: matchingDeals
+    };
+  };
+
+  DealerForensicManager.prototype.getDealByVin = function(vin) {
+    for (var i = 0; i < this.deals.length; i++) {
+      if (this.deals[i].vin === vin) return this.deals[i];
+    }
+    return null;
+  };
+
+  // =====================================================
   // 3. ヘルパー関数
   // =====================================================
   DealerForensicManager.prototype._splitCsvLine = function(line) {
@@ -419,7 +560,6 @@
     for (var i = 0; i < cols.length; i++) {
       var num = Number(cols[i].replace(/[^0-9.-]/g, ''));
       if (!isNaN(num) && num > 0) {
-        // 簡易判定
         if (type === 'in' && (i === 1 || i === 2 || cols[i].indexOf('+') !== -1)) return num;
         if (type === 'out' && (i === 2 || i === 3 || cols[i].indexOf('-') !== -1)) return num;
       }
@@ -451,11 +591,11 @@
   };
 
   // =====================================================
-  // 4. 検証用 過去3年分デモデータ生成
+  // 4. 検証用 過去3年分デモデータ生成（逆引き監査対応）
   // =====================================================
   DealerForensicManager.prototype.loadPastAuditDemo = function() {
     var pastDeals = [
-      // 神田 敏幸（歴32年営業部長）: 組織的不正モデル
+      // 神田 敏幸（歴32年営業部長）: 神田オート鈑金（特定個人工場）への異常集中・水増しモデル
       {
         id: 'CT-PAST-0891',
         contractDate: '2024-05-12',
@@ -463,15 +603,24 @@
         model: 'Porsche 911 GT3 (992)',
         salesRep: '神田 敏幸',
         contractTotal: 29800000,
+        vehiclePrice: 28500000,
+        purchaseCost: 24000000,
         expenseDeposit: 1250000,
         expenseActualPaid: 580000,
         expenseSettledDate: '2024-07-28', // 77日間滞留
-        cashReceived: 18000000, // 多額の現金受託
+        cashReceived: 18000000,
         loanPrincipal: 10000000,
         tradeInAppraised: 11000000,
-        ussMarketPrice: 15500000, // 450万安値買叩き (29%乖離)
-        repairVendor: '神田オート鈑金（特定個人工場）',
-        repairCost: 2850000
+        ussMarketPrice: 15500000,
+        repairVendor: '神田オート鈑金',
+        repairCost: 2850000, // 他社平均の3倍超
+        benchmarkRepair: 700000,
+        brokerVendor: '紹介業者B',
+        brokerFee: 800000,
+        discountAmount: 0,
+        transportCost: 150000,
+        otherLegitCost: 250000,
+        actualProfit: 1170000 // 本来約350万残るはずが激減
       },
       {
         id: 'CT-PAST-0922',
@@ -480,15 +629,76 @@
         model: 'Mercedes-AMG G63 Edition 1',
         salesRep: '神田 敏幸',
         contractTotal: 34500000,
+        vehiclePrice: 33000000,
+        purchaseCost: 28000000,
         expenseDeposit: 1400000,
         expenseActualPaid: 620000,
-        expenseSettledDate: '2024-11-20', // 63日間滞留
+        expenseSettledDate: '2024-11-20',
         cashReceived: 20000000,
         loanPrincipal: 14500000,
         tradeInAppraised: 8500000,
-        ussMarketPrice: 12000000, // 350万安値買叩き (29%乖離)
-        repairVendor: '神田オート鈑金（特定個人工場）',
-        repairCost: 3100000
+        ussMarketPrice: 12000000,
+        repairVendor: '神田オート鈑金',
+        repairCost: 3100000, // 突出
+        benchmarkRepair: 650000,
+        brokerVendor: '紹介業者B',
+        brokerFee: 600000,
+        discountAmount: 0,
+        transportCost: 120000,
+        otherLegitCost: 200000,
+        actualProfit: 1860000
+      },
+      {
+        id: 'CT-PAST-0965',
+        contractDate: '2024-11-25',
+        vin: 'WBAJF01090B918234',
+        model: 'BMW M4 Competition xDrive',
+        salesRep: '神田 敏幸',
+        contractTotal: 14800000,
+        vehiclePrice: 14200000,
+        purchaseCost: 11500000,
+        expenseDeposit: 600000,
+        expenseActualPaid: 320000,
+        expenseSettledDate: '2025-01-15',
+        cashReceived: 5000000,
+        loanPrincipal: 9800000,
+        tradeInAppraised: 0,
+        ussMarketPrice: 0,
+        repairVendor: '神田オート鈑金',
+        repairCost: 1850000, // 突出
+        benchmarkRepair: 400000,
+        brokerVendor: '',
+        brokerFee: 0,
+        discountAmount: 300000,
+        transportCost: 100000,
+        otherLegitCost: 150000,
+        actualProfit: 580000
+      },
+      {
+        id: 'CT-PAST-0988',
+        contractDate: '2025-01-14',
+        vin: 'ZHWUR1ZF0KLA19482',
+        model: 'Lamborghini Huracan EVO',
+        salesRep: '神田 敏幸',
+        contractTotal: 32000000,
+        vehiclePrice: 31000000,
+        purchaseCost: 26000000,
+        expenseDeposit: 1000000,
+        expenseActualPaid: 550000,
+        expenseSettledDate: '2025-03-01',
+        cashReceived: 12000000,
+        loanPrincipal: 20000000,
+        tradeInAppraised: 0,
+        ussMarketPrice: 0,
+        repairVendor: '神田オート鈑金',
+        repairCost: 2900000, // 突出
+        benchmarkRepair: 600000,
+        brokerVendor: '紹介業者B',
+        brokerFee: 750000,
+        discountAmount: 0,
+        transportCost: 180000,
+        otherLegitCost: 200000,
+        actualProfit: 1420000
       },
       {
         id: 'CT-PAST-1004',
@@ -497,18 +707,27 @@
         model: 'Rolls-Royce Ghost V12',
         salesRep: '神田 敏幸',
         contractTotal: 42000000,
+        vehiclePrice: 40500000,
+        purchaseCost: 34000000,
         expenseDeposit: 1800000,
         expenseActualPaid: 850000,
-        expenseSettledDate: '', // 未精算・流用中
+        expenseSettledDate: '',
         cashReceived: 25000000,
         loanPrincipal: 17000000,
         tradeInAppraised: 14000000,
-        ussMarketPrice: 19000000, // 500万安値買叩き (26%乖離)
-        repairVendor: '神田オート鈑金（特定個人工場）',
-        repairCost: 4200000
+        ussMarketPrice: 19000000,
+        repairVendor: '神田オート鈑金',
+        repairCost: 4200000, // 突出
+        benchmarkRepair: 800000,
+        brokerVendor: '紹介業者B',
+        brokerFee: 1200000,
+        discountAmount: 0,
+        transportCost: 250000,
+        otherLegitCost: 350000,
+        actualProfit: 1150000
       },
 
-      // 佐藤 健一（シニア・歴8年）: クリーンモデル
+      // 佐藤 健一（シニア・歴8年）: クリーン・分散モデル
       {
         id: 'CT-PAST-0885',
         contractDate: '2024-04-10',
@@ -516,15 +735,24 @@
         model: 'BMW M8 Gran Coupe',
         salesRep: '佐藤 健一',
         contractTotal: 18500000,
+        vehiclePrice: 17700000,
+        purchaseCost: 15200000,
         expenseDeposit: 750000,
         expenseActualPaid: 720000,
-        expenseSettledDate: '2024-04-18', // 8日精算完了
-        cashReceived: 0, // 全額振込
+        expenseSettledDate: '2024-04-18',
+        cashReceived: 0,
         loanPrincipal: 15000000,
         tradeInAppraised: 6800000,
-        ussMarketPrice: 7000000, // 相場近似 (2.8%乖離・適正)
+        ussMarketPrice: 7000000,
         repairVendor: '正規ヤナセ指定工場',
-        repairCost: 450000
+        repairCost: 450000,
+        benchmarkRepair: 450000,
+        brokerVendor: '',
+        brokerFee: 0,
+        discountAmount: 0,
+        transportCost: 80000,
+        otherLegitCost: 150000,
+        actualProfit: 1900000
       },
       {
         id: 'CT-PAST-0940',
@@ -533,21 +761,113 @@
         model: 'Lamborghini Urus S',
         salesRep: '佐藤 健一',
         contractTotal: 36000000,
+        vehiclePrice: 34500000,
+        purchaseCost: 29500000,
         expenseDeposit: 1300000,
         expenseActualPaid: 1280000,
-        expenseSettledDate: '2024-10-14', // 9日精算完了
+        expenseSettledDate: '2024-10-14',
         cashReceived: 0,
         loanPrincipal: 30000000,
         tradeInAppraised: 12500000,
-        ussMarketPrice: 12800000, // 相場近似
+        ussMarketPrice: 12800000,
         repairVendor: 'コーンズ認定サービスセンター',
-        repairCost: 550000
+        repairCost: 550000,
+        benchmarkRepair: 550000,
+        brokerVendor: '',
+        brokerFee: 0,
+        discountAmount: 0,
+        transportCost: 120000,
+        otherLegitCost: 200000,
+        actualProfit: 4350000
+      },
+      {
+        id: 'CT-PAST-0972',
+        contractDate: '2024-12-08',
+        vin: 'WP0AB2A99NS192841',
+        model: 'Porsche 718 Cayman GT4',
+        salesRep: '佐藤 健一',
+        contractTotal: 15800000,
+        vehiclePrice: 15100000,
+        purchaseCost: 13000000,
+        expenseDeposit: 650000,
+        expenseActualPaid: 630000,
+        expenseSettledDate: '2024-12-16',
+        cashReceived: 0,
+        loanPrincipal: 12000000,
+        tradeInAppraised: 0,
+        ussMarketPrice: 0,
+        repairVendor: '正規ポルシェセンター',
+        repairCost: 380000,
+        benchmarkRepair: 380000,
+        brokerVendor: '',
+        brokerFee: 0,
+        discountAmount: 0,
+        transportCost: 70000,
+        otherLegitCost: 120000,
+        actualProfit: 1600000
+      },
+
+      // 鈴木 一郎（一般営業）: 板金B・電装C等へ正常分散
+      {
+        id: 'CT-PAST-0870',
+        contractDate: '2024-03-22',
+        vin: 'WAUZZZF27NA019283',
+        model: 'Audi RS6 Avant',
+        salesRep: '鈴木 一郎',
+        contractTotal: 16200000,
+        vehiclePrice: 15500000,
+        purchaseCost: 13500000,
+        expenseDeposit: 700000,
+        expenseActualPaid: 680000,
+        expenseSettledDate: '2024-03-29',
+        cashReceived: 0,
+        loanPrincipal: 14000000,
+        tradeInAppraised: 4500000,
+        ussMarketPrice: 4600000,
+        repairVendor: '東京オート板金B',
+        repairCost: 280000,
+        benchmarkRepair: 280000,
+        brokerVendor: '',
+        brokerFee: 0,
+        discountAmount: 0,
+        transportCost: 80000,
+        otherLegitCost: 140000,
+        actualProfit: 1520000
+      },
+      {
+        id: 'CT-PAST-0910',
+        contractDate: '2024-07-15',
+        vin: 'SALWR2VF5LA198273',
+        model: 'Range Rover Sport',
+        salesRep: '鈴木 一郎',
+        contractTotal: 17500000,
+        vehiclePrice: 16800000,
+        purchaseCost: 14600000,
+        expenseDeposit: 700000,
+        expenseActualPaid: 670000,
+        expenseSettledDate: '2024-07-22',
+        cashReceived: 0,
+        loanPrincipal: 15000000,
+        tradeInAppraised: 0,
+        ussMarketPrice: 0,
+        repairVendor: '港南電装C',
+        repairCost: 190000,
+        benchmarkRepair: 200000,
+        brokerVendor: '',
+        brokerFee: 0,
+        discountAmount: 0,
+        transportCost: 90000,
+        otherLegitCost: 150000,
+        actualProfit: 1800000
       }
     ];
 
     var pastBank = [
       { id: 'BNK-101', date: '2024-04-10', deposit: 18500000, withdrawal: 0, description: 'フリカエ BMW M8 ダイキン サトウ' },
       { id: 'BNK-102', date: '2024-10-05', deposit: 36000000, withdrawal: 0, description: 'フリカエ URUS ダイキン サトウ' },
+      { id: 'BNK-105', date: '2024-12-08', deposit: 15800000, withdrawal: 0, description: 'フリカエ 718CAYMAN サトウ' },
+      { id: 'BNK-106', date: '2024-03-22', deposit: 16200000, withdrawal: 0, description: 'フリカエ AUDI RS6 スズキ' },
+      { id: 'BNK-107', date: '2024-07-15', deposit: 17500000, withdrawal: 0, description: 'フリカエ RANGE ROVER スズキ' },
       // 神田の案件は現金手渡しのため通帳に入金が一部しか届いていない
       { id: 'BNK-103', date: '2024-05-15', deposit: 10000000, withdrawal: 0, description: 'オリコ ローン カンダ GT3' },
       { id: 'BNK-104', date: '2024-09-20', deposit: 14500000, withdrawal: 0, description: 'ジャックス ローン カンダ G63' }
